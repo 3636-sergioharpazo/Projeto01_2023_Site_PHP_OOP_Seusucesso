@@ -3,7 +3,7 @@ document.ready = function(){
 
 };
 
-  var deadline = new Date("dec 31, 2022 15:37:25").getTime();
+  var deadline = new Date("dec 31, 2024 15:37:25").getTime();
 	
   var x = setInterval(function() {
 	
