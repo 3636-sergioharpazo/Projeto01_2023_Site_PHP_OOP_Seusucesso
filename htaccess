@@ -1,0 +1,23 @@
+
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+RewriteOptions inherit
+
+ErrorDocument 403 https:///seusucesso.farce.com.br
+Options -Indexes
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-SSL} !on
+RewriteCond %{HTTP_HOST} ^seusucesso\.farce\.com\.br$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.seusucesso\.farce\.com\.br$
+RewriteRule ^/?$ "https\:\/\/seusucesso\.farce\.com\.br\/" [R=301,L]
+
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Defina o pacote “ea-php70” como a linguagem padrão de programação “PHP”.
+<IfModule mime_module>
+ # AddHandler application/x-httpd-ea-php70 .php .php7 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit
