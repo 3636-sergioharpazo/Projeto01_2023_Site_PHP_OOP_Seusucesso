@@ -124,8 +124,6 @@ client.on('authenticated', () => {
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-const clientesRespondidos = {}; // Cache para armazenar clientes que já responderam
-
 // Função para enviar mensagem ao WhatsApp
 async function enviarMensagem(telefone, mensagem) {
   await client.sendMessage(telefone, mensagem);
@@ -208,7 +206,7 @@ client.on('message', async msg => {
             `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
           );
 
-          // Criar pedido no banco de dados
+          // Criar pedido no banco de dados via PHP
           axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido&telefone_cliente=${msg.from}&nome_cliente=${contact.pushname}`)
             .then(response => {
               console.log('Pedido Criado:', response.data);
