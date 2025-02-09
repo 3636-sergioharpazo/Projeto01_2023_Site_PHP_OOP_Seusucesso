@@ -137,20 +137,36 @@ async function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-client.on('message', async (msg) => {
+client.on('message', async msg => {
   const chat = await msg.getChat();
-  const nomeCliente = msg._data.notifyName; // Obtendo o nome do cliente
+  const contact = await msg.getContact(); // Obtendo contato
+  const nomeCliente = contact.pushname || "Cliente"; // Garantindo que sempre tenha um nome
+
+  // Mensagem de boas-vindas
+  if (/^(menu|Menu|oi|Oi|Olá|olá|ola)$/i.test(msg.body)) {
+    await delay(2000);
+    await chat.sendStateTyping();
+    await delay(2000);
+
+    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
+      .then((response) => {
+        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋 Bem-vindo ao nosso serviço!\n\n${response.data}`);
+      })
+      .catch((error) => {
+        console.error("Erro ao obter menu:", error);
+      });
+  }
 
   // Menu 1 - Cardápio
-  if (msg.body.trim() === '1') {
+  else if (msg.body.trim() === '1') {
     await chat.sendStateTyping();
     await delay(2000);
 
     axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
-      .then((response) => {
+      .then(response => {
         client.sendMessage(msg.from, response.data);
       })
-      .catch((error) => {
+      .catch(error => {
         console.error("Erro ao obter cardápio:", error);
         client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
       });
@@ -179,7 +195,7 @@ client.on('message', async (msg) => {
     }
 
     axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
-      .then((response) => {
+      .then(response => {
         if (response.data && response.data.produto && response.data.produto.nome && response.data.produto.preco) {
           const itemPedido = response.data.produto;
           const valorTotal = itemPedido.preco * quantidade;
@@ -214,10 +230,10 @@ client.on('message', async (msg) => {
   // Menu "Voltar"
   else if (msg.body.trim().toLowerCase() === 'voltar') {
     axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
-      .then((response) => {
+      .then(response => {
         client.sendMessage(msg.from, response.data);
       })
-      .catch((error) => {
+      .catch(error => {
         console.error("Erro ao voltar ao menu:", error);
       });
   }
@@ -244,3 +260,4 @@ client.on('message', async (msg) => {
     );
   }
 });
+
