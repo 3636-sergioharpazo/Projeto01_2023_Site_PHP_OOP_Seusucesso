@@ -126,6 +126,11 @@ client.on("authenticated", () => {
 // Quando o cliente estiver pronto
 //client.on('ready', () => {
   //  console.log('Tudo certo! WhatsApp conectado.');
+
+
+// Função para criar delay
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 client.on('message', async msg => {
 
   // Mensagem de boas-vindas
@@ -133,6 +138,7 @@ client.on('message', async msg => {
     const chat = await msg.getChat();
     const contact = await msg.getContact();
     const name = contact.pushname || "Cliente";
+    await delay(2000);
 
     await chat.sendStateTyping();
     await delay(2000);
