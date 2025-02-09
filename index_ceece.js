@@ -152,25 +152,31 @@ client.on('message', async msg => {
       });
   }
 
-  // Menu 1 - Cardápio
-  if (msg.body.trim() === '1') {
-    await chat.sendStateTyping();
-    await delay(2000);
+ // Menu 1 - Cardápio
+if (msg.body.trim() === '1') {
+  await chat.sendStateTyping();
+  await delay(2000);
 
-    // Requisitar o cardápio
-    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
-      .then((response) => {
-        const produtos = response.data;
-        let menu = "🍽️ *Cardápio*\n\n";
+  // Requisitar o cardápio
+  axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
+    .then((response) => {
+      console.log("Resposta do cardápio:", response.data);  // Adicionando o log para depuração
+      const produtos = response.data;
+      let menu = "🍽️ *Cardápio*\n\n";
+      
+      if (Array.isArray(produtos)) {  // Verifique se 'produtos' é realmente um array
         produtos.forEach(produto => {
           menu += `${produto.id}. ${produto.nome} - R$ ${produto.preco}\n`;
         });
         client.sendMessage(msg.from, menu);
-      })
-      .catch((error) => {
-        console.error("Erro ao obter cardápio:", error);
-      });
-  }
+      } else {
+        client.sendMessage(msg.from, "Erro: O cardápio não está disponível no momento.");
+      }
+    })
+    .catch((error) => {
+      console.error("Erro ao obter cardápio:", error);
+    });
+}
 
   // Menu 2 - Fazer Pedido
   if (msg.body.trim() === '2') {
