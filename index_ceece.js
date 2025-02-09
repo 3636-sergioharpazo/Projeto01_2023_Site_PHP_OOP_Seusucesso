@@ -254,5 +254,63 @@ client.on('message', async msg => {
       "Digite o ID do seu pedido e depois o ID do produto e a quantidade para adicionar mais itens (exemplo: 'ID_PEDIDO 1 2' para 2 unidades do prato 1)."
     );
   }
+
+// Menu 4 - Adicionar Mais Itens ao Pedido
+  else if (msg.body.trim() === '4') {
+    await chat.sendStateTyping();
+    await delay(2000);
+
+    client.sendMessage(
+      msg.from,
+      "Digite o ID do seu pedido, o ID do produto e a quantidade para adicionar mais itens (exemplo: '123 1 2' para adicionar 2 unidades do prato 1 no pedido 123)."
+    );
+  }
+
+  // Adicionando mais itens ao pedido
+  else if (/^\d+\s\d+\s\d+$/.test(msg.body)) {
+    const partes = msg.body.split(' ');
+    const idPedido = partes[0];
+    const idProduto = partes[1];
+    const quantidade = parseInt(partes[2], 10);
+
+    if (isNaN(quantidade) || quantidade <= 0) {
+      client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo. Tente novamente.");
+      return;
+    }
+
+    // Verificar se o produto existe
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${idProduto}`)
+      .then(response => {
+        if (response.data && response.data.produto && response.data.produto.nome && response.data.produto.preco) {
+          const itemPedido = response.data.produto;
+          const valorTotal = itemPedido.preco * quantidade;
+
+          client.sendMessage(
+            msg.from,
+            `Item adicionado: ${itemPedido.nome} x ${quantidade}\n` +
+            `Valor adicional: R$ ${valorTotal.toFixed(2)}\n` +
+            `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
+          );
+
+          // Adiciona o item ao pedido no banco de dados
+          axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item_pedido&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${quantidade}`)
+            .then(response => {
+              client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
+            })
+            .catch(error => {
+              console.error('Erro ao adicionar item ao pedido:', error.response ? error.response.data : error);
+              client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
+            });
+
+        } else {
+          client.sendMessage(msg.from, "Produto inválido. Verifique o ID e tente novamente.");
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao verificar produto:', error.response ? error.response.data : error);
+        client.sendMessage(msg.from, "Erro ao verificar produto. Tente novamente mais tarde.");
+      });
+  }
+
 });
 
