@@ -126,75 +126,119 @@ client.on('authenticated', () => {
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const clientesRespondidos = {}; // Cache para armazenar clientes que já responderam
+// Inicializa o cliente
+client.initialize();
 
-client.on('message', async (msg) => {
-  if (!msg.from.endsWith('@c.us')) return;
+// Função para enviar mensagem ao WhatsApp
+async function enviarMensagem(telefone, mensagem) {
+    await client.sendMessage(telefone, mensagem);
+}
 
-  if (/^(menu|Menu|oi|Oi|Olá|olá|ola)$/i.test(msg.body)) {
-    const chat = await msg.getChat();
-    const contact = await msg.getContact();
-    const name = contact.pushname || 'Cliente';
+// Quando uma mensagem é recebida
+client.on('message', async msg => {
+    if (!msg.from.endsWith('@c.us')) return;
 
-    await delay(2000);
-    await chat.sendStateTyping();
-    await delay(2000);
+    // Mensagem de boas-vindas
+    if (/^(menu|Menu|oi|Oi|Olá|olá|ola)$/i.test(msg.body)) {
+        const chat = await msg.getChat();
+        const contact = await msg.getContact();
+        const name = contact.pushname || "Cliente";
 
-    // Chama o servidor PHP para enviar o menu
-    await axios.get(`http://localhost:3002/index.php?action=menu&to=${msg.from}`)
-      .then(response => {
-        client.sendMessage(msg.from, response.data);
-      })
-      .catch(error => {
-        client.sendMessage(msg.from, "Erro ao carregar o menu. Tente novamente mais tarde.");
-      });
-  }
+        await chat.sendStateTyping();
+        await delay(2000);
 
-  if (msg.body.trim() === '1') {
-    // Chama o servidor PHP para enviar o cardápio
-    await axios.get(`http://localhost:3002/index.php?action=cardapio&to=${msg.from}`)
-      .then(response => {
-        client.sendMessage(msg.from, response.data);
-      })
-      .catch(error => {
-        client.sendMessage(msg.from, "Erro ao carregar o cardápio. Tente novamente mais tarde.");
-      });
-  }
+        // Requisitar o menu principal do PHP
+        axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
+            .then((response) => {
+                client.sendMessage(msg.from, `Olá, ${name.split(" ")[0]}! 👋 Bem-vindo ao nosso serviço!\n\n${response.data}`);
+            })
+            .catch((error) => {
+                console.error("Erro ao obter menu:", error);
+            });
+    }
 
-  if (msg.body.trim() === '2') {
-    // Envia a solicitação para o cliente fazer um pedido
-    await client.sendMessage(
-      msg.from,
-      'Para fazer seu pedido, digite o número do prato seguido pela quantidade, por exemplo:\n' +
-      '1. Picanha 2\n' +
-      '2. Fraldinha 3\n' +
-      'Ou digite *Voltar* para retornar ao menu anterior.'
-    );
-  }
+    // Menu 1 - Cardápio
+    if (msg.body.trim() === '1') {
+        const chat = await msg.getChat();
+        await chat.sendStateTyping();
+        await delay(2000);
 
-  if (/^\d+\.\s?\w+\s?\d+$/i.test(msg.body)) {
-    // Processa o pedido com a sintaxe "1:2,3:1" e envia ao PHP
-    const pedido = msg.body.replace(/[^0-9,:]/g, ''); // Filtra caracteres não válidos
-    await axios.get(`http://localhost:3002/index.php?action=pedido&to=${msg.from}&pedido=${pedido}`)
-      .then(response => {
-        client.sendMessage(msg.from, response.data);
-      })
-      .catch(error => {
-        client.sendMessage(msg.from, "Erro ao processar o pedido. Tente novamente.");
-      });
-  }
+        // Requisitar o cardápio do PHP e exibir produtos
+        axios.get('http://localhost/menus.php?action=cardapio')
+            .then((response) => {
+                const produtos = response.data;
+                let menu = "🍽️ *Cardápio*\n\n";
+                produtos.forEach(produto => {
+                    menu += `${produto.id}. ${produto.nome} - R$ ${produto.preco}\n`;
+                });
+                client.sendMessage(msg.from, menu);
+            })
+            .catch((error) => {
+                console.error("Erro ao obter cardápio:", error);
+            });
+    }
 
-  if (msg.body.trim().toLowerCase() === 'confirmar') {
-    await client.sendMessage(msg.from, "Pedido confirmado! Aguardando preparo. Obrigado por escolher a *Churrascaria Ceece Gril*!");
-  }
+    // Menu 2 - Fazer Pedido
+    if (msg.body.trim() === '2') {
+        const chat = await msg.getChat();
+        await chat.sendStateTyping();
+        await delay(2000);
 
-  if (msg.body.trim().toLowerCase() === 'voltar') {
-    await client.sendMessage(msg.from, "Voltando ao menu principal...");
-    await axios.get(`http://localhost:3002/index.php?action=menu&to=${msg.from}`)
-      .then(response => {
-        client.sendMessage(msg.from, response.data);
-      })
-      .catch(error => {
-        client.sendMessage(msg.from, "Erro ao voltar ao menu principal.");
-      });
-  }
+        client.sendMessage(
+            msg.from,
+            "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1) ou digite *Voltar* para retornar."
+        );
+    }
+
+    // Confirmação de pedido
+    if (/^\d+\s?\d+$/.test(msg.body)) {
+        const pedido = msg.body.split(' ');
+        const prato = pedido[0];
+        const quantidade = parseInt(pedido[1], 10);
+
+        // Validar pedido (adicionar lógica do banco aqui)
+        axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio`)
+            .then((response) => {
+                const produtos = response.data;
+                const itemPedido = produtos.find(prod => prod.id === parseInt(prato));
+                
+                if (itemPedido) {
+                    const valorTotal = itemPedido.preco * quantidade;
+                    client.sendMessage(
+                        msg.from,
+                        `Seu pedido: ${itemPedido.nome} x ${quantidade}\n` +
+                        `Valor total: R$ ${valorTotal.toFixed(2)}\n` +
+                        `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
+                    );
+
+                    // Criar pedido no banco de dados via PHP
+                    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido&telefone_cliente=${msg.from}&nome_cliente=${contact.pushname}`)
+                        .then(response => {
+                            console.log('Pedido Criado:', response.data);
+                        })
+                        .catch(error => {
+                            console.error('Erro ao criar pedido:', error);
+                        });
+                } else {
+                    client.sendMessage(msg.from, "Pedido inválido. Tente novamente.");
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao obter cardápio para validar o pedido:', error);
+            });
+    }
+
+    // Voltar ao menu
+    if (msg.body.trim().toLowerCase() === 'voltar') {
+        axios.get('http://localhost/menus.php?action=menu')
+            .then((response) => {
+                client.sendMessage(msg.from, response.data);
+            })
+            .catch((error) => {
+                console.error("Erro ao voltar ao menu:", error);
+            });
+    }
 });
+
+// Função para criar delay
+const delay = ms => new Promise(res => setTimeout(res, ms));
