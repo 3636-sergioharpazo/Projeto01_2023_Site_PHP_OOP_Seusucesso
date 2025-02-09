@@ -197,7 +197,7 @@ if (/^\d+\s?\d+$/.test(msg.body)) {
 axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio`)
   .then((response) => {
     // Adicione um console.log para verificar o retorno da API
-    console.log("Resposta da API do cardápio:", response.data);
+    //console.log("Resposta da API do cardápio:", response.data);
     
     // Verifique se a resposta contém um array de produtos
     const produtos = Array.isArray(response.data) ? response.data : [];
