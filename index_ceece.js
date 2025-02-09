@@ -260,5 +260,5 @@ if (/^\d+\s?\d+$/.test(msg.body)) {
       "Digite o ID do seu pedido e depois o ID do produto e a quantidade para adicionar mais itens (exemplo: 'ID_PEDIDO 1 2' para 2 unidades do prato 1)."
     );
   }
-}
+
 });
