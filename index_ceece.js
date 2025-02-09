@@ -126,7 +126,6 @@ client.on("authenticated", () => {
 // Quando o cliente estiver pronto
 //client.on('ready', () => {
   //  console.log('Tudo certo! WhatsApp conectado.');
-    
 client.on('message', async msg => {
 
   // Mensagem de boas-vindas
@@ -209,7 +208,7 @@ client.on('message', async msg => {
           );
 
           // Criar pedido no banco de dados via PHP
-          axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido&telefone_cliente=${msg.from}&nome_cliente=${contact.pushname}`)
+          axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido&telefone_cliente=${msg.from}&nome_cliente=${contact.pushname}&id_produto=${prato}&quantidade=${quantidade}`)
             .then(response => {
               console.log('Pedido Criado:', response.data);
             })
