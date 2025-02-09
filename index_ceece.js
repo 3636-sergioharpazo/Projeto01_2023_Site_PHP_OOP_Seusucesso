@@ -130,9 +130,16 @@ client.on("authenticated", () => {
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
+const axios = require('axios');
+
+// Função para simular digitação
+async function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 client.on('message', async (msg) => {
   const chat = await msg.getChat();
+  const nomeCliente = msg._data.notifyName; // Obtendo o nome do cliente
 
   // Menu 1 - Cardápio
   if (msg.body.trim() === '1') {
@@ -141,8 +148,7 @@ client.on('message', async (msg) => {
 
     axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
       .then((response) => {
-        const cardapio = response.data;
-        client.sendMessage(msg.from, cardapio);
+        client.sendMessage(msg.from, response.data);
       })
       .catch((error) => {
         console.error("Erro ao obter cardápio:", error);
@@ -185,8 +191,8 @@ client.on('message', async (msg) => {
             `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
           );
 
-          // Criar pedido no banco de dados
-          axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&id_produto=${prato}&quantidade=${quantidade}`)
+          // Criar pedido no banco de dados com nome do cliente
+          axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
             .then(response => {
               client.sendMessage(msg.from, "Pedido registrado com sucesso! ✅");
             })
@@ -238,6 +244,3 @@ client.on('message', async (msg) => {
     );
   }
 });
-
-
-
