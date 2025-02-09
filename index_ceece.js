@@ -164,7 +164,7 @@ client.on('message', async msg => {
         await delay(2000);
 
         // Requisitar o cardápio do PHP e exibir produtos
-        axios.get('http://localhost/menus.php?action=cardapio')
+        axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
             .then((response) => {
                 const produtos = response.data;
                 let menu = "🍽️ *Cardápio*\n\n";
@@ -230,7 +230,7 @@ client.on('message', async msg => {
 
     // Voltar ao menu
     if (msg.body.trim().toLowerCase() === 'voltar') {
-        axios.get('http://localhost/menus.php?action=menu')
+        axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
             .then((response) => {
                 client.sendMessage(msg.from, response.data);
             })
