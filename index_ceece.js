@@ -5,7 +5,7 @@ const qrcodeWeb = require('qrcode');
 const express = require('express');
 
 const app = express();
-const port = 3002;
+const port = 3003;
 
 const client = new Client({
   authStrategy: new LocalAuth(),
