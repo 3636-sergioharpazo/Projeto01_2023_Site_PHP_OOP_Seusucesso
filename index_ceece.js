@@ -130,7 +130,7 @@ client.on("authenticated", () => {
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-const axios = require('axios');
+
 
 // Função para simular digitação
 async function delay(ms) {
