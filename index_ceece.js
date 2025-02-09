@@ -130,109 +130,83 @@ client.on("authenticated", () => {
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-client.on('message', async msg => {
+
+client.on('message', async (msg) => {
   const chat = await msg.getChat();
-  const contact = await msg.getContact();  // Garantir que contact seja obtido aqui no início
 
-  // Mensagem de boas-vindas
-  if (/^(menu|Menu|oi|Oi|Olá|olá|ola)$/i.test(msg.body)) {
-    const name = contact.pushname || "Cliente";
-    await delay(2000);
-
+  // Menu 1 - Cardápio
+  if (msg.body.trim() === '1') {
     await chat.sendStateTyping();
     await delay(2000);
 
-    // Requisitar o menu principal
-    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
+    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
       .then((response) => {
-        client.sendMessage(msg.from, `Olá, ${name.split(" ")[0]}! 👋 Bem-vindo ao nosso serviço!\n\n${response.data}`);
+        const cardapio = response.data;
+        client.sendMessage(msg.from, cardapio);
       })
       .catch((error) => {
-        console.error("Erro ao obter menu:", error);
+        console.error("Erro ao obter cardápio:", error);
+        client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
       });
   }
 
- // Menu 1 - Cardápio
-if (msg.body.trim() === '1') {
-  await chat.sendStateTyping();
-  await delay(2000);
+  // Menu 2 - Fazer Pedido
+  else if (msg.body.trim() === '2') {
+    await chat.sendStateTyping();
+    await delay(2000);
 
-  // Requisitar o cardápio
-  axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
-    .then((response) => {
-      //console.log("Resposta do cardápio:", response.data);  // Log para ver o conteúdo da resposta
-      const cardapio = response.data;  // A resposta já é uma string com formatação em Markdown
-
-      // Enviar a resposta diretamente sem alteração, pois ela já está formatada
-      client.sendMessage(msg.from, cardapio);
-    })
-    .catch((error) => {
-      console.error("Erro ao obter cardápio:", error);
-      client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
-    });
-}
-// Menu 2 - Fazer Pedido
-if (msg.body.trim() === '2') {
-  await chat.sendStateTyping();
-  await delay(2000);
-
-  client.sendMessage(
-    msg.from,
-    "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1). A quantidade deve ser um número inteiro positivo. Ou digite *Voltar* para retornar."
-  );
-}
-
-// Confirmação de pedido
-if (/^\d+\s?\d+$/.test(msg.body)) {
-  const pedido = msg.body.split(' ');
-  const prato = pedido[0];
-  const quantidade = parseInt(pedido[1], 10);
-
-  // Validar se a quantidade é um número inteiro positivo
-  if (isNaN(quantidade) || quantidade <= 0) {
-    client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo. Tente novamente.");
-    return;
+    client.sendMessage(
+      msg.from,
+      "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1). A quantidade deve ser um número inteiro positivo. Ou digite *Voltar* para retornar."
+    );
   }
 
-// Verificar cardápio e validar o pedido
-axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
-  .then((response) => {
-    console.log("Resposta completa da API do cardápio:", response);
+  // Confirmação de pedido
+  else if (/^\d+\s?\d+$/.test(msg.body)) {
+    const pedido = msg.body.split(' ');
+    const prato = pedido[0];
+    const quantidade = parseInt(pedido[1], 10);
 
-    // Verifique se o retorno da API contém um produto válido
-    if (response.data && response.data.produto && response.data.produto.nome && response.data.produto.preco) {
-      const itemPedido = response.data.produto;
-      const valorTotal = itemPedido.preco * quantidade;
-
-      client.sendMessage(
-        msg.from,
-        `Seu pedido: ${itemPedido.nome} x ${quantidade}\n` +
-        `Valor total: R$ ${valorTotal.toFixed(2)}\n` +
-        `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
-      );
-
-      // Criar pedido no banco de dados via PHP
-      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&nome_cliente=${contact.pushname}&id_produto=${prato}&quantidade=${quantidade}`)
-        .then(response => {
-          console.log('Resposta ao criar pedido:', response.data);
-          client.sendMessage(msg.from, "Pedido registrado com sucesso! ✅");
-        })
-        .catch(error => {
-          console.error('Erro ao criar pedido:', error.response ? error.response.data : error);
-          client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
-        });
-      
-    } else {
-      console.log("Produto não encontrado ou inválido:", response.data);
-      client.sendMessage(msg.from, "Pedido inválido. Tente novamente.");
+    if (isNaN(quantidade) || quantidade <= 0) {
+      client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo. Tente novamente.");
+      return;
     }
-  })
-  .catch(error => {
-    console.error('Erro ao verificar cardápio:', error.response ? error.response.data : error);
-    client.sendMessage(msg.from, "Erro ao verificar cardápio. Tente novamente mais tarde.");
-  });
-  // Voltar ao menu
-  if (msg.body.trim().toLowerCase() === 'voltar') {
+
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
+      .then((response) => {
+        if (response.data && response.data.produto && response.data.produto.nome && response.data.produto.preco) {
+          const itemPedido = response.data.produto;
+          const valorTotal = itemPedido.preco * quantidade;
+
+          client.sendMessage(
+            msg.from,
+            `Seu pedido: ${itemPedido.nome} x ${quantidade}\n` +
+            `Valor total: R$ ${valorTotal.toFixed(2)}\n` +
+            `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
+          );
+
+          // Criar pedido no banco de dados
+          axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&id_produto=${prato}&quantidade=${quantidade}`)
+            .then(response => {
+              client.sendMessage(msg.from, "Pedido registrado com sucesso! ✅");
+            })
+            .catch(error => {
+              console.error('Erro ao criar pedido:', error.response ? error.response.data : error);
+              client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+            });
+
+        } else {
+          client.sendMessage(msg.from, "Pedido inválido. Tente novamente.");
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao verificar cardápio:', error.response ? error.response.data : error);
+        client.sendMessage(msg.from, "Erro ao verificar cardápio. Tente novamente mais tarde.");
+      });
+  }
+
+  // Menu "Voltar"
+  else if (msg.body.trim().toLowerCase() === 'voltar') {
     axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
       .then((response) => {
         client.sendMessage(msg.from, response.data);
@@ -243,7 +217,7 @@ axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar
   }
 
   // Menu 3 - Localização
-  if (msg.body.trim() === '3') {
+  else if (msg.body.trim() === '3') {
     await chat.sendStateTyping();
     await delay(2000);
 
@@ -254,7 +228,7 @@ axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar
   }
 
   // Menu 4 - Adicionar Mais Itens ao Pedido
-  if (msg.body.trim() === '4') {
+  else if (msg.body.trim() === '4') {
     await chat.sendStateTyping();
     await delay(2000);
 
@@ -262,6 +236,8 @@ axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar
       msg.from,
       "Digite o ID do seu pedido e depois o ID do produto e a quantidade para adicionar mais itens (exemplo: 'ID_PEDIDO 1 2' para 2 unidades do prato 1)."
     );
-}
-}
+  }
 });
+
+
+
