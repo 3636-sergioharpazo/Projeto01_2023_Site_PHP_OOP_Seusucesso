@@ -127,7 +127,7 @@ client.on("authenticated", () => {
 //client.on('ready', () => {
   //  console.log('Tudo certo! WhatsApp conectado.');
     
-
+client.on('message', async msg => {
 
   // Mensagem de boas-vindas
   if (/^(menu|Menu|oi|Oi|Olá|olá|ola)$/i.test(msg.body)) {
@@ -177,7 +177,7 @@ client.on("authenticated", () => {
 
     client.sendMessage(
       msg.from,
-      "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1) ou digite *Voltar* para retornar."
+      "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1). A quantidade deve ser um número inteiro positivo. Ou digite *Voltar* para retornar."
     );
   }
 
@@ -186,6 +186,12 @@ client.on("authenticated", () => {
     const pedido = msg.body.split(' ');
     const prato = pedido[0];
     const quantidade = parseInt(pedido[1], 10);
+
+    // Validar se a quantidade é um número inteiro positivo
+    if (isNaN(quantidade) || quantidade <= 0) {
+        client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo. Tente novamente.");
+        return;
+    }
 
     // Validar pedido (adicionar lógica do banco aqui)
     axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio`)
