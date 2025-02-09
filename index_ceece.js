@@ -240,5 +240,3 @@ client.on('message', async msg => {
     }
 });
 
-// Função para criar delay
-const delay = ms => new Promise(res => setTimeout(res, ms));
