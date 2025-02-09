@@ -127,16 +127,12 @@ client.on("authenticated", () => {
 //client.on('ready', () => {
   //  console.log('Tudo certo! WhatsApp conectado.');
 
-
-// Função para criar delay
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
 client.on('message', async msg => {
+  const chat = await msg.getChat();
+  const contact = await msg.getContact();  // Garantir que contact seja obtido aqui no início
 
   // Mensagem de boas-vindas
   if (/^(menu|Menu|oi|Oi|Olá|olá|ola)$/i.test(msg.body)) {
-    const chat = await msg.getChat();
-    const contact = await msg.getContact();
     const name = contact.pushname || "Cliente";
     await delay(2000);
 
@@ -155,7 +151,6 @@ client.on('message', async msg => {
 
   // Menu 1 - Cardápio
   if (msg.body.trim() === '1') {
-    const chat = await msg.getChat();
     await chat.sendStateTyping();
     await delay(2000);
 
@@ -176,7 +171,6 @@ client.on('message', async msg => {
 
   // Menu 2 - Fazer Pedido
   if (msg.body.trim() === '2') {
-    const chat = await msg.getChat();
     await chat.sendStateTyping();
     await delay(2000);
 
@@ -243,7 +237,6 @@ client.on('message', async msg => {
 
   // Menu 3 - Localização
   if (msg.body.trim() === '3') {
-    const chat = await msg.getChat();
     await chat.sendStateTyping();
     await delay(2000);
 
@@ -255,7 +248,6 @@ client.on('message', async msg => {
 
   // Menu 4 - Adicionar Mais Itens ao Pedido
   if (msg.body.trim() === '4') {
-    const chat = await msg.getChat();
     await chat.sendStateTyping();
     await delay(2000);
 
