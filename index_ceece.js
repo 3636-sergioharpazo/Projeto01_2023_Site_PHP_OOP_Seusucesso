@@ -171,18 +171,7 @@ if (msg.body.trim() === '1') {
       client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
     });
 }
- // Menu 2 - Fazer Pedido
-  if (msg.body.trim() === '2') {
-    await chat.sendStateTyping();
-    await delay(2000);
-
-    client.sendMessage(
-      msg.from,
-      "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1). A quantidade deve ser um número inteiro positivo. Ou digite *Voltar* para retornar."
-    );
-  }
-
-  // Confirmação de pedido
+// Confirmação de pedido
 if (/^\d+\s?\d+$/.test(msg.body)) {
   const pedido = msg.body.split(' ');
   const prato = pedido[0];
@@ -197,6 +186,9 @@ if (/^\d+\s?\d+$/.test(msg.body)) {
   // Validar pedido (adicionar lógica do banco aqui)
   axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio`)
     .then((response) => {
+      // Imprimir o que é retornado pela API
+      console.log("Resposta da API do cardápio:", response.data);
+
       // Verifique se a resposta contém um array de produtos
       const produtos = Array.isArray(response.data) ? response.data : [];
 
