@@ -194,49 +194,46 @@ if (/^\d+\s?\d+$/.test(msg.body)) {
     return;
   }
 
-  // Validar pedido (adicionar lógica do banco aqui)
-  axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio`)
-    .then((response) => {
-      // Imprimir o que é retornado pela API
-      console.log("Resposta da API do cardápio:", response.data);
+axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio`)
+  .then((response) => {
+    // Adicione um console.log para verificar o retorno da API
+    console.log("Resposta da API do cardápio:", response.data);
+    
+    // Verifique se a resposta contém um array de produtos
+    const produtos = Array.isArray(response.data) ? response.data : [];
+    
+    if (produtos.length === 0) {
+      client.sendMessage(msg.from, "Erro ao obter o cardápio para validar o pedido.");
+      return;
+    }
 
-      // Verifique se a resposta contém um array de produtos
-      const produtos = Array.isArray(response.data) ? response.data : [];
+    const itemPedido = produtos.find(prod => prod.id === parseInt(prato));
 
-      // Se a resposta não for um array válido, retorne erro
-      if (produtos.length === 0) {
-        client.sendMessage(msg.from, "Erro ao obter o cardápio para validar o pedido.");
-        return;
-      }
+    if (itemPedido) {
+      const valorTotal = itemPedido.preco * quantidade;
+      client.sendMessage(
+        msg.from,
+        `Seu pedido: ${itemPedido.nome} x ${quantidade}\n` +
+        `Valor total: R$ ${valorTotal.toFixed(2)}\n` +
+        `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
+      );
 
-      const itemPedido = produtos.find(prod => prod.id === parseInt(prato));
-
-      if (itemPedido) {
-        const valorTotal = itemPedido.preco * quantidade;
-        client.sendMessage(
-          msg.from,
-          `Seu pedido: ${itemPedido.nome} x ${quantidade}\n` +
-          `Valor total: R$ ${valorTotal.toFixed(2)}\n` +
-          `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
-        );
-
-        // Criar pedido no banco de dados via PHP
-        axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido&telefone_cliente=${msg.from}&nome_cliente=${contact.pushname}&id_produto=${prato}&quantidade=${quantidade}`)
-          .then(response => {
-            console.log('Pedido Criado:', response.data);
-          })
-          .catch(error => {
-            console.error('Erro ao criar pedido:', error);
-          });
-      } else {
-        client.sendMessage(msg.from, "Pedido inválido. Tente novamente.");
-      }
-    })
-    .catch(error => {
-      console.error('Erro ao obter cardápio para validar o pedido:', error);
-      client.sendMessage(msg.from, "Erro ao obter cardápio para validar o pedido.");
-    });
-}
+      // Criar pedido no banco de dados via PHP
+      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido&telefone_cliente=${msg.from}&nome_cliente=${contact.pushname}&id_produto=${prato}&quantidade=${quantidade}`)
+        .then(response => {
+          console.log('Pedido Criado:', response.data);
+        })
+        .catch(error => {
+          console.error('Erro ao criar pedido:', error);
+        });
+    } else {
+      client.sendMessage(msg.from, "Pedido inválido. Tente novamente.");
+    }
+  })
+  .catch(error => {
+    console.error('Erro ao obter cardápio para validar o pedido:', error);
+    client.sendMessage(msg.from, "Erro ao obter cardápio para validar o pedido.");
+  });
 
 
 // Voltar ao menu
