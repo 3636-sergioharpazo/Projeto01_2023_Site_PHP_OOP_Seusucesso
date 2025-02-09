@@ -132,11 +132,6 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 
 
 
-// Função para simular digitação
-async function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 client.on('message', async msg => {
   const chat = await msg.getChat();
   const contact = await msg.getContact(); // Obtendo contato
