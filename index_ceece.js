@@ -126,8 +126,8 @@ client.on('authenticated', () => {
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const clientesRespondidos = {}; // Cache para armazenar clientes que já responderam
-// Inicializa o cliente
-client.initialize();
+
+
 
 // Função para enviar mensagem ao WhatsApp
 async function enviarMensagem(telefone, mensagem) {
