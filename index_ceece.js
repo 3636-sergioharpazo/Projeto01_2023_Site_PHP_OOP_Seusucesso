@@ -202,25 +202,18 @@ client.on('message', async msg => {
             `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
           );
 
-          // Criar pedido no banco de dados com nome do cliente
           axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
-            .then(response => {
-              client.sendMessage(msg.from, "Pedido registrado com sucesso! ✅");
-            })
-            .catch(error => {
-              console.error('Erro ao criar pedido:', error.response ? error.response.data : error);
-              client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
-            });
-
-        } else {
-          client.sendMessage(msg.from, "Pedido inválido. Tente novamente.");
-        }
-      })
-      .catch(error => {
-        console.error('Erro ao verificar cardápio:', error.response ? error.response.data : error);
-        client.sendMessage(msg.from, "Erro ao verificar cardápio. Tente novamente mais tarde.");
-      });
-  }
+  .then(response => {
+    if (response.data.pedido_id) {
+      client.sendMessage(msg.from, `Pedido registrado com sucesso! ✅\nSeu número de pedido é: *${response.data.pedido_id}*`);
+    } else {
+      client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+    }
+  })
+  .catch(error => {
+    console.error('Erro ao criar pedido:', error.response ? error.response.data : error);
+    client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+  });
 
   // Menu "Voltar"
   else if (msg.body.trim().toLowerCase() === 'voltar') {
