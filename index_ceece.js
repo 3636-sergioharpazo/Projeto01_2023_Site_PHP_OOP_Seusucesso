@@ -150,7 +150,7 @@ client.on('message', async msg => {
       .catch((error) => {
         console.error("Erro ao obter menu:", error);
       });
-  }
+    }
 
   // Menu 1 - Cardápio
   else if (msg.body.trim() === '1') {
@@ -214,7 +214,7 @@ client.on('message', async msg => {
     console.error('Erro ao criar pedido:', error.response ? error.response.data : error);
     client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
   });
-
+        }
   // Menu "Voltar"
   else if (msg.body.trim().toLowerCase() === 'voltar') {
     axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
@@ -225,7 +225,7 @@ client.on('message', async msg => {
         console.error("Erro ao voltar ao menu:", error);
       });
   }
-
+      
   // Menu 3 - Localização
   else if (msg.body.trim() === '3') {
     await chat.sendStateTyping();
@@ -245,17 +245,6 @@ client.on('message', async msg => {
     client.sendMessage(
       msg.from,
       "Digite o ID do seu pedido e depois o ID do produto e a quantidade para adicionar mais itens (exemplo: 'ID_PEDIDO 1 2' para 2 unidades do prato 1)."
-    );
-  }
-
-// Menu 4 - Adicionar Mais Itens ao Pedido
-  else if (msg.body.trim() === '4') {
-    await chat.sendStateTyping();
-    await delay(2000);
-
-    client.sendMessage(
-      msg.from,
-      "Digite o ID do seu pedido, o ID do produto e a quantidade para adicionar mais itens (exemplo: '123 1 2' para adicionar 2 unidades do prato 1 no pedido 123)."
     );
   }
 
@@ -298,12 +287,12 @@ client.on('message', async msg => {
         } else {
           client.sendMessage(msg.from, "Produto inválido. Verifique o ID e tente novamente.");
         }
-      })
+    })
       .catch(error => {
         console.error('Erro ao verificar produto:', error.response ? error.response.data : error);
         client.sendMessage(msg.from, "Erro ao verificar produto. Tente novamente mais tarde.");
       });
+  
   }
-
-});
-
+      
+  });
