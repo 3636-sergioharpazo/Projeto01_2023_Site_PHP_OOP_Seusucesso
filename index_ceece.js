@@ -276,3 +276,39 @@ client.on('message', async (msg) => {
       });
   }
 });
+
+const verificarPedidos = async () => {
+    try {
+        // Consulta para obter todos os pedidos e seus status
+        const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php');
+        const pedidos = response.data.pedidos;
+
+        for (const pedido of pedidos) {
+            let { id, telefone_cliente, nome_cliente, status } = pedido;
+
+            // Remove "@c.us" caso esteja presente no telefone
+            telefone_cliente = telefone_cliente.replace('@c.us', '');
+
+            // Se o status for "saiu", envia a mensagem
+            if (status === "saiu") {
+                const numeroWhatsApp = `${telefone_cliente}@c.us`;
+                const mensagem = `📦 Olá, ${nome_cliente}! Seu pedido (ID: ${id}) saiu para entrega. Fique atento! 🚚💨`;
+
+                if (!client || !client.sendMessage) {
+                    console.error('❌ Erro: client.sendMessage não está definido. Verifique a conexão do bot.');
+                    return;
+                }
+
+                await client.sendMessage(numeroWhatsApp, mensagem);
+                console.log(`📩 Mensagem enviada para ${nome_cliente} informando que o pedido saiu.`);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erro ao buscar pedidos:', error.message || error);
+    }
+};
+
+// Verifica os pedidos a cada 2 minutos
+setInterval(verificarPedidos, 2 * 60 * 1000);
+verificarPedidos();
+
