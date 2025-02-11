@@ -229,26 +229,38 @@ client.on('message', async (msg) => {
     await chat.sendStateTyping();
     await delay(2000);
 
-    client.sendMessage(msg.from, "Digite o ID do seu pedido e depois o ID do produto e a quantidade para adicionar (ex: '123 1 2').");
+    client.sendMessage(msg.from, "Digite o ID do seu pedido, o ID do produto e a quantidade para adicionar (ex: '123 1 2').");
   }
 
   // Adicionar item ao pedido
   else if (/^\d+\s\d+\s\d+$/.test(msg.body)) {
     const [idPedido, idProduto, quantidade] = msg.body.split(' ');
     const qtd = parseInt(quantidade, 10);
+    const telefoneCliente = msg.from;
 
     if (isNaN(qtd) || qtd <= 0) {
       client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
       return;
     }
 
-    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}`)
-      .then(() => {
-        client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_status&id_pedido=${idPedido}`)
+      .then(response => {
+        if (response.data.status === 'aberto' || response.data.status === 'saiu') {
+          axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
+            .then(() => {
+              client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
+            })
+            .catch(error => {
+              console.error('Erro ao adicionar item:', error);
+              client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
+            });
+        } else {
+          client.sendMessage(msg.from, "Erro: Não é possível adicionar itens a um pedido que não está aberto ou já saiu.");
+        }
       })
       .catch(error => {
-        console.error('Erro ao adicionar item:', error);
-        client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
+        console.error('Erro ao verificar status do pedido:', error);
+        client.sendMessage(msg.from, "Erro ao verificar o status do pedido. Tente novamente.");
       });
   }
 
