@@ -274,20 +274,29 @@ else if (msg.body.trim().toLowerCase() === 'voltar') {
       });
   }
 
-  // Menu 5 - Ver Pedido
-  else if (msg.body.trim() === '5') {
+// Menu 5 - Ver Pedido
+else if (msg.body.trim() === '5') {
     await chat.sendStateTyping();
     await delay(2000);
 
     client.sendMessage(msg.from, "Digite o ID do pedido para visualizar os detalhes.");
-  }
+}
 
-  // Ver detalhes do pedido
-  else if (/^\d+$/.test(msg.body)) {
+// Ver detalhes do pedido
+else if (/^\d+$/.test(msg.body)) {
     axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${msg.body}`)
       .then(response => {
         if (response.data && response.data.id) {
           client.sendMessage(msg.from, `📦 Pedido #${response.data.id}\nStatus: ${response.data.status}\nNome: ${response.data.nome_cliente}`);
+          
+          // Verificar se a quantidade dos itens é válida
+          response.data.forEach(item => {
+            if (item.quantidade === 'Quantidade inválida') {
+              client.sendMessage(msg.from, `Item #${item.id_produto}: Quantidade inválida detectada.`);
+            } else {
+              client.sendMessage(msg.from, `Produto: ${item.id_produto} | Quantidade: ${item.quantidade}`);
+            }
+          });
         } else {
           client.sendMessage(msg.from, "Pedido não encontrado.");
         }
@@ -296,8 +305,7 @@ else if (msg.body.trim().toLowerCase() === 'voltar') {
         console.error("Erro ao buscar pedido:", error);
         client.sendMessage(msg.from, "Erro ao buscar pedido. Tente novamente.");
       });
-  }
-
+}
 
 // Menu 6 - Atendimento
 else if (msg.body.trim() === '6') {
