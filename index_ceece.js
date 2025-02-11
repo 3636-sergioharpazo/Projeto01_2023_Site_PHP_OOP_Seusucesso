@@ -328,7 +328,8 @@ else if (msg.body.trim() === '6') {
 const verificarPedidos = async () => {
     try {
         // Consulta para obter todos os pedidos e seus status
-        const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php');
+      const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php', { timeout: 10000 });  // Timeout de 10 segundos
+
         const pedidos = response.data.pedidos;
 
         for (const pedido of pedidos) {
