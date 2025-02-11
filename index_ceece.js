@@ -205,7 +205,7 @@ else if (/^\d+\s?\d+$/.test(msg.body)) {
 
 // Confirmação final do pedido
 else if (msg.body.trim().toLowerCase() === 'confirmar') {
-  const pedidoData = /* Obter dados do pedido armazenados */; // Aqui você deve armazenar os dados do pedido temporariamente até a confirmação.
+  const pedidoData = {};
   const { prato, quantidade } = pedidoData;
 
   axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
