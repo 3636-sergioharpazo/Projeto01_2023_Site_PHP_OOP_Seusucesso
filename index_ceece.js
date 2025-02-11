@@ -166,57 +166,67 @@ client.on('message', async (msg) => {
       });
   }
 
-  // Menu 2 - Fazer Pedido
-  else if (msg.body.trim() === '2') {
-    await chat.sendStateTyping();
-    await delay(2000);
+ // Menu 2 - Fazer Pedido
+else if (msg.body.trim() === '2') {
+  await chat.sendStateTyping();
+  await delay(2000);
 
-    client.sendMessage(
-      msg.from,
-      "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1)."
-    );
+  client.sendMessage(
+    msg.from,
+    "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1)."
+  );
+}
+
+// Confirmação de pedido
+else if (/^\d+\s?\d+$/.test(msg.body)) {
+  const pedido = msg.body.split(' ');
+  const prato = pedido[0];
+  const quantidade = parseInt(pedido[1], 10);
+
+  if (isNaN(quantidade) || quantidade <= 0) {
+    client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
+    return;
   }
 
-  // Confirmação de pedido
-  else if (/^\d+\s?\d+$/.test(msg.body)) {
-    const pedido = msg.body.split(' ');
-    const prato = pedido[0];
-    const quantidade = parseInt(pedido[1], 10);
+  axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
+    .then(response => {
+      if (response.data && response.data.produto) {
+        const itemPedido = response.data.produto;
+        const valorTotal = itemPedido.preco * quantidade;
 
-    if (isNaN(quantidade) || quantidade <= 0) {
-      client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
-      return;
-    }
+        client.sendMessage(
+          msg.from,
+          `Seu pedido: ${itemPedido.nome} x ${quantidade}\nValor total: R$ ${valorTotal.toFixed(2)}\n` +
+          `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
+        );
+      }
+    });
+}
 
-    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
-      .then(response => {
-        if (response.data && response.data.produto) {
-          const itemPedido = response.data.produto;
-          const valorTotal = itemPedido.preco * quantidade;
+// Confirmação final do pedido
+else if (msg.body.trim().toLowerCase() === 'confirmar') {
+  const pedidoData = /* Obter dados do pedido armazenados */; // Aqui você deve armazenar os dados do pedido temporariamente até a confirmação.
+  const { prato, quantidade } = pedidoData;
 
-          client.sendMessage(
-            msg.from,
-            `Seu pedido: ${itemPedido.nome} x ${quantidade}\nValor total: R$ ${valorTotal.toFixed(2)}\n` +
-            `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
-          );
+  axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
+    .then(response => {
+      if (response.data.pedido_id) {
+        client.sendMessage(msg.from, `Pedido registrado com sucesso! ✅\nSeu número de pedido é: *${response.data.pedido_id}*`);
+      } else {
+        client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+      }
+    })
+    .catch(error => {
+      console.error('Erro ao criar pedido:', error);
+      client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+    });
+}
 
-          axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
-            .then(response => {
-              if (response.data.pedido_id) {
-                client.sendMessage(msg.from, `Pedido registrado com sucesso! ✅\nSeu número de pedido é: *${response.data.pedido_id}*`);
-              } else {
-                client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
-              }
-            })
-            .catch(error => {
-              console.error('Erro ao criar pedido:', error);
-              client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
-            });
-        }
-      });
-  }
-
-  // Menu 3 - Localização
+// Opção para voltar e alterar o pedido
+else if (msg.body.trim().toLowerCase() === 'voltar') {
+  client.sendMessage(msg.from, "Digite novamente o número do prato seguido da quantidade para alterar seu pedido.");
+}
+ // Menu 3 - Localização
   else if (msg.body.trim() === '3') {
     await chat.sendStateTyping();
     await delay(2000);
