@@ -297,6 +297,24 @@ else if (msg.body.trim().toLowerCase() === 'voltar') {
         client.sendMessage(msg.from, "Erro ao buscar pedido. Tente novamente.");
       });
   }
+
+
+// Menu 6 - Atendimento
+else if (msg.body.trim() === '6') {
+    await chat.sendStateTyping();
+    await delay(2000);
+
+    // Enviar mensagem para uma atendente
+    const atendenteNumber = '5588988019118'; // Substitua com o número do atendente
+    const message = "👋 Olá! Você recebeu uma nova mensagem de um cliente pelo o canal da Churrascaria CEECE GRIL. Por favor, responda assim que possível.";
+
+    client.sendMessage(atendenteNumber, message);
+    client.sendMessage(msg.from, "💬 Sua solicitação foi encaminhada para um de nossos atendentes. Aguarde um momento!");
+}
+
+
+
+  
 });
 
 const verificarPedidos = async () => {
