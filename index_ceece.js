@@ -276,8 +276,6 @@ client.on('message', async (msg) => {
       });
   }
 });
-const axios = require('axios');
-const client = require('./whatsappClient'); // Certifique-se de configurar corretamente o cliente WhatsApp
 
 // Função para verificar pedidos e atualizar os clientes
 const verificarPedidos = async () => {
