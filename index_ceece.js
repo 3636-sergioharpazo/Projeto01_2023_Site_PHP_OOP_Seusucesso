@@ -129,7 +129,8 @@ client.on("authenticated", () => {
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
-
+// Manipulação de Mensagens
+const pedidosPendentes = {};
 
 client.on('message', async (msg) => {
   const chat = await msg.getChat();
@@ -138,108 +139,64 @@ client.on('message', async (msg) => {
 
   // Mensagem de boas-vindas e menu principal
   if (/^(menu|oi|ol[áa])$/i.test(msg.body)) {
-    await delay(2000);
     await chat.sendStateTyping();
     await delay(2000);
 
     axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
-      .then((response) => {
+      .then(response => {
         client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
       })
-      .catch((error) => {
-        console.error("Erro ao obter menu:", error);
-      });
+      .catch(error => console.error("Erro ao obter menu:", error));
   }
 
-  // Menu 1 - Cardápio
-  else if (msg.body.trim() === '1') {
+  // Definição das opções do menu
+  const menuOpcoes = {
+    '1': 'cardapio',
+    '3': "📍 Estamos localizados em frente ao Estádio! Churrascaria CEECE GRIL! 🍖",
+    '5': "Digite o ID do pedido para visualizar os detalhes."
+  };
+
+  if (menuOpcoes[msg.body.trim()]) {
     await chat.sendStateTyping();
     await delay(2000);
-
-    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
-      .then(response => {
-        client.sendMessage(msg.from, response.data);
-      })
-      .catch(error => {
-        console.error("Erro ao obter cardápio:", error);
-        client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
-      });
+    if (msg.body.trim() === '1') {
+      axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
+        .then(response => client.sendMessage(msg.from, response.data))
+        .catch(error => {
+          console.error("Erro ao obter cardápio:", error);
+          client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
+        });
+    } else {
+      client.sendMessage(msg.from, menuOpcoes[msg.body.trim()]);
+    }
   }
 
- // Menu 2 - Fazer Pedido
-else if (msg.body.trim() === '2') {
+    // Menu 6 - Atendimento
+else if (msg.body.trim() === '6') {
   await chat.sendStateTyping();
   await delay(2000);
 
-  client.sendMessage(
-    msg.from,
-    "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1)."
-  );
+  // Enviar mensagem para uma atendente
+  const atendenteNumber = '5588988019118'; // Substitua com o número do atendente
+  const message = "👋 Olá! Você recebeu uma nova mensagem de um cliente pelo o canal da Churrascaria CEECE GRIL. Por favor, responda assim que possível.";
+
+  client.sendMessage(atendenteNumber, message);
+  client.sendMessage(msg.from, "💬 Sua solicitação foi encaminhada para um de nossos atendentes. Aguarde um momento!");
 }
-
-// Confirmação de pedido
-else if (/^\d+\s?\d+$/.test(msg.body)) {
-  const pedido = msg.body.split(' ');
-  const prato = pedido[0];
-  const quantidade = parseInt(pedido[1], 10);
-
-  if (isNaN(quantidade) || quantidade <= 0) {
-    client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
-    return;
-  }
-
-  axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
-    .then(response => {
-      if (response.data && response.data.produto) {
-        const itemPedido = response.data.produto;
-        const valorTotal = itemPedido.preco * quantidade;
-
-        client.sendMessage(
-          msg.from,
-          `Seu pedido: ${itemPedido.nome} x ${quantidade}\nValor total: R$ ${valorTotal.toFixed(2)}\n` +
-          `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
-        );
-      }
-    });
-}
-
-// Confirmação final do pedido
-else if (msg.body.trim().toLowerCase() === 'confirmar') {
-  const pedidoData = {};
-  const { prato, quantidade } = pedidoData;
-
-  axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
-    .then(response => {
-      if (response.data.pedido_id) {
-        client.sendMessage(msg.from, `Pedido registrado com sucesso! ✅\nSeu número de pedido é: *${response.data.pedido_id}*`);
-      } else {
-        client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
-      }
-    })
+   // Menu 4 - Adicionar Mais Itens ao Pedido
+   else if (msg.body.trim() === '4') {
+    await chat.sendStateTyping();
+    await delay(2000);
+    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
+    .then(response => client.sendMessage(msg.from, response.data))
     .catch(error => {
-      console.error('Erro ao criar pedido:', error);
-      client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+      console.error("Erro ao obter cardápio:", error);
+      client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
     });
-}
 
-// Opção para voltar e alterar o pedido
-else if (msg.body.trim().toLowerCase() === 'voltar') {
-  client.sendMessage(msg.from, "Digite novamente o número do prato seguido da quantidade para alterar seu pedido.");
-}
- // Menu 3 - Localização
-  else if (msg.body.trim() === '3') {
-    await chat.sendStateTyping();
-    await delay(2000);
-
-    client.sendMessage(msg.from, "📍 Estamos localizados em frente ao Estádio! Churrascaria CEECE GRIL! 🍖");
-  }
-
-  // Menu 4 - Adicionar Mais Itens ao Pedido
-  else if (msg.body.trim() === '4') {
-    await chat.sendStateTyping();
-    await delay(2000);
-
+  
     client.sendMessage(msg.from, "Digite o ID do seu pedido, o ID do produto e a quantidade para adicionar (ex: '123 1 2').");
+    client.sendMessage(msg.from, menuOpcoes[msg.body.trim()]);
   }
 
   // Adicionar item ao pedido
@@ -253,9 +210,7 @@ else if (msg.body.trim().toLowerCase() === 'voltar') {
       return;
     }
 
-    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_status&id_pedido=${idPedido}`)
-      .then(response => {
-        if (response.data.status === 'aberto' || response.data.status === 'saiu') {
+   
           axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
             .then(() => {
               client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
@@ -264,100 +219,125 @@ else if (msg.body.trim().toLowerCase() === 'voltar') {
               console.error('Erro ao adicionar item:', error);
               client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
             });
-        } else {
-          client.sendMessage(msg.from, "Erro: Não é possível adicionar itens a um pedido que não está aberto ou já saiu.");
-        }
-      })
-      .catch(error => {
-        console.error('Erro ao verificar status do pedido:', error);
-        client.sendMessage(msg.from, "Erro ao verificar o status do pedido. Tente novamente.");
-      });
+     
   }
 
 // Menu 5 - Ver Pedido
 else if (msg.body.trim() === '5') {
     await chat.sendStateTyping();
     await delay(2000);
-
     client.sendMessage(msg.from, "Digite o ID do pedido para visualizar os detalhes.");
 }
 
 // Ver detalhes do pedido
 else if (/^\d+$/.test(msg.body)) {
-    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${msg.body}`)
-      .then(response => {
-        if (response.data && response.data.id) {
-          client.sendMessage(msg.from, `📦 Pedido #${response.data.id}\nStatus: ${response.data.status}\nNome: ${response.data.nome_cliente}`);
-          
-          // Verificar se a quantidade dos itens é válida
-          response.data.forEach(item => {
-            if (item.quantidade === 'Quantidade inválida') {
-              client.sendMessage(msg.from, `Item #${item.id_produto}: Quantidade inválida detectada.`);
-            } else {
-              client.sendMessage(msg.from, `Produto: ${item.id_produto} | Quantidade: ${item.quantidade}`);
-            }
+  axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${msg.body}`)
+    .then(response => {
+      if (response.data && response.data.id) {
+        let mensagem = `📦 *Pedido #${response.data.id}*\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+
+        if (response.data.itens && response.data.itens.length > 0) {
+          response.data.itens.forEach(item => {
+            mensagem += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
           });
         } else {
-          client.sendMessage(msg.from, "Pedido não encontrado.");
+          mensagem += "⚠️ Nenhum item encontrado neste pedido.\n";
         }
-      })
-      .catch(error => {
-        console.error("Erro ao buscar pedido:", error);
-        client.sendMessage(msg.from, "Erro ao buscar pedido. Tente novamente.");
-      });
+
+        mensagem += `💳 *Total do Pedido:* R$ ${response.data.total}`;
+
+        client.sendMessage(msg.from, mensagem);
+      } else {
+        client.sendMessage(msg.from, "⚠️ Pedido não encontrado.");
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar pedido:", error);
+      client.sendMessage(msg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
+    });
 }
 
-// Menu 6 - Atendimento
-else if (msg.body.trim() === '6') {
-    await chat.sendStateTyping();
-    await delay(2000);
-
-    // Enviar mensagem para uma atendente
-    const atendenteNumber = '5588988019118'; // Substitua com o número do atendente
-    const message = "👋 Olá! Você recebeu uma nova mensagem de um cliente pelo o canal da Churrascaria CEECE GRIL. Por favor, responda assim que possível.";
-
-    client.sendMessage(atendenteNumber, message);
-    client.sendMessage(msg.from, "💬 Sua solicitação foi encaminhada para um de nossos atendentes. Aguarde um momento!");
-}
 
 
 
   
+  // Fazer Pedido
+  else if (msg.body.trim() === '2') {
+    await chat.sendStateTyping();
+    await delay(2000);
+    client.sendMessage(msg.from, "Digite o número do prato seguido da quantidade (exemplo: '1 2' para 2 unidades do prato 1). ");
+  }
+
+  // Confirmação de Pedido
+  else if (/^\d+\s?\d+$/.test(msg.body)) {
+    const [prato, qtd] = msg.body.split(' ');
+    const quantidade = parseInt(qtd, 10);
+
+    if (isNaN(quantidade) || quantidade <= 0) {
+      return client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
+    }
+
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
+      .then(response => {
+        if (response.data?.produto) {
+          const { nome, preco } = response.data.produto;
+          const valorTotal = preco * quantidade;
+          client.sendMessage(
+            msg.from,
+            `Seu pedido: ${nome} x ${quantidade}\nValor total: R$ ${valorTotal.toFixed(2)}\n` +
+            `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
+          );
+          pedidosPendentes[msg.from] = { prato, quantidade, nomeCliente };
+        }
+      });
+  }
+
+  // Finalizar Pedido
+  else if (msg.body.trim().toLowerCase() === 'confirmar' && pedidosPendentes[msg.from]) {
+    const { prato, quantidade, nomeCliente } = pedidosPendentes[msg.from];
+
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${msg.from}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
+      .then(response => {
+        if (response.data.pedido_id) {
+          client.sendMessage(msg.from, `Pedido registrado com sucesso! ✅\nSeu número de pedido é: *${response.data.pedido_id}*`);
+          delete pedidosPendentes[msg.from];
+        } else {
+          client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao criar pedido:', error);
+        client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+      });
+  }
+
+  // Cancelar Pedido
+  else if (msg.body.trim().toLowerCase() === 'voltar' && pedidosPendentes[msg.from]) {
+    client.sendMessage(msg.from, "Pedido cancelado. Digite novamente o número do prato e a quantidade.");
+    delete pedidosPendentes[msg.from];
+  }
+
+
 });
 
+// Função para verificar pedidos pendentes
 const verificarPedidos = async () => {
-    try {
-        // Consulta para obter todos os pedidos e seus status
-      const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php', { timeout: 10000 });  // Timeout de 10 segundos
+  try {
+    const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php');
+    const pedidos = response.data.pedidos;
 
-        const pedidos = response.data.pedidos;
-
-        for (const pedido of pedidos) {
-            let { id, telefone_cliente, nome_cliente, status } = pedido;
-
-            // Remove "@c.us" caso esteja presente no telefone
-            telefone_cliente = telefone_cliente.replace('@c.us', '');
-
-            // Se o status for "saiu", envia a mensagem
-            if (status === "saiu") {
-                const numeroWhatsApp = `${telefone_cliente}@c.us`;
-                const mensagem = `📦 Olá, ${nome_cliente}! Seu pedido (ID: ${id}) saiu para entrega. Fique atento! 🚚💨`;
-
-                if (!client || !client.sendMessage) {
-                    console.error('❌ Erro: client.sendMessage não está definido. Verifique a conexão do bot.');
-                    return;
-                }
-
-                await client.sendMessage(numeroWhatsApp, mensagem);
-                console.log(`📩 Mensagem enviada para ${nome_cliente} informando que o pedido saiu.`);
-            }
-        }
-    } catch (error) {
-        console.error('❌ Erro ao buscar pedidos:', error.message || error);
+    for (const { id, telefone_cliente, nome_cliente, status } of pedidos) {
+      if (status === "saiu") {
+        const numeroWhatsApp = `${telefone_cliente.replace('@c.us', '')}@c.us`;
+        await client.sendMessage(numeroWhatsApp, `📦 Olá, ${nome_cliente}! Seu pedido (ID: ${id}) saiu para entrega. Fique atento! 🚚💨`);
+        console.log(`📩 Mensagem enviada para ${nome_cliente} informando que o pedido saiu.`);
+      }
     }
+  } catch (error) {
+    console.error('❌ Erro ao buscar pedidos:', error.message || error);
+  }
 };
 
-// Verifica os pedidos a cada 2 minutos
+// Verificar pedidos a cada 2 minutos
 setInterval(verificarPedidos, 2 * 60 * 1000);
 verificarPedidos();
-
