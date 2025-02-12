@@ -392,7 +392,7 @@ const verificarPedidos = async () => {
         
         await client.sendMessage(numeroWhatsApp, `⏳ Olá, ${nome_cliente}! Seu pedido está na posição ${posicao} da fila de espera. Manteremos você atualizado!`);
       } else if (status === "saiu") {
-        await client.sendMessage(numeroWhatsApp, `🚚 Olá, ${nome_cliente}! Seu pedido (ID: ${id}) saiu para entrega. Fique atento!`);
+    await client.sendMessage(numeroWhatsApp, `🍽️ Olá, ${nome_cliente}! Seu pedido (ID: ${id}) já saiu para entrega! 🚚 Em breve, você poderá saborear o melhor da CEECE GRIL. Fique atento à chegada! 😉`);
       }
 
       // Verificar se a data de nascimento está preenchida
