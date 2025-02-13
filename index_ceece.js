@@ -153,7 +153,8 @@ client.on('message', async (msg) => {
   // Definição das opções do menu
   const menuOpcoes = {
     '1': 'cardapio',
-    '3': "📍 Estamos localizados em frente ao Estádio! Churrascaria CEECE GRIL! 🍖"
+    '3': "📍 Estamos localizados em frente ao Estádio! Churrascaria CEECE GRIL! 🍖",
+    '6': "📍 Esse canal é excluisivo para pedidos, mas em instantes iremos te atender! 🍖"
       };
 
   if (menuOpcoes[msg.body.trim()]) {
@@ -171,18 +172,7 @@ client.on('message', async (msg) => {
     }
   }
 
-  // Menu 6 - Atendimento
-  if (msg.body.trim() === '6') {
-    await chat.sendStateTyping();
-    await delay(2000);
-
-    // Enviar mensagem para uma atendente
-    const atendenteNumber = '5588988019118'; // Substitua com o número do atendente
-    const message = "👋 Olá! Você recebeu uma nova mensagem de um cliente pelo canal da Churrascaria CEECE GRIL. Por favor, responda assim que possível.";
-
-    client.sendMessage(atendenteNumber, message);
-    client.sendMessage(msg.from, "💬 Sua solicitação foi encaminhada para um de nossos atendentes. Aguarde um momento!");
-  }
+ 
 
  
 
@@ -298,6 +288,8 @@ if (msg.body.trim() === '5') {
   });
 }
 
+ // Menu 6 - Atendimento
+ 
   // Menu 2 - Fazer Pedido
 if (msg.body.trim() === '2') {
   await chat.sendStateTyping();
@@ -373,98 +365,137 @@ if (msg.body.trim() === '2') {
     client.sendMessage(msg.from, "Pedido cancelado. Digite novamente o número do prato e a quantidade.");
     delete pedidosPendentes[msg.from];
   }
-});
+// client on ready ----------------------final
 
+setInterval(async () => {
+  if (!client) {
+    console.error('❌ Erro: client não está inicializado.');
+    return;
+  }
+
+  console.log('⏳ Executando verificações...');
+  try {
+    await verificarPedidos(client);
+    await enviarMensagensAniversario(client);
+  } catch (error) {
+    console.error('❌ Erro ao executar verificações:', error.message);
+  }
+}, 60 * 1000);
+});
+// Mapa para rastrear quantas vezes cada cliente foi avisado
+const avisosEnviados = new Map();
 
 // Função para verificar pedidos e atualizar os clientes
-const verificarPedidos = async () => {
+const verificarPedidos = async (client) => {
+  if (!client) {
+    console.error('❌ Erro: client não está definido.');
+    return;
+  }
+
+  console.log('📦 Iniciando verificação de pedidos...');
   try {
     const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php');
-    const pedidos = response.data.pedidos;
-    
-    for (const { id, telefone_cliente, nome_cliente, status, criado_em } of pedidos) {
-      const numeroWhatsApp = `${telefone_cliente.replace('@c.us', '')}@c.us`;
-      
-      if (status === "aberto") {
-        // Verifica quantos pedidos foram concluídos antes do atual
-        const filaResponse = await axios.get(`https://ceecegril.antoniooliveira.shop/contar_pedidos.php?criado_em=${criado_em}`);
-        const { posicao } = filaResponse.data;
-        
-        await client.sendMessage(numeroWhatsApp, `⏳ Olá, ${nome_cliente}! Seu pedido está na posição ${posicao} da fila de espera. Manteremos você atualizado!`);
-      } else if (status === "saiu") {
-    await client.sendMessage(numeroWhatsApp, `🍽️ Olá, ${nome_cliente}! Seu pedido (ID: ${id}) já saiu para entrega! 🚚 Em breve, você poderá saborear o melhor da CEECE GRIL. Fique atento à chegada! 😉`);
-      }
+    if (!response.data || !response.data.pedidos) {
+      console.error('⚠️ Nenhum pedido encontrado.');
+      return;
+    }
 
-      // Verificar se a data de nascimento está preenchida
-      const clienteResponse = await axios.get(`https://ceecegril.antoniooliveira.shop/obter_cliente.php?telefone=${telefone_cliente}`);
-      const { data_nascimento } = clienteResponse.data;
-      
-      if (!data_nascimento) {
-        await client.sendMessage(numeroWhatsApp, `📅 Olá, ${nome_cliente}! Percebemos que sua data de nascimento não está cadastrada. Poderia informá-la? Responda com sua data no formato DD/MM/AAAA.`);
-        
-        client.on('message', async msg => {
-          if (msg.from === numeroWhatsApp && /^\d{2}\/\d{2}\/\d{4}$/.test(msg.body)) {
-            await axios.post('https://ceecegril.antoniooliveira.shop/atualizar_cliente.php', {
-              telefone: telefone_cliente,
-              data_nascimento: msg.body
-            });
-            await client.sendMessage(numeroWhatsApp, `✅ Obrigado, ${nome_cliente}! Sua data de nascimento foi atualizada com sucesso.`);
+    const pedidos = response.data.pedidos;
+    console.log('Pedidos obtidos:', pedidos);
+
+    for (const { id, telefone_cliente, nome_cliente, status, criado_em } of pedidos) {
+      const numeroWhatsApp = `${telefone_cliente}@s.whatsapp.net`; // Formato correto
+      console.log(`📦 Verificando pedido ${id} para ${nome_cliente} (${numeroWhatsApp}) com status ${status}`);
+
+      try {
+        if (status === "aberto") {
+          // Obtém a posição na fila
+          const filaResponse = await axios.get(`https://ceecegril.antoniooliveira.shop/contar_pedidos.php?criado_em=${criado_em}`);
+          const { posicao } = filaResponse.data;
+
+          if (posicao !== undefined) {
+            console.log(`📌 Posição na fila: ${posicao}`);
+
+            // Obtém quantos avisos já foram enviados para esse cliente
+            const avisos = avisosEnviados.get(numeroWhatsApp) || 0;
+
+            if (avisos < 2) { // Limite de 2 avisos
+              await client.sendMessage(numeroWhatsApp, `⏳ Olá, ${nome_cliente}! Seu pedido (ID: ${id}) está atualmente na posição ${posicao} da nossa fila. Agradecemos pela paciência!`);
+              avisosEnviados.set(numeroWhatsApp, avisos + 1);
+            } else {
+              console.log(`🔕 Cliente ${nome_cliente} já recebeu ${avisos} avisos. Não será enviado mais.`);
+            }
+          } else {
+            console.warn(`⚠️ Posição na fila não encontrada para pedido ${id}.`);
           }
-        });
+        } else if (status === "saiu") {
+          console.log(`🚚 O pedido ${id} saiu para entrega.`);
+          await client.sendMessage(numeroWhatsApp, `🚀 Olá, ${nome_cliente}! Temos uma ótima notícia para você! 🎉
+
+Seu pedido (ID: ${id}) já saiu para entrega e em breve estará com você. Fique atento ao telefone e aguarde com expectativa. 🍽️😋
+
+Se precisar de algo, estamos à disposição! Obrigado por escolher a Ceece Gril. 🥩🔥`);
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao enviar mensagem para ${numeroWhatsApp}:`, error.message);
       }
     }
   } catch (error) {
-    console.error('❌ Erro ao buscar pedidos:', error.message || error);
+    console.error('❌ Erro ao buscar pedidos:', error.message);
   }
 };
+const enviarMensagensAniversario = async (client) => {
+  console.log('🎉 Verificando aniversariantes...');
 
-// Verificar pedidos a cada 2 minutos
-setInterval(verificarPedidos, 2 * 60 * 1000);
-verificarPedidos();
-// Função para enviar mensagens de aniversário
-const enviarMensagensAniversario = async () => {
+  if (!client || typeof client.sendMessage !== 'function') {
+    console.error('❌ Erro: client não está definido corretamente ou sendMessage não está disponível.');
+    return;
+  }
+
   try {
     const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_clientes.php');
-    const clientes = response.data.clientes;
     
-    // Obtém a data atual no formato DD/MM
+    console.log("📢 Resposta da API de aniversariantes:", response.data);
+
+    if (!response.data || !Array.isArray(response.data.aniversariantes) || response.data.aniversariantes.length === 0) {
+      console.error('⚠️ Nenhum aniversariante encontrado.');
+      return;
+    }
+
+    const aniversariantes = response.data.aniversariantes;
+    console.log(`🎂 Aniversariantes obtidos: ${JSON.stringify(aniversariantes)}`);
+
     const hoje = new Date();
-    const dataAtual = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+    const diaHoje = hoje.getDate();
+    const mesHoje = hoje.getMonth() + 1; // Janeiro é 0
 
-    // Array de mensagens de aniversário
-    const mensagens = [
-      `🎉 Olá, {nome}! Que alegria comemorar o seu dia! A equipe da *CEECE Gril* te deseja muitas felicidades e um dia repleto de sabor! 🎂🥳🍗🔥`,
-      `🎂 Parabéns, {nome}! Hoje é o seu dia e a equipe da *CEECE Gril* deseja que seja repleto de alegria e boa comida! 🥳🎉 Aproveite o seu aniversário com o melhor churrasco! 🍗🔥`,
-      `🥳 Feliz aniversário, {nome}! A *CEECE Gril* deseja a você um dia incrível, cheio de momentos especiais e claro, muito sabor! 🎉🎂🍖 Que seu dia seja repleto de boas energias! 🔥`,
-      `🎉 Uhul, {nome}! O seu aniversário chegou e a *Ceece Gril* está aqui para te desejar um dia super especial! Que ele seja recheado de alegria e deliciosos pratos! 🍗🎂🥳🔥`,
-      `🎂 Parabéns, {nome}! A equipe da *CEECE Gril* te deseja um aniversário repleto de felicidade e momentos incríveis! Que tal comemorar com um delicioso churrasco? 🥳🍗🔥🎉`
-    ]
+    for (const { nome, telefone, aniversario } of aniversariantes) {
+      console.log(`📅 Verificando aniversário de ${nome} com data ${aniversario}`);
+      
+      if (!aniversario) {
+        console.warn(`⚠️ Data de aniversário inválida para ${nome}`);
+        continue;
+      }
 
-    for (const { nome, telefone, data_nascimento } of clientes) {
-      if (data_nascimento) {
-        // Extrai o dia e mês da data de nascimento
-        const [dia, mes, _] = data_nascimento.split('/');
-        const dataCliente = `${dia}/${mes}`;
+      const [ano, mes, dia] = aniversario.split('-').map(Number);
 
-        if (dataCliente === dataAtual) {
-          const numeroWhatsApp = `${telefone.replace('@c.us', '')}@c.us`;
+      if (dia === diaHoje && mes === mesHoje) {
+        const numeroWhatsApp = `${telefone.replace(/\s+/g, '')}@s.whatsapp.net`; // Remove espaços no número
+        console.log(`🎊 Aniversariante encontrado: ${nome}, enviando mensagem para ${numeroWhatsApp}`);
 
-          // Seleciona uma mensagem aleatória e substitui o nome do cliente
-          const mensagemAleatoria = mensagens[Math.floor(Math.random() * mensagens.length)].replace("{nome}", nome);
-
-          await client.sendMessage(numeroWhatsApp, mensagemAleatoria);
+        try {
+          await client.sendMessage(numeroWhatsApp, `🎉 Parabéns, ${nome}! Hoje é o seu dia especial! 🥳 Toda a equipe da CEECE GRIL deseja um dia cheio de alegrias e muitos momentos incríveis! 🎂🎁`);
+          console.log(`✅ Mensagem de aniversário enviada para ${nome}`);
+        } catch (error) {
+          console.error(`❌ Erro ao enviar mensagem de aniversário para ${nome}:`, error.message);
         }
       }
     }
   } catch (error) {
-    console.error('❌ Erro ao enviar mensagens de aniversário:', error.message || error);
+    console.error('❌ Erro ao buscar aniversariantes:', error.message);
   }
 };
+// Intervalo para executar verificações a cada minuto
+// Supondo que a inicialização do client seja algo assim
+//const client = new SomeClientClass(); // Substitua por como o client deve ser inicializado
 
-// Executa a função todos os dias às 8h da manhã
-setInterval(() => {
-  const agora = new Date();
-  if (agora.getHours() === 8 && agora.getMinutes() === 0) {
-    enviarMensagensAniversario();
-  }
-}, 60 * 1000); // Verifica a cada minuto
