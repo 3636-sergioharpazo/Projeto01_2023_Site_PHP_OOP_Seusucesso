@@ -377,6 +377,7 @@ setInterval(async () => {
   try {
     await verificarPedidos(client);
     await enviarMensagensAniversario(client);
+    await verificarCliente(client, cliente_telefone)
   } catch (error) {
     console.error('❌ Erro ao executar verificações:', error.message);
   }
@@ -401,11 +402,11 @@ const verificarPedidos = async (client) => {
     }
 
     const pedidos = response.data.pedidos;
-    console.log('Pedidos obtidos:', pedidos);
+    //console.log('Pedidos obtidos:', pedidos);
 
     for (const { id, telefone_cliente, nome_cliente, status, criado_em } of pedidos) {
       const numeroWhatsApp = `${telefone_cliente}@s.whatsapp.net`; // Formato correto
-      console.log(`📦 Verificando pedido ${id} para ${nome_cliente} (${numeroWhatsApp}) com status ${status}`);
+     // console.log(`📦 Verificando pedido ${id} para ${nome_cliente} (${numeroWhatsApp}) com status ${status}`);
 
       try {
         if (status === "aberto") {
@@ -414,22 +415,22 @@ const verificarPedidos = async (client) => {
           const { posicao } = filaResponse.data;
 
           if (posicao !== undefined) {
-            console.log(`📌 Posição na fila: ${posicao}`);
+          //  console.log(`📌 Posição na fila: ${posicao}`);
 
             // Obtém quantos avisos já foram enviados para esse cliente
             const avisos = avisosEnviados.get(numeroWhatsApp) || 0;
 
-            if (avisos < 2) { // Limite de 2 avisos
+            if (avisos < 5) { // Limite de 2 avisos
               await client.sendMessage(numeroWhatsApp, `⏳ Olá, ${nome_cliente}! Seu pedido (ID: ${id}) está atualmente na posição ${posicao} da nossa fila. Agradecemos pela paciência!`);
               avisosEnviados.set(numeroWhatsApp, avisos + 1);
             } else {
-              console.log(`🔕 Cliente ${nome_cliente} já recebeu ${avisos} avisos. Não será enviado mais.`);
+         //     console.log(`🔕 Cliente ${nome_cliente} já recebeu ${avisos} avisos. Não será enviado mais.`);
             }
           } else {
-            console.warn(`⚠️ Posição na fila não encontrada para pedido ${id}.`);
+           // console.warn(`⚠️ Posição na fila não encontrada para pedido ${id}.`);
           }
         } else if (status === "saiu") {
-          console.log(`🚚 O pedido ${id} saiu para entrega.`);
+       //   console.log(`🚚 O pedido ${id} saiu para entrega.`);
           await client.sendMessage(numeroWhatsApp, `🚀 Olá, ${nome_cliente}! Temos uma ótima notícia para você! 🎉
 
 Seu pedido (ID: ${id}) já saiu para entrega e em breve estará com você. Fique atento ao telefone e aguarde com expectativa. 🍽️😋
@@ -452,49 +453,168 @@ const enviarMensagensAniversario = async (client) => {
     return;
   }
 
-  try {
-    const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_clientes.php');
-    
-    console.log("📢 Resposta da API de aniversariantes:", response.data);
+  // Lista de 30 mensagens diferentes para o aniversário
+ 
+  const mensagensAniversario = [
+    "🎉 Parabéns, ${nome}! Hoje é o seu dia especial! 🥳 Toda a equipe da CEECE GRIL deseja um dia cheio de alegrias e muitos momentos incríveis! 🎂🎁",
+    "🥳 Que alegria celebrar o seu aniversário, ${nome}! Que o seu dia seja repleto de felicidade e que todos os seus desejos se tornem realidade! 🎉",
+    "🎂 Feliz aniversário, ${nome}! Esperamos que o seu dia seja repleto de momentos especiais e que o ano novo de vida traga muitas bênçãos para você! 🎁",
+    "🎉 Que alegria comemorar mais um ano de vida, ${nome}! Que este seja o melhor ano de todos, cheio de conquistas e momentos inesquecíveis! 🎂🎈",
+    "🥳 Feliz aniversário, ${nome}! Que o seu dia seja tão especial quanto você! Que a felicidade esteja sempre ao seu lado! 🎉",
+    "🎂 Parabéns, ${nome}! Que a vida continue te presenteando com momentos incríveis e muito sucesso. Tenha um dia maravilhoso! 🎁",
+    "🎉 Hoje é o seu dia, ${nome}! Desejamos que seja um aniversário inesquecível, cheio de alegria e amor! 🥳🎂",
+    "🥳 Feliz aniversário, ${nome}! Que todos os seus sonhos se realizem e que sua vida seja cheia de felicidade e conquistas! 🎉",
+    "🎂 Parabéns, ${nome}! Que o seu novo ano de vida seja repleto de sucesso, saúde e muitas realizações. Aproveite seu dia! 🎁",
+    "🎉 Que neste aniversário você se sinta rodeado de carinho e amor, ${nome}! Que a felicidade invada o seu coração neste dia tão especial! 🎂",
+    "🥳 Feliz aniversário, ${nome}! Que você continue sendo essa pessoa maravilhosa e que todos os seus desejos se realizem! 🎉",
+    "🎂 Parabéns, ${nome}! Que a sua vida seja uma jornada de alegrias, realizações e muito sucesso! Aproveite cada segundo do seu dia! 🎁",
+    "🎉 Que o seu aniversário seja tão incrível quanto você, ${nome}! Que a felicidade, amor e sucesso te acompanhem sempre! 🥳",
+    "🥳 Feliz aniversário, ${nome}! Que esse novo ano de vida seja ainda melhor que o anterior, cheio de momentos inesquecíveis! 🎂🎁",
+    "🎂 Parabéns, ${nome}! Que a vida te reserve muitos sorrisos, alegrias e sucesso. Tenha um dia maravilhoso e um ano incrível! 🎉",
+    "🎉 Feliz aniversário, ${nome}! Que você tenha um dia repleto de alegria, rodeado de pessoas especiais e momentos felizes! 🎂🎁",
+    "🥳 Parabéns, ${nome}! Que neste dia especial você receba muitas energias positivas e que o novo ano de vida seja incrível! 🎉",
+    "🎂 Feliz aniversário, ${nome}! Desejamos que você continue brilhando e alcançando seus objetivos com muito sucesso! 🎁",
+    "🎉 Que a vida continue te sorrindo, ${nome}! Que este aniversário seja o começo de mais um ciclo repleto de felicidades! 🥳",
+    "🥳 Feliz aniversário, ${nome}! Que sua jornada seja repleta de amor, paz e muitos momentos felizes! 🎂🎁",
+    "🎂 Parabéns, ${nome}! Que o seu aniversário seja o reflexo de tudo o que você merece: felicidade, amor e sucesso! 🎉",
+    "🎉 Feliz aniversário, ${nome}! Que a cada novo dia você possa conquistar ainda mais. Aproveite o seu dia com muita alegria! 🥳",
+    "🥳 Parabéns, ${nome}! Que esse novo ano de vida seja repleto de realizações e que você continue sendo uma pessoa inspiradora! 🎂🎁",
+    "🎂 Feliz aniversário, ${nome}! Que a felicidade te acompanhe por todos os caminhos e que seus sonhos se tornem realidade! 🎉",
+    "🎉 Parabéns, ${nome}! Que seu aniversário seja só o começo de um ano maravilhoso, cheio de saúde, amor e conquistas! 🥳",
+    "🥳 Feliz aniversário, ${nome}! Que você celebre este dia com muita alegria e que cada desejo seu se realize! 🎂🎁",
+    "🎂 Parabéns, ${nome}! Que o seu novo ano de vida seja iluminado por muitas vitórias e que você continue conquistando seus sonhos! 🎉",
+    "🎉 Feliz aniversário, ${nome}! Que sua vida seja uma eterna celebração de felicidade, amor e sucesso! 🥳🎂",
+    "🥳 Parabéns, ${nome}! Que neste dia especial você se sinta cercado de boas energias e que todos os seus desejos se realizem! 🎉",
+    "🎂 Feliz aniversário, ${nome}! Que seu dia seja inesquecível e que o novo ano traga muitas alegrias e conquistas! 🎁",
+    "🎉 Que neste aniversário você se sinta ainda mais realizado e cheio de boas energias, ${nome}! 🎂🎁",
+    "🥳 Feliz aniversário, ${nome}! Que seu dia seja repleto de surpresas boas e que o novo ciclo seja cheio de momentos felizes! 🎉",
+    "🎂 Parabéns, ${nome}! Que o seu aniversário seja uma grande celebração de felicidade e que o novo ano traga ainda mais sucesso! 🎁",
+    "🎉 Feliz aniversário, ${nome}! Que seu dia seja repleto de amor, paz e muita alegria, com muitas conquistas pela frente! 🥳"
+  ];
 
-    if (!response.data || !Array.isArray(response.data.aniversariantes) || response.data.aniversariantes.length === 0) {
-      console.error('⚠️ Nenhum aniversariante encontrado.');
+
+
+  if (!response.data || !Array.isArray(response.data.aniversariantes) || response.data.aniversariantes.length === 0) {
+    console.error('⚠️ Nenhum aniversariante encontrado.');
+    return;
+  }
+
+  const aniversariantes = response.data.aniversariantes;
+  console.log(`🎂 Aniversariantes obtidos: ${JSON.stringify(aniversariantes)}`);
+
+  const hoje = new Date();
+  const diaHoje = hoje.getDate();
+  const mesHoje = hoje.getMonth() + 1; // Janeiro é 0
+
+  // Cria um Set para controlar quais números já receberam a mensagem
+  const numerosEnviados = new Set();
+
+  for (const { nome, telefone, aniversario } of aniversariantes) {
+    console.log(`📅 Verificando aniversário de ${nome} com data ${aniversario}`);
+    
+    if (!aniversario) {
+      console.warn(`⚠️ Data de aniversário inválida para ${nome}`);
+      continue;
+    }
+
+    const [ano, mes, dia] = aniversario.split('-').map(Number);
+
+    if (dia === diaHoje && mes === mesHoje) {
+      const numeroWhatsApp = `${telefone.replace(/\s+/g, '')}@s.whatsapp.net`; // Remove espaços no número
+
+      // Verifica se o número já recebeu a mensagem
+      if (numerosEnviados.has(numeroWhatsApp)) {
+        console.log(`📱 Mensagem já enviada para ${nome}`);
+        continue; // Se já enviou, pula para o próximo
+      }
+
+      console.log(`🎊 Aniversariante encontrado: ${nome}, enviando mensagem para ${numeroWhatsApp}`);
+
+      // Seleciona uma mensagem aleatória
+      const mensagem = mensagensAniversario[Math.floor(Math.random() * mensagensAniversario.length)].replace("${nome}", nome);
+
+      try {
+        await client.sendMessage(numeroWhatsApp, mensagem);
+        console.log(`✅ Mensagem de aniversário enviada para ${nome}`);
+        numerosEnviados.add(numeroWhatsApp); // Marca o número como enviado
+      } catch (error) {
+        console.error(`❌ Erro ao enviar mensagem de aniversário para ${nome}:`, error.message);
+      }
+    }
+  }
+};
+
+const verificarCliente = async (client, telefone) => {
+  console.log('🔍 Verificando cliente...');
+
+  if (!client || typeof client.sendMessage !== 'function') {
+    console.error('❌ Erro: client não está definido corretamente ou sendMessage não está disponível.');
+    return;
+  }
+
+  if (!telefone) {
+    console.error('⚠️ Número de telefone não fornecido.');
+    return;
+  }
+
+  try {
+    // Realiza a requisição para a API que verifica se o cliente tem data de nascimento
+    const response = await axios.get(`https://ceecegril.antoniooliveira.shop/verificar_data_nascimento.php?telefone=${telefone}`);
+
+    console.log("📢 Resposta da API de verificação de cliente:", response.data);
+
+    if (response.data.erro) {
+      console.error(`⚠️ Erro: ${response.data.erro}`);
       return;
     }
 
-    const aniversariantes = response.data.aniversariantes;
-    console.log(`🎂 Aniversariantes obtidos: ${JSON.stringify(aniversariantes)}`);
+    const cliente = response.data.cliente;
+    
+    if (cliente) {
+      const { nome, aniversario } = cliente;
+      const numeroWhatsApp = `${telefone.replace(/\s+/g, '')}@s.whatsapp.net`; // Remove espaços no número
 
-    const hoje = new Date();
-    const diaHoje = hoje.getDate();
-    const mesHoje = hoje.getMonth() + 1; // Janeiro é 0
+      if (aniversario) {
+        console.log(`🎉 Cliente encontrado: ${nome}, com data de aniversário: ${aniversario}`);
+        
+        // Envia a mensagem de aniversário
+      //  await client.sendMessage(numeroWhatsApp, `🎉 Parabéns, ${nome}! Hoje é o seu dia especial! 🥳 Toda a equipe da CEECE GRIL deseja um dia cheio de alegrias e muitos momentos incríveis! 🎂🎁`);
+        console.log(`✅ Mensagem de aniversário enviada para ${nome}`);
+      } else {
+        console.warn(`⚠️ Cliente ${nome} não tem data de nascimento registrada.`);
+        
+        // Solicita ao cliente que insira a data de nascimento
+        const dataNascimento = prompt('Não encontramos sua data de nascimento. Por favor, insira sua data de nascimento no formato AAAA-MM-DD:');
 
-    for (const { nome, telefone, aniversario } of aniversariantes) {
-      console.log(`📅 Verificando aniversário de ${nome} com data ${aniversario}`);
-      
-      if (!aniversario) {
-        console.warn(`⚠️ Data de aniversário inválida para ${nome}`);
-        continue;
-      }
+        if (dataNascimento) {
+          // Valida a data inserida
+          const dataValida = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(dataNascimento);
+          
+          if (!dataValida) {
+            console.error('⚠️ Data de nascimento inválida. Formato correto: AAAA-MM-DD.');
+            return;
+          }
 
-      const [ano, mes, dia] = aniversario.split('-').map(Number);
+          // Atualiza a base de dados com a nova data de nascimento
+          const atualizarResponse = await axios.post('https://ceecegril.antoniooliveira.shop/atualizar_data_nascimento.php', {
+            telefone: telefone,
+            data_nascimento: dataNascimento
+          });
 
-      if (dia === diaHoje && mes === mesHoje) {
-        const numeroWhatsApp = `${telefone.replace(/\s+/g, '')}@s.whatsapp.net`; // Remove espaços no número
-        console.log(`🎊 Aniversariante encontrado: ${nome}, enviando mensagem para ${numeroWhatsApp}`);
-
-        try {
-          await client.sendMessage(numeroWhatsApp, `🎉 Parabéns, ${nome}! Hoje é o seu dia especial! 🥳 Toda a equipe da CEECE GRIL deseja um dia cheio de alegrias e muitos momentos incríveis! 🎂🎁`);
-          console.log(`✅ Mensagem de aniversário enviada para ${nome}`);
-        } catch (error) {
-          console.error(`❌ Erro ao enviar mensagem de aniversário para ${nome}:`, error.message);
+          if (atualizarResponse.data.sucesso) {
+            console.log(`✅ Data de nascimento de ${nome} atualizada.`);
+            await client.sendMessage(numeroWhatsApp, `📅 A sua data de nascimento foi atualizada com sucesso! 🎉`);
+          } else {
+            console.error('❌ Erro ao atualizar a data de nascimento.');
+          }
         }
       }
     }
   } catch (error) {
-    console.error('❌ Erro ao buscar aniversariantes:', error.message);
+    console.error('❌ Erro ao verificar o cliente:', error.message);
   }
 };
+
 // Intervalo para executar verificações a cada minuto
 // Supondo que a inicialização do client seja algo assim
 //const client = new SomeClientClass(); // Substitua por como o client deve ser inicializado
