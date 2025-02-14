@@ -389,12 +389,11 @@ setInterval(async () => {
   } catch (error) {
     console.error('❌ Erro ao executar verificações:', error);
   }
-},  60 * 1000);
+}, 2 * 60 * 1000);
 
 });
 // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
-
 // Função para verificar pedidos e atualizar os clientes
 const verificarPedidos = async (client) => {
   if (!client) {
@@ -436,18 +435,25 @@ const verificarPedidos = async (client) => {
       
           if (avisos < 4) { // Limite de 4 avisos para o status "saiu"
             await client.sendMessage(numeroWhatsApp, `🚀 Olá, ${nome_cliente}! Temos uma ótima notícia para você! 🎉
-      
-      Seu pedido (*ID: ${id}*) já saiu para entrega e em breve estará com você. Fique atento ao telefone e aguarde com expectativa. 🍽️😋
-      
-      Se precisar de algo, estamos à disposição! Obrigado por escolher a Ceece Gril. 🥩🔥`);
+
+Seu pedido (*ID: ${id}*) já saiu para entrega e em breve estará com você. Fique atento ao telefone e aguarde com expectativa. 🍽️😋
+
+Se precisar de algo, estamos à disposição! Obrigado por escolher a Ceece Gril. 🥩🔥`);
             avisosEnviados.set(numeroWhatsApp, avisos + 1);
           }
         }
       } catch (error) {
         console.error(`❌ Erro ao enviar mensagem para ${numeroWhatsApp}:`, error.message);
       }
+
+    } // Aqui fechamos o "for" corretamente
+  } catch (error) {
+    console.error(`❌ Erro ao enviar pedido:`, error.message);
+  }
+} // Aqui fechamos a função corretamente
   
-};
+  
+
 
 let enviosHoje = 0; // Variável global para contar os envios no dia
 const maxEnviosPorDia = 2; // Limite de envios por dia
@@ -670,3 +676,4 @@ const atualizarDataNascimento = async (telefone, dataNascimento) => {
         return { status: 'erro' };
     }
 };
+  
