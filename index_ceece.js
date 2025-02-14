@@ -389,7 +389,7 @@ setInterval(async () => {
   } catch (error) {
     console.error('❌ Erro ao executar verificações:', error);
   }
-}, 60 * 1000);
+},  60 * 1000);
 
 });
 // Mapa para rastrear quantas vezes cada cliente foi avisado
@@ -420,32 +420,33 @@ const verificarPedidos = async (client) => {
           // Obtém a posição na fila
           const filaResponse = await axios.get(`https://ceecegril.antoniooliveira.shop/contar_pedidos.php?criado_em=${criado_em}`);
           const { posicao } = filaResponse.data;
-
+      
           if (posicao !== undefined) {
             // Obtém quantos avisos já foram enviados para esse cliente
             const avisos = avisosEnviados.get(numeroWhatsApp) || 0;
-
-            if (avisos < 6) { // Limite de 2 avisos
+      
+            if (avisos < 6) { // Limite de 6 avisos
               await client.sendMessage(numeroWhatsApp, `⏳ Olá, ${nome_cliente}! Seu pedido (*ID: ${id}*) está atualmente na posição ${posicao} da nossa fila. Agradecemos pela paciência!`);
               avisosEnviados.set(numeroWhatsApp, avisos + 1);
             }
           }
         } else if (status === "saiu") {
-          if (avisos < 4) {
-          await client.sendMessage(numeroWhatsApp, `🚀 Olá, ${nome_cliente}! Temos uma ótima notícia para você! 🎉
-
-Seu pedido (*ID: ${id}*) já saiu para entrega e em breve estará com você. Fique atento ao telefone e aguarde com expectativa. 🍽️😋
-
-Se precisar de algo, estamos à disposição! Obrigado por escolher a Ceece Gril. 🥩🔥`);
+          // Obtém quantos avisos já foram enviados para esse cliente
+          const avisos = avisosEnviados.get(numeroWhatsApp) || 0;
+      
+          if (avisos < 4) { // Limite de 4 avisos para o status "saiu"
+            await client.sendMessage(numeroWhatsApp, `🚀 Olá, ${nome_cliente}! Temos uma ótima notícia para você! 🎉
+      
+      Seu pedido (*ID: ${id}*) já saiu para entrega e em breve estará com você. Fique atento ao telefone e aguarde com expectativa. 🍽️😋
+      
+      Se precisar de algo, estamos à disposição! Obrigado por escolher a Ceece Gril. 🥩🔥`);
+            avisosEnviados.set(numeroWhatsApp, avisos + 1);
+          }
         }
-      }
       } catch (error) {
         console.error(`❌ Erro ao enviar mensagem para ${numeroWhatsApp}:`, error.message);
       }
-    }
-  } catch (error) {
-    console.error('❌ Erro ao buscar pedidos:', error.message);
-  }
+  
 };
 
 let enviosHoje = 0; // Variável global para contar os envios no dia
@@ -522,11 +523,11 @@ const enviarMensagensAniversario = async (client) => {
 
         for (const { nome, telefone, aniversario } of aniversariantes) {
             if (enviosHoje >= maxEnviosPorDia) {
-                console.log('🚫 Limite de envios atingido para o dia.');
+          //      console.log('🚫 Limite de envios atingido para o dia.');
                 break; // Interrompe o envio se o limite for atingido
             }
 
-            console.log(`📅 Verificando aniversário de ${nome} com data ${aniversario}`);
+           // console.log(`📅 Verificando aniversário de ${nome} com data ${aniversario}`);
               
             if (!aniversario) {
                 console.warn(`⚠️ Data de aniversário inválida para ${nome}`);
@@ -543,7 +544,7 @@ const enviarMensagensAniversario = async (client) => {
                     continue;
                 }
   
-                console.log(`🎊 Aniversariante encontrado: ${nome}, enviando mensagem para ${numeroWhatsApp}`);
+               // console.log(`🎊 Aniversariante encontrado: ${nome}, enviando mensagem para ${numeroWhatsApp}`);
   
                 const mensagem = mensagensAniversario[Math.floor(Math.random() * mensagensAniversario.length)].replace("${nome}", nome);
   
@@ -577,7 +578,7 @@ const verificarCliente = async (client, cliente_telefone) => {
         return;
     }
 
-    console.log("📢 Telefone procurado:", cliente_telefone);
+    //console.log("📢 Telefone procurado:", cliente_telefone);
     try {
         const response = await axios.get(`https://ceecegril.antoniooliveira.shop/verificar_data_nascimento.php?telefone=${cliente_telefone}`);
        // console.log("📢 Resposta da API de verificação de cliente:", response.data);
