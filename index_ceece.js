@@ -129,7 +129,6 @@ client.on("authenticated", () => {
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
-
 // Manipulação de Mensagens
 const pedidosPendentes = {};
 
@@ -678,8 +677,16 @@ const atualizarDataNascimento = async (telefone, dataNascimento) => {
 };
 // 📤 Função para verificar o status do pedido e enviar mensagem
 // 📤 Função para verificar o status do pedido e enviar mensagem
-const verificarStatusEPedido = async (client,telefone) => {
+const enviados = new Set(); // Armazena números que já receberam a mensagem
+
+const verificarStatusEPedido = async (client, telefone) => {
   try {
+      // Se o número já recebeu a mensagem, não faz nada
+      if (enviados.has(telefone)) {
+          console.log("✅ Mensagem já enviada para este número:", telefone);
+          return;
+      }
+
       // Enviando o número de telefone para verificar o status do pedido
       const response = await axios.post('https://ceecegril.antoniooliveira.shop/verificar_status_pedido.php', {
           telefone: telefone
@@ -687,15 +694,14 @@ const verificarStatusEPedido = async (client,telefone) => {
 
       // Verificando a resposta da API
       if (response.data.status === 'concluido') {
-          // Se o pedido foi concluído, envia a mensagem para o cliente via WhatsApp
-          //console.log("🎉 Pedido concluído! Enviando mensagem de agradecimento ao cliente.");
-
           // Supondo que o número do WhatsApp do cliente é retornado da API ou já seja conhecido
-          const numeroWhatsApp = `${telefone}`; // Adapte conforme o formato do telefone
+          const numeroWhatsApp = `${telefone}`; 
 
           // Enviar mensagem usando o cliente (exemplo com client.sendMessage)
           await client.sendMessage(numeroWhatsApp, `🎉 Seu Pedido Foi Concluído com Sucesso! \nObrigado por escolher a CEECE Grill! 🍽️`);
 
+          // Adiciona o telefone à lista de enviados
+          enviados.add(telefone);
       } else {
           console.log("❌ Pedido não concluído ou não encontrado.");
       }
