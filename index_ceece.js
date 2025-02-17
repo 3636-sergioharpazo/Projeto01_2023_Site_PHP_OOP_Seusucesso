@@ -138,19 +138,21 @@ client.on('message', async (msg) => {
   const nomeCliente = contact.pushname || "Cliente";
 
   // Mensagem de boas-vindas e menu principal
-  if (/^(menu|oi|ol[áa]|bom dia|boa tarde|boa noite)$/i.test(msg.body)) {  
- 
-
+ if (/^(menu|oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
     await chat.sendStateTyping();
     await delay(2000);
 
-  axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
-      timeout: 10000 // 10 segundos de timeout
-    })
-    .then(response => {
-      client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
-    })
-    
+    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
+          timeout: 10000 // 10 segundos de timeout
+        })
+      .then(response => {
+        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
+      })
+      .catch(error => {
+        console.error("Erro ao obter menu:", error);
+        client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
+      });
+  }
 
   // Definição das opções do menu
   const menuOpcoes = {
@@ -392,7 +394,7 @@ setInterval(async () => {
     console.error('❌ Erro ao executar verificações:', error);
   }
 }, 2 * 60 * 1000);
-  }
+
 });
 // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
