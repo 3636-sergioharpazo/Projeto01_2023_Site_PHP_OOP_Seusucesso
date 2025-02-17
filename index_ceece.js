@@ -144,12 +144,17 @@ client.on('message', async (msg) => {
     await chat.sendStateTyping();
     await delay(2000);
 
-    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
-      .then(response => {
-        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
-      })
-      .catch(error => console.error("Erro ao obter menu:", error));
-  }
+  axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
+      timeout: 10000 // 10 segundos de timeout
+    })
+    .then(response => {
+      client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
+    })
+    .catch(error => {
+      console.error("Erro ao obter menu:", error);
+      client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
+    });
+
 
   // Definição das opções do menu
   const menuOpcoes = {
