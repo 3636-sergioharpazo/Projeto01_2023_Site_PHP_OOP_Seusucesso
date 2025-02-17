@@ -150,11 +150,7 @@ client.on('message', async (msg) => {
     .then(response => {
       client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
     })
-    .catch(error => {
-      console.error("Erro ao obter menu:", error);
-      client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
-    });
-
+    
 
   // Definição das opções do menu
   const menuOpcoes = {
