@@ -401,15 +401,15 @@ const avisosEnviados = new Map();
 // Função para verificar pedidos e atualizar os clientes
 const verificarPedidos = async (client) => {
   if (!client) {
-    console.error('❌ Erro: client não está definido.');
+    //console.error('❌ Erro: client não está definido.');
     return;
   }
 
-  console.log('📦 Iniciando verificação de pedidos...');
+  //console.log('📦 Iniciando verificação de pedidos...');
   try {
     const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php');
     if (!response.data || !response.data.pedidos) {
-      console.error('⚠️ Nenhum pedido encontrado.');
+      //console.error('⚠️ Nenhum pedido encontrado.');
       return;
     }
 
@@ -447,7 +447,7 @@ Se precisar de algo, estamos à disposição! Obrigado por escolher a Ceece Gril
           }
         }
       } catch (error) {
-        console.error(`❌ Erro ao enviar mensagem para ${numeroWhatsApp}:`, error.message);
+        //console.error(`❌ Erro ao enviar mensagem para ${numeroWhatsApp}:`, error.message);
       }
 
     } // Aqui fechamos o "for" corretamente
@@ -466,7 +466,7 @@ const enviarMensagensAniversario = async (client) => {
    // console.log('🎉 Verificando aniversariantes...');
   
     if (!client || typeof client.sendMessage !== 'function') {
-        console.error('❌ Erro: client não está definido corretamente.');
+        //console.error('❌ Erro: client não está definido corretamente.');
         return;
     }
 
@@ -540,7 +540,7 @@ const enviarMensagensAniversario = async (client) => {
            // console.log(`📅 Verificando aniversário de ${nome} com data ${aniversario}`);
               
             if (!aniversario) {
-                console.warn(`⚠️ Data de aniversário inválida para ${nome}`);
+             //   console.warn(`⚠️ Data de aniversário inválida para ${nome}`);
                 continue;
             }
   
@@ -550,7 +550,7 @@ const enviarMensagensAniversario = async (client) => {
                 const numeroWhatsApp = `${telefone.replace(/\s+/g, '')}@s.whatsapp.net`;
   
                 if (numerosEnviados.has(numeroWhatsApp)) {
-                    console.log(`📱 Mensagem já enviada para ${nome}`);
+                 //   console.log(`📱 Mensagem já enviada para ${nome}`);
                     continue;
                 }
   
@@ -594,7 +594,7 @@ const verificarCliente = async (client, cliente_telefone) => {
        // console.log("📢 Resposta da API de verificação de cliente:", response.data);
 
         if (response.data.erro) {
-            console.error(`⚠️ Erro: ${response.data.erro}`);
+         //   console.error(`⚠️ Erro: ${response.data.erro}`);
 
             if (response.data.erro.includes('sem data de nascimento')) {
                 const numeroWhatsApp = formatarNumero(cliente_telefone);
@@ -620,13 +620,13 @@ const verificarCliente = async (client, cliente_telefone) => {
                         await client.sendMessage(numeroWhatsApp, `⚠️ Ocorreu um erro ao registrar sua data de nascimento. Tente novamente.`);
                     }
                 } else {
-                    console.error("⚠️ Nenhuma resposta recebida do cliente.");
+           //         console.error("⚠️ Nenhuma resposta recebida do cliente.");
                 }
             }
             return;
         }
     } catch (error) {
-        console.error('❌ Erro ao verificar o cliente:', error.message);
+        //console.error('❌ Erro ao verificar o cliente:', error.message);
     }
 };
 
@@ -676,7 +676,7 @@ const atualizarDataNascimento = async (telefone, dataNascimento) => {
       //  console.log("📢 Resposta da API de atualização:", response.data);
         return response.data;
     } catch (error) {
-        console.error('❌ Erro ao atualizar data de nascimento:', error.message);
+        //console.error('❌ Erro ao atualizar data de nascimento:', error.message);
         return { status: 'erro' };
     }
 };
@@ -688,7 +688,7 @@ const verificarStatusEPedido = async (client, telefone) => {
   try {
       // Se o número já recebeu a mensagem, não faz nada
       if (enviados.has(telefone)) {
-          console.log("✅ Mensagem já enviada para este número:", telefone);
+          //console.log("✅ Mensagem já enviada para este número:", telefone);
           return;
       }
 
@@ -708,12 +708,12 @@ const verificarStatusEPedido = async (client, telefone) => {
           // Adiciona o telefone à lista de enviados
           enviados.add(telefone);
       } else {
-          console.log("❌ Pedido não concluído ou não encontrado.");
+          //console.log("❌ Pedido não concluído ou não encontrado.");
       }
 
       return response.data;
   } catch (error) {
-      console.error('❌ Erro ao verificar o status do pedido:', error.message);
+      //console.error('❌ Erro ao verificar o status do pedido:', error.message);
       return { status: 'erro' };
   }
 };
