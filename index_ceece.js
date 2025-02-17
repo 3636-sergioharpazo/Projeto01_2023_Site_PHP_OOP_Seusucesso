@@ -392,7 +392,7 @@ setInterval(async () => {
     console.error('❌ Erro ao executar verificações:', error);
   }
 }, 2 * 60 * 1000);
-
+  }
 });
 // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
