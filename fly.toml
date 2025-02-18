@@ -1,4 +1,4 @@
-app = "nome-do-seu-app"  # Substitua pelo nome do seu app no Fly.io
+app = "projeto01-2023-site-php-oop-seusucesso"
 primary_region = "gru"
 
 [build]
