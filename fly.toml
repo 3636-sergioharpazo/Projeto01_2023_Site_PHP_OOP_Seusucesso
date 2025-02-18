@@ -4,7 +4,7 @@ app = "projeto01-2023-site-php-oop-seusucesso-eu1llw"
 primary_region = "gru"
 
 [build]
-  dockerfile = "Dockerfile"  # Certifique-se de que o caminho está correto
+  dockerfile = "dockerfile"  # Certifique-se de que o caminho está correto
 
 [[services]]
   internal_port = 3000  # Ajuste a porta se necessário
