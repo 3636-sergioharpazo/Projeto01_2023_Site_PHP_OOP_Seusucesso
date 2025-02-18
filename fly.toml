@@ -1,13 +1,13 @@
 app = "projeto01-2023-site-php-oop-seusucesso"
 
-
+app = "nome-do-seu-app"
 primary_region = "gru"
 
 [build]
-  image = "node:18-alpine"  # Usando uma imagem base do Node.js
+  dockerfile = "Dockerfile"  # Use o Dockerfile que você acabou de criar
 
 [[services]]
-  internal_port = 3000  # Ajuste para a porta correta da sua aplicação Node.js
+  internal_port = 3000  # A porta exposta pela aplicação no Docker
   processes = ["app"]
 
 [[services.ports]]
