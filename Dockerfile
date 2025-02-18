@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y \
 COPY . .
 
 # Expor a porta que o app vai usar
-EXPOSE 3000
+EXPOSE 3002
 
 # Comando para rodar o app
 CMD ["npm", "start"]
