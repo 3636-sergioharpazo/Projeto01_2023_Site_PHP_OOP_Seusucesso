@@ -1,0 +1,18 @@
+app = "projeto01-2023-site-php-oop-seusucesso"
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[services]]
+  internal_port = 3000
+  processes = ["app"]
+
+[[services.ports]]
+  handlers = ["http"]
+  port = 80
+  force_https = true
+
+[[services.ports]]
+  handlers = ["tls", "http"]
+  port = 443
