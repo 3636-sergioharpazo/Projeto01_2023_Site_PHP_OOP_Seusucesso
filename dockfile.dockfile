@@ -1,20 +1,18 @@
-# Usar uma imagem oficial do Node.js
-FROM node:18-alpine
+app = "projeto01-2023-site-php-oop-seusucesso"
+primary_region = "gru"
 
-# Criar diretório de trabalho
-WORKDIR /app
+[build]
+  image = "node:18-alpine"  # A imagem oficial do Node.js
 
-# Copiar os arquivos de dependências para dentro do container
-COPY package.json package-lock.json ./
+[[services]]
+  internal_port = 3000
+  processes = ["app"]
 
-# Instalar dependências
-RUN npm install --production
+[[services.ports]]
+  handlers = ["http"]
+  port = 80
+  force_https = true
 
-# Copiar todo o código do projeto
-COPY . .
-
-# Definir a porta que o app irá rodar
-EXPOSE 3000
-
-# Comando para rodar o servidor
-CMD ["node", "index_ceece.js"]
+[[services.ports]]
+  handlers = ["tls", "http"]
+  port = 443
