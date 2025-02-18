@@ -1,8 +1,8 @@
-app = "projeto01-2023-site-php-oop-seusucesso"
+app = "nome-do-seu-app"  # Substitua pelo nome do seu app no Fly.io
 primary_region = "gru"
 
 [build]
-  dockerfile = "Dockerfile"
+  image = "node:18-alpine"  # Usa a imagem do Node.js do Docker
 
 [[services]]
   internal_port = 3000
