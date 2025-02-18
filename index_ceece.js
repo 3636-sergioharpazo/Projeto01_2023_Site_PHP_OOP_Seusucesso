@@ -139,7 +139,7 @@ client.on('message', async (msg) => {
   const nomeCliente = contact.pushname || "Cliente";
 
   // Mensagem de boas-vindas e menu principal
- if (/^(menu|oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
+ if (/^(menu|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
     await chat.sendStateTyping();
     await delay(2000);
 
