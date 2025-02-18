@@ -1,18 +1,21 @@
 app = "projeto01-2023-site-php-oop-seusucesso"
-primary_region = "gru"
+# Use a imagem oficial do Node.js como base
+FROM node:18-alpine
 
-[build]
-  image = "node:18-alpine"  # A imagem oficial do Node.js
+# Crie e defina o diretório de trabalho
+WORKDIR /app
 
-[[services]]
-  internal_port = 3000
-  processes = ["app"]
+# Copie os arquivos de package.json e package-lock.json
+COPY package*.json ./
 
-[[services.ports]]
-  handlers = ["http"]
-  port = 80
-  force_https = true
+# Instale as dependências
+RUN npm install
 
-[[services.ports]]
-  handlers = ["tls", "http"]
-  port = 443
+# Copie o restante do código da aplicação
+COPY . .
+
+# Exponha a porta em que a aplicação vai rodar
+EXPOSE 3000
+
+# Comando para iniciar a aplicação
+CMD ["npm", "start"]
