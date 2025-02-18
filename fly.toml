@@ -1,12 +1,13 @@
 app = "projeto01-2023-site-php-oop-seusucesso"
 
+
 primary_region = "gru"
 
 [build]
-  dockerfile = "Dockerfile"  # Caminho do Dockerfile
+  dockerfile = "Dockerfile"  # Certifique-se de que o caminho está correto
 
 [[services]]
-  internal_port = 3000  # A porta exposta pela aplicação no Docker
+  internal_port = 3000  # Ajuste a porta se necessário
   processes = ["app"]
 
 [[services.ports]]
