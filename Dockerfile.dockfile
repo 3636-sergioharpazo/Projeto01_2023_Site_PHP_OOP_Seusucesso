@@ -1,20 +1,20 @@
-# Usar uma imagem oficial do Node.js
+# Use a imagem oficial do Node.js como base
 FROM node:18-alpine
 
-# Criar diretório de trabalho
+# Crie e defina o diretório de trabalho
 WORKDIR /app
 
-# Copiar os arquivos de dependências para dentro do container
-COPY package.json package-lock.json ./
+# Copie os arquivos de package.json e package-lock.json
+COPY package*.json ./
 
-# Instalar dependências
-RUN npm install --production
+# Instale as dependências
+RUN npm install
 
-# Copiar todo o código do projeto
+# Copie o restante do código da aplicação
 COPY . .
 
-# Definir a porta que o app irá rodar
+# Exponha a porta em que a aplicação vai rodar
 EXPOSE 3000
 
-# Comando para rodar o servidor
-CMD ["node", "index_ceece.js"]
+# Comando para iniciar a aplicação
+CMD ["npm", "start"]
