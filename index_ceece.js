@@ -11,6 +11,13 @@ const port = 3002;
 const client = new Client({
   authStrategy: new LocalAuth(),
 });
+const puppeteer = require('puppeteer-core');
+
+puppeteer.launch({
+  executablePath: '/path/to/chrome', // Caminho do seu navegador
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
 
 let qrCodeImage = "";
 let connectionStatus = "Desconectado"; // Inicializa como desconectado
