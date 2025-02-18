@@ -1,4 +1,4 @@
-app = "projeto01-2023-site-php-oop-seusucesso"
+
 # Use a imagem oficial do Node.js como base
 FROM node:18-alpine
 
