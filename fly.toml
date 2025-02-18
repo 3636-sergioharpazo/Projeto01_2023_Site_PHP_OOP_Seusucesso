@@ -6,7 +6,7 @@ primary_region = "gru"
 [build]
   dockerfile = "Dockerfile"
 [[services]]
-  internal_port = 3000  # Ajuste a porta se necessário
+  internal_port = 3002  # Ajuste a porta se necessário
   processes = ["app"]
 
 [[services.ports]]
