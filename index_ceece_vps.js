@@ -9,20 +9,18 @@ const app = express();
 const port = 3002;
 
 
+//const client = new Client({
+  //authStrategy: new LocalAuth(),
+  
+//});
+// Vps linux
 const client = new Client({
   authStrategy: new LocalAuth(),
-  
+  puppeteer: {
+    executablePath: '/usr/bin/chromium-browser', // Verifique se esse é o caminho correto
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  }
 });
-// Vps linux
-
-//const client = new Client({
- // authStrategy: new LocalAuth(),
- // puppeteer: {
-   // executablePath: '/usr/bin/chromium-browser',  // Adiciona o caminho do Chromium
- //   args: ['--no-sandbox', '--disable-setuid-sandbox']
- // }
-//});
-
 let qrCodeImage = "";
 let connectionStatus = "Desconectado"; // Inicializa como desconectado
 
