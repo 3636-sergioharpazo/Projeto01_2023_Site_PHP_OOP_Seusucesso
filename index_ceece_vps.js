@@ -14,13 +14,12 @@ const port = 3002;
   
 //});
 // Vps linux
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: {
-    executablePath: '/usr/bin/chromium',  // Caminho correto do Chromium
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  }
+const puppeteer = require('puppeteer-core');
+const browser = await puppeteer.launch({
+  executablePath: '/path/to/your/chromium',  // Forneça o caminho exato
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
 });
+
 let qrCodeImage = "";
 let connectionStatus = "Desconectado"; // Inicializa como desconectado
 
