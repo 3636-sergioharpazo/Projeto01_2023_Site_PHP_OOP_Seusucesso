@@ -8,20 +8,9 @@ const express = require("express");
 const app = express();
 const port = 3002;
 
-
 const client = new Client({
   authStrategy: new LocalAuth(),
-  
 });
-// Vps linux
-
-//const client = new Client({
- // authStrategy: new LocalAuth(),
- // puppeteer: {
-   // executablePath: '/usr/bin/chromium-browser',  // Adiciona o caminho do Chromium
- //   args: ['--no-sandbox', '--disable-setuid-sandbox']
- // }
-//});
 
 let qrCodeImage = "";
 let connectionStatus = "Desconectado"; // Inicializa como desconectado
@@ -60,7 +49,6 @@ client.on("disconnected", () => {
   console.log("Bot desconectado.");
   connectionStatus = "Desconectado"; // Atualiza para desconectado
   generateQRCode(); // Gera novamente o QR Code quando desconectado
-client.initialize();
 });
 
 // Inicializa o cliente
@@ -125,15 +113,11 @@ res.send(`
     res.send('Erro ao gerar QR Code');
   }
 });
-app.listen(3002, '0.0.0.0', () => {
-    console.log('Servidor rodando em http://0.0.0.0:3002');
-});
-
 
 // Inicia o servidor
-//app.listen(port, '0.0.0.0', () => {
-//    console.log(`Servidor rodando em http://92.112.179.191:${port}`);
-//});
+app.listen(port, () => {
+  console.log(`Servidor rodando em http://localhost:${port}`);
+});
 
 // Evento quando a conexão for estabelecida com o celular
 client.on("authenticated", () => {
@@ -142,11 +126,10 @@ client.on("authenticated", () => {
 // Quando o cliente estiver pronto
 //client.on('ready', () => {
   //  console.log('Tudo certo! WhatsApp conectado.');
-setInterval(() => {
-    client.sendPresenceUpdate('available');
-    console.log('Mantendo a sessão ativa...');
-}, 60000); // A cada 60 segundos
-// Função para criar delay
+    
+
+
+
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
 const pedidosPendentes = {};
