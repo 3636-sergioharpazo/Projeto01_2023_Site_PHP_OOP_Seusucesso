@@ -8,10 +8,12 @@ const express = require("express");
 const app = express();
 const port = 3002;
 
+
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    args: ['--no-sandbox', '--disable-setuid-sandbox']  // Adiciona esses argumentos
+    executablePath: '/usr/bin/chromium-browser',  // Adiciona o caminho do Chromium
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
   }
 });
 
