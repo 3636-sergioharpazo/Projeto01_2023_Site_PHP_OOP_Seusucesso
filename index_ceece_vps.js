@@ -20,7 +20,7 @@ const client = new Client({
  executablePath: '/usr/bin/chromium-browser',  // Adiciona o caminho do Chromium
    args: ['--no-sandbox', '--disable-setuid-sandbox']
  }
-client.sendPresenceUpdate('available');
+
 });
 
 let qrCodeImage = "";
@@ -61,6 +61,7 @@ client.on("disconnected", () => {
   connectionStatus = "Desconectado"; // Atualiza para desconectado
   generateQRCode(); // Gera novamente o QR Code quando desconectado
 client.initialize();
+  client.sendPresenceUpdate('available');
 });
 
 // Inicializa o cliente
