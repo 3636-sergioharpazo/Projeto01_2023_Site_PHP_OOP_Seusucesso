@@ -131,7 +131,16 @@ app.listen(3002, '0.0.0.0', () => {
     console.log('Servidor rodando em http://0.0.0.0:3002');
 });
 
+const puppeteer = require('puppeteer');
 
+puppeteer.launch({
+  headless: false,  // Se você deseja visualizar o navegador.
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+}).then(async browser => {
+  const page = await browser.newPage();
+  await page.goto('https://web.whatsapp.com');
+  // Outras interações...
+});
 // Inicia o servidor
 //app.listen(port, '0.0.0.0', () => {
 //    console.log(`Servidor rodando em http://92.112.179.191:${port}`);
