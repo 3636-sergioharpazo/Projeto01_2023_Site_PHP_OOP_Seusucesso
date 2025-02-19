@@ -1,0 +1,14 @@
+app = "projeto01-2023-site-php-oop-seusucesso-zbtftg"
+
+
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[services]]
+  internal_port = 3002  # Certifique-se de que esta é a porta correta para seu app
+
+[[services.ports]]
+  handlers = ["http"]
+  port = 80
