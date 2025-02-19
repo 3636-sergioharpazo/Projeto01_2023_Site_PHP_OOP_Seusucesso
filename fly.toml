@@ -1,22 +1,19 @@
 app = "projeto01-2023-site-php-oop-seusucesso"
 
-# Usa a imagem oficial do Node.js
-FROM node:18
+primary_region = "gru"
 
-# Define o diretório de trabalho dentro do contêiner
-WORKDIR /app
+[build]
+  dockerfile = "Dockerfile"
 
-# Copia os arquivos de dependência para o contêiner
-COPY package*.json ./
+[[services]]
+  internal_port = 3002  # Ajuste a porta se necessário
+  processes = ["app"]
 
-# Instala as dependências
-RUN npm install
+[[services.ports]]
+  handlers = ["http"]
+  port = 80
+  force_https = true
 
-# Copia o restante do código para o contêiner
-COPY . .
-
-# Expõe a porta correta
-EXPOSE 3002
-
-# Comando para iniciar a aplicação
-CMD ["node", "index.js"]
+[[services.ports]]
+  handlers = ["tls", "http"]
+  port = 443
