@@ -80,7 +80,7 @@ app.get('/', async (req, res) => {
   res.send('A página está funcionando!');
 });
 
-// Rota HTTP
+// Rota HTTP para exibir o status e o QR Code
 app.get("/", async (req, res) => {
   try {
     if (!qrCodeImage) {
@@ -148,24 +148,11 @@ app.listen(port, () => {
   startBrowser();
 });
 
-
-// Inicia o servidor
-//app.listen(port, '0.0.0.0', () => {
-//    console.log(`Servidor rodando em http://92.112.179.191:${port}`);
-//});
-
-// Evento quando a conexão for estabelecida com o celular
-client.on("authenticated", () => {
-  console.log("📲 WhatsApp conectado ao celular!");
-});
-// Quando o cliente estiver pronto
-//client.on('ready', () => {
-  //  console.log('Tudo certo! WhatsApp conectado.');
+// Mantém a sessão ativa
 setInterval(() => {
-    client.sendPresenceUpdate('available');
-    console.log('Mantendo a sessão ativa...');
+  client.sendPresenceUpdate('available');
+  console.log('Mantendo a sessão ativa...');
 }, 60000); // A cada 60 segundos
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
