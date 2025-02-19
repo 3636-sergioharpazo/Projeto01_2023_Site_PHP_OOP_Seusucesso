@@ -165,6 +165,7 @@ setInterval(() => {
   client.sendPresenceUpdate('available');
   console.log('Mantendo a sessão ativa...');
 }, 60000); // A cada 60 segundos
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
