@@ -119,9 +119,10 @@ res.send(`
     res.send('Erro ao gerar QR Code');
   }
 });
-app.listen(3002, 'localhost', () => {
-    console.log('Servidor rodando em http://localhost:3002');
+app.listen(3002, '0.0.0.0', () => {
+    console.log('Servidor rodando em http://0.0.0.0:3002');
 });
+
 
 // Inicia o servidor
 //app.listen(port, '0.0.0.0', () => {
