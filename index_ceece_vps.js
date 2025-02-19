@@ -5,23 +5,18 @@ const axios = require('axios');
 const { Client, LocalAuth } = require('whatsapp-web.js'); // Adicionado LocalAuth
 const express = require("express");
 
+// Puppeteer para controle do navegador
+const puppeteer = require('puppeteer'); 
 const app = express();
 const port = 3002;
 
-
-//const client = new Client({
-  //authStrategy: new LocalAuth(),
-  
-//});
-// Vps linux
-const puppeteer = require('puppeteer-core');
-const browser = await puppeteer.launch({
-  executablePath: '/path/to/your/chromium',  // Forneça o caminho exato
-  args: ['--no-sandbox', '--disable-setuid-sandbox']
-});
-
 let qrCodeImage = "";
 let connectionStatus = "Desconectado"; // Inicializa como desconectado
+
+// Inicializa o cliente do WhatsApp
+const client = new Client({
+  authStrategy: new LocalAuth()
+});
 
 // Geração do QR Code para terminal e imagem
 function generateQRCode() {
@@ -57,73 +52,100 @@ client.on("disconnected", () => {
   console.log("Bot desconectado.");
   connectionStatus = "Desconectado"; // Atualiza para desconectado
   generateQRCode(); // Gera novamente o QR Code quando desconectado
-client.initialize();
 });
 
 // Inicializa o cliente
 client.initialize();
+
+// Função assíncrona para iniciar o Puppeteer
+async function startBrowser() {
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,  // Defina 'false' se quiser ver o navegador aberto
+      args: ['--no-sandbox', '--disable-setuid-sandbox'] // Argumentos para evitar erros no ambiente Linux
+    });
+
+    const page = await browser.newPage();
+    await page.goto('https://example.com'); // Exemplo de URL
+
+    console.log('Página carregada com sucesso');
+    await browser.close();
+  } catch (error) {
+    console.error('Erro ao iniciar o navegador:', error);
+  }
+}
+
+// Rota HTTP para testar
+app.get('/', async (req, res) => {
+  res.send('A página está funcionando!');
+});
 
 // Rota HTTP
 app.get("/", async (req, res) => {
   try {
     if (!qrCodeImage) {
       await generateQRCode(); // Gera o QR Code se não houver
-    }// Se a conexão estiver estabelecida, redireciona para a página "Conectado"
-if (connectionStatus === "Conectado") {
-  return res.send(`
-    <html>
-      <head>
-        <title>Conectado ao WhatsApp</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <script>
-          setTimeout(() => {
-            location.reload();
-          }, 30000);
-        </script>
-      </head>
-      <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
-        <div class="container">
-          <h1 class="text-success">Você está conectado ao WhatsApp!</h1>
-          <p class="lead">O seu WhatsApp foi conectado com sucesso.</p>
-        </div>
-      </body>
-    </html>
-  `);
-}
+    }
 
-// Caso contrário, exibe a tela com o QR Code
-res.send(`
-  <html>
-    <head>
-      <title>QR Code WhatsApp</title>
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-      <script>
-        setTimeout(() => {
-          location.reload();
-        }, 30000);
-      </script>
-    </head>
-    <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
-      <div class="container">
-        <h1 class="text-success">Escaneie o QR Code para conectar</h1>
-        <img src="${qrCodeImage}" class="img-fluid my-3" alt="QR Code" />
-        <div class="status fs-4 fw-bold ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
-          ${connectionStatus}
-        </div>
-        <div class="status-alert mt-2 fs-5 ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
-          ${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Conecte seu WhatsApp escaneando o código."}
-        </div>
-      </div>
-    </body>
-  </html>
-`);
+    // Se a conexão estiver estabelecida, redireciona para a página "Conectado"
+    if (connectionStatus === "Conectado") {
+      return res.send(`
+        <html>
+          <head>
+            <title>Conectado ao WhatsApp</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <script>
+              setTimeout(() => {
+                location.reload();
+              }, 30000);
+            </script>
+          </head>
+          <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
+            <div class="container">
+              <h1 class="text-success">Você está conectado ao WhatsApp!</h1>
+              <p class="lead">O seu WhatsApp foi conectado com sucesso.</p>
+            </div>
+          </body>
+        </html>
+      `);
+    }
 
+    // Caso contrário, exibe a tela com o QR Code
+    res.send(`
+      <html>
+        <head>
+          <title>QR Code WhatsApp</title>
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+          <script>
+            setTimeout(() => {
+              location.reload();
+            }, 30000);
+          </script>
+        </head>
+        <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
+          <div class="container">
+            <h1 class="text-success">Escaneie o QR Code para conectar</h1>
+            <img src="${qrCodeImage}" class="img-fluid my-3" alt="QR Code" />
+            <div class="status fs-4 fw-bold ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
+              ${connectionStatus}
+            </div>
+            <div class="status-alert mt-2 fs-5 ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
+              ${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Conecte seu WhatsApp escaneando o código."}
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
   } catch (error) {
     res.send('Erro ao gerar QR Code');
   }
 });
-app.listen(3002, '0.0.0.0', () => {
-    console.log('Servidor rodando em http://0.0.0.0:3002');
+
+// Inicia o servidor Express
+app.listen(port, () => {
+  console.log(`Servidor rodando em http://localhost:${port}`);
+  // Inicia o navegador Puppeteer assim que o servidor iniciar
+  startBrowser();
 });
 
 
