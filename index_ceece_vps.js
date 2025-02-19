@@ -20,6 +20,7 @@ const client = new Client({
  executablePath: '/usr/bin/chromium-browser',  // Adiciona o caminho do Chromium
    args: ['--no-sandbox', '--disable-setuid-sandbox']
  }
+client.sendPresenceUpdate('available');
 });
 
 let qrCodeImage = "";
