@@ -1,30 +1,27 @@
 // Importações
 const qrcode = require('qrcode-terminal'); // qrcode para terminal
-
+const qrcodeWeb = require("qrcode"); // qrcode para imagem web
 const axios = require('axios');
 const { Client, LocalAuth } = require('whatsapp-web.js'); // Adicionado LocalAuth
 const express = require("express");
-const qrcodeTerminal = require('qrcode-terminal');  // Para exibir QR no terminal
-const qrcodeWeb = require("qrcode");  // Para gerar QR para o navegador
 
 const app = express();
 const port = 3002;
-// Importações
 
 
-
-
-
-let client;
-
-// Instância do cliente com a estratégia LocalAuth e a configuração do Puppeteer
-client = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: {
-        executablePath: '/usr/bin/chromium-browser',  // Adiciona o caminho do Chromium
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    }
+const client = new Client({
+  authStrategy: new LocalAuth(),
+  
 });
+// Vps linux
+
+//const client = new Client({
+ // authStrategy: new LocalAuth(),
+ // puppeteer: {
+   // executablePath: '/usr/bin/chromium-browser',  // Adiciona o caminho do Chromium
+ //   args: ['--no-sandbox', '--disable-setuid-sandbox']
+ // }
+//});
 
 let qrCodeImage = "";
 let connectionStatus = "Desconectado"; // Inicializa como desconectado
@@ -63,6 +60,7 @@ client.on("disconnected", () => {
   console.log("Bot desconectado.");
   connectionStatus = "Desconectado"; // Atualiza para desconectado
   generateQRCode(); // Gera novamente o QR Code quando desconectado
+client.initialize();
 });
 
 // Inicializa o cliente
@@ -116,7 +114,39 @@ res.send(`
           ${connectionStatus}
         </div>
         <div class="status-alert mt-2 fs-5 ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
-          ${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Conecte seu
+          ${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Conecte seu WhatsApp escaneando o código."}
+        </div>
+      </div>
+    </body>
+  </html>
+`);
+
+  } catch (error) {
+    res.send('Erro ao gerar QR Code');
+  }
+});
+app.listen(3002, '0.0.0.0', () => {
+    console.log('Servidor rodando em http://0.0.0.0:3002');
+});
+
+
+// Inicia o servidor
+//app.listen(port, '0.0.0.0', () => {
+//    console.log(`Servidor rodando em http://92.112.179.191:${port}`);
+//});
+
+// Evento quando a conexão for estabelecida com o celular
+client.on("authenticated", () => {
+  console.log("📲 WhatsApp conectado ao celular!");
+});
+// Quando o cliente estiver pronto
+//client.on('ready', () => {
+  //  console.log('Tudo certo! WhatsApp conectado.');
+setInterval(() => {
+    client.sendPresenceUpdate('available');
+    console.log('Mantendo a sessão ativa...');
+}, 60000); // A cada 60 segundos
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
