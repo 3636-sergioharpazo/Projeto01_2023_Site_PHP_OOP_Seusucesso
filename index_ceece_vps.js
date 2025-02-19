@@ -61,7 +61,8 @@ client.on("disconnected", () => {
   connectionStatus = "Desconectado"; // Atualiza para desconectado
   generateQRCode(); // Gera novamente o QR Code quando desconectado
 client.initialize();
-  client.sendPresenceUpdate('available');
+ 
+  client.pupBrowser.send('available');
 });
 
 // Inicializa o cliente
