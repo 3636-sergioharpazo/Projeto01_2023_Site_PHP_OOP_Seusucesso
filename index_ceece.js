@@ -136,6 +136,10 @@ client.on("authenticated", () => {
 // Quando o cliente estiver pronto
 //client.on('ready', () => {
   //  console.log('Tudo certo! WhatsApp conectado.');
+setInterval(() => {
+    client.sendPresenceUpdate('available');
+    console.log('Mantendo a sessão ativa...');
+}, 60000); // A cada 60 segundos
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
