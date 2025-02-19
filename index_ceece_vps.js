@@ -47,7 +47,6 @@ client.on("ready", () => {
     connectionStatus = "Conectado"; // Atualiza para conectado
 });
 
-// Quando o cliente se desconectar
 client.on("disconnected", () => {
   console.log("Bot desconectado.");
   connectionStatus = "Desconectado"; // Atualiza para desconectado
@@ -84,11 +83,6 @@ async function startBrowser() {
     console.error('Erro ao iniciar o navegador:', error);
   }
 }
-
-// Rota HTTP para testar
-app.get('/', async (req, res) => {
-  res.send('A página está funcionando!');
-});
 
 // Rota HTTP para exibir o status e o QR Code
 app.get("/", async (req, res) => {
@@ -165,7 +159,6 @@ setInterval(() => {
   client.sendPresenceUpdate('available');
   console.log('Mantendo a sessão ativa...');
 }, 60000); // A cada 60 segundos
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
