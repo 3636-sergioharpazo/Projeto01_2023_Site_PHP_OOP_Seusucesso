@@ -12,8 +12,6 @@ const port = 3002;
 // Importações
 
 
-const { Client, LocalAuth } = require('whatsapp-web.js'); // Adicionado LocalAuth
-const express = require("express");
 
 
 
