@@ -1,21 +1,21 @@
 // Importações
 const qrcode = require('qrcode-terminal'); // qrcode para terminal
-const qrcodeWeb = require("qrcode"); // qrcode para imagem web
+
 const axios = require('axios');
 const { Client, LocalAuth } = require('whatsapp-web.js'); // Adicionado LocalAuth
 const express = require("express");
+const qrcodeTerminal = require('qrcode-terminal');  // Para exibir QR no terminal
+const qrcodeWeb = require("qrcode");  // Para gerar QR para o navegador
 
 const app = express();
 const port = 3002;
 // Importações
-const qrcode = require('qrcode-terminal'); // qrcode para terminal
-const qrcodeWeb = require("qrcode"); // qrcode para imagem web
-const axios = require('axios');
+
+
 const { Client, LocalAuth } = require('whatsapp-web.js'); // Adicionado LocalAuth
 const express = require("express");
 
-const app = express();
-const port = 3002;
+
 
 let client;
 
