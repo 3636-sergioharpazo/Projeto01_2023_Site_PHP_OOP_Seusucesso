@@ -1,20 +1,20 @@
-# Usa a imagem oficial do Node.js
-FROM node:18
+# Use a imagem oficial do Node.js como base
+FROM node:18-alpine
 
-# Define o diretório de trabalho dentro do contêiner
+# Crie e defina o diretório de trabalho
 WORKDIR /app
 
-# Copia os arquivos de dependência
+# Copie os arquivos de package.json e package-lock.json
 COPY package*.json ./
 
-# Instala as dependências
+# Instale as dependências
 RUN npm install
 
-# Copia o restante do código para o contêiner
+# Copie o restante do código da aplicação
 COPY . .
 
-# Expondo a porta usada pelo app
-EXPOSE 3002
+# Exponha a porta em que a aplicação vai rodar
+EXPOSE 3000
 
 # Comando para iniciar a aplicação
-CMD ["node", "index_ceece.js"]
+CMD ["npm", "start"]
