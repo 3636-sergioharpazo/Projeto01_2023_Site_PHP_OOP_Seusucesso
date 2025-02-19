@@ -55,6 +55,7 @@ client.on("disconnected", () => {
   console.log("Bot desconectado.");
   connectionStatus = "Desconectado"; // Atualiza para desconectado
   generateQRCode(); // Gera novamente o QR Code quando desconectado
+client.initialize();
 });
 
 // Inicializa o cliente
