@@ -119,11 +119,14 @@ res.send(`
     res.send('Erro ao gerar QR Code');
   }
 });
+app.listen(3002, 'localhost', () => {
+    console.log('Servidor rodando em http://localhost:3002');
+});
 
 // Inicia o servidor
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Servidor rodando em http://92.112.179.191:${port}`);
-});
+//app.listen(port, '0.0.0.0', () => {
+//    console.log(`Servidor rodando em http://92.112.179.191:${port}`);
+//});
 
 // Evento quando a conexão for estabelecida com o celular
 client.on("authenticated", () => {
