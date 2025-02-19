@@ -17,7 +17,7 @@ const port = 3002;
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    executablePath: '/usr/bin/chromium-browser', // Verifique se esse é o caminho correto
+    executablePath: '/usr/bin/chromium',  // Caminho correto do Chromium
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   }
 });
