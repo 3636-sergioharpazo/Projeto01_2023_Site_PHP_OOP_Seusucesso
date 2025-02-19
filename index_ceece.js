@@ -10,6 +10,9 @@ const port = 3002;
 
 const client = new Client({
   authStrategy: new LocalAuth(),
+  puppeteer: {
+    args: ['--no-sandbox', '--disable-setuid-sandbox']  // Adiciona esses argumentos
+  }
 });
 
 
