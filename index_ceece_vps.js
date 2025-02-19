@@ -24,7 +24,7 @@ function generateQRCode() {
     client.on("qr", (qr) => {
       qrcode.toString(qr, { small: true }, (err, qrCode) => {
         if (!err) {
-          console.log(qrCode); // Exibe o QR code no terminal
+          console.log('QR Code gerado no terminal:\n', qrCode); // Exibe o QR code no terminal
         }
       });
 
@@ -54,12 +54,22 @@ client.on("disconnected", () => {
   generateQRCode(); // Gera novamente o QR Code quando desconectado
 });
 
+// Para checar o status da conexão com o WhatsApp
+client.on("auth_failure", () => {
+    console.log("Falha na autenticação. Verifique o QR Code.");
+});
+
+client.on("authenticated", () => {
+    console.log("Autenticado com sucesso.");
+});
+
 // Inicializa o cliente
 client.initialize();
 
 // Função assíncrona para iniciar o Puppeteer
 async function startBrowser() {
   try {
+    console.log('Iniciando o Puppeteer...');
     const browser = await puppeteer.launch({
       headless: true,  // Defina 'false' se quiser ver o navegador aberto
       args: ['--no-sandbox', '--disable-setuid-sandbox'] // Argumentos para evitar erros no ambiente Linux
@@ -84,6 +94,7 @@ app.get('/', async (req, res) => {
 app.get("/", async (req, res) => {
   try {
     if (!qrCodeImage) {
+      console.log('Gerando QR Code...');
       await generateQRCode(); // Gera o QR Code se não houver
     }
 
@@ -137,6 +148,7 @@ app.get("/", async (req, res) => {
       </html>
     `);
   } catch (error) {
+    console.error('Erro ao gerar QR Code:', error);
     res.send('Erro ao gerar QR Code');
   }
 });
