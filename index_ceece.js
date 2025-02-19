@@ -121,8 +121,8 @@ res.send(`
 });
 
 // Inicia o servidor
-app.listen(port,'92.112.179.191', () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
+app.listen(port, '92.112.179.191', () => {
+    console.log(`Servidor rodando em http://92.112.179.191:${port}`);
 });
 
 // Evento quando a conexão for estabelecida com o celular
