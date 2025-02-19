@@ -1,18 +1,20 @@
-# Use uma imagem base do Node.js
-FROM node:18-alpine
+# Usa a imagem oficial do Node.js
+FROM node:18
 
-# Defina o diretório de trabalho no container
+# Define o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
-# Copie os arquivos do projeto para o container
+# Copia os arquivos de dependência para o contêiner
 COPY package*.json ./
+
+# Instala as dependências
 RUN npm install
 
-# Copie o restante do código
+# Copia o restante do código para o contêiner
 COPY . .
 
-# Exponha a porta usada pelo app
+# Expõe a porta correta (deve ser a mesma do `fly.toml`)
 EXPOSE 3002
 
-# Comando para iniciar o app
-CMD ["npm", "start"]
+# Comando para iniciar a aplicação
+CMD ["node", "index.js"]
