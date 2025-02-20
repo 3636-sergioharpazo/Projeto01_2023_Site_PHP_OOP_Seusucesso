@@ -1,26 +1,3 @@
-/**
- * Para que o aplicativo seja acessível via http://92.112.179.191/ sem precisar especificar a porta,
- * configure o Nginx como proxy reverso conforme instruções no arquivo de configuração abaixo.
- *
- * --- Exemplo de configuração Nginx (/etc/nginx/sites-available/default) ---
- *
- * server {
- *     listen 80;
- *     server_name 92.112.179.191;
- *
- *     location / {
- *         proxy_pass http://localhost:3002;
- *         proxy_http_version 1.1;
- *         proxy_set_header Upgrade $http_upgrade;
- *         proxy_set_header Connection 'upgrade';
- *         proxy_set_header Host $host;
- *         proxy_cache_bypass $http_upgrade;
- *     }
- * }
- *
- * Após salvar a configuração, reinicie o Nginx:
- * sudo systemctl restart nginx
- */
 
 const qrcode = require('qrcode-terminal'); // QR Code para terminal
 const qrcodeWeb = require("qrcode"); // QR Code para imagem web
