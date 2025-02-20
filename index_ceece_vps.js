@@ -1,7 +1,4 @@
 // index_ceece_vps.js
-// index_ceece_vps.js
-
-// Importações
 const qrcode = require('qrcode-terminal'); // QR Code para terminal
 const qrcodeWeb = require("qrcode"); // QR Code para imagem web
 const axios = require('axios');
@@ -10,6 +7,10 @@ const express = require("express");
 
 const app = express();
 const port = 3002;
+
+// Middleware para interpretar JSON e URL Encoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const client = new Client({
   authStrategy: new LocalAuth(),
@@ -22,10 +23,11 @@ let connectionStatus = "Desconectado"; // Inicializa como desconectado
 function generateQRCode() {
   return new Promise((resolve, reject) => {
     client.on("qr", (qr) => {
+      // Gera o QR Code no terminal
       qrcode.toString(qr, { small: true }, (err, qrCode) => {
         if (!err) console.log(qrCode);
       });
-
+      // Gera o QR Code para imagem web
       qrcodeWeb.toDataURL(qr, (err, url) => {
         if (!err) {
           qrCodeImage = url;
@@ -47,11 +49,25 @@ client.on("ready", () => {
 client.on("disconnected", () => {
   console.log("Bot desconectado.");
   connectionStatus = "Desconectado";
+  // Reinicia a geração do QR Code para reconexão
   generateQRCode();
 });
 
 client.on("authenticated", () => {
   console.log("📲 WhatsApp conectado ao celular!");
+});
+
+// Tratamento de erros e mudanças de estado
+client.on("auth_failure", (msg) => {
+  console.error("Falha na autenticação:", msg);
+});
+
+client.on("change_state", (state) => {
+  console.log("Estado do cliente:", state);
+});
+
+client.on("error", (err) => {
+  console.error("Erro no cliente:", err);
 });
 
 // Inicializa o cliente
@@ -60,7 +76,9 @@ client.initialize();
 // Rota HTTP
 app.get("/", async (req, res) => {
   try {
-    if (!qrCodeImage) await generateQRCode();
+    if (!qrCodeImage && connectionStatus !== "Conectado") {
+      await generateQRCode();
+    }
 
     if (connectionStatus === "Conectado") {
       return res.send(`
@@ -102,6 +120,7 @@ app.get("/", async (req, res) => {
       </html>
     `);
   } catch (error) {
+    console.error("Erro ao gerar QR Code:", error);
     res.send('Erro ao gerar QR Code');
   }
 });
@@ -110,9 +129,6 @@ app.get("/", async (req, res) => {
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
-
-
-
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
