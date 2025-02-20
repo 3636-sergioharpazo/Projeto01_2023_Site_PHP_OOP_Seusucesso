@@ -1,4 +1,5 @@
 // index_ceece_vps.js
+
 const qrcode = require('qrcode-terminal'); // QR Code para terminal
 const qrcodeWeb = require("qrcode"); // QR Code para imagem web
 const axios = require('axios');
