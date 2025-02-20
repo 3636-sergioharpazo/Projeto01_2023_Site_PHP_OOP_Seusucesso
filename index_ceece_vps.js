@@ -1,4 +1,3 @@
-// index_ceece_vps.js
 /**
  * Para que o aplicativo seja acessível via http://92.112.179.191/ sem precisar especificar a porta,
  * configure o Nginx como proxy reverso conforme instruções no arquivo de configuração abaixo.
@@ -153,6 +152,7 @@ app.get("/", async (req, res) => {
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
