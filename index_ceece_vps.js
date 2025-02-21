@@ -1,6 +1,6 @@
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode'); // Usar qrcode para gerar a imagem
 const path = require('path');
 const fs = require('fs');
 
@@ -10,7 +10,7 @@ const port = 3002;
 // Diretório onde a imagem do QR Code será salva
 const qrCodeDir = path.join(__dirname, 'public', 'qrcodes');
 
-// Certifique-se de que o diretório existe
+// Garante que o diretório existe
 if (!fs.existsSync(qrCodeDir)) {
   fs.mkdirSync(qrCodeDir, { recursive: true });
 }
@@ -22,31 +22,30 @@ const client = new Client({
 
 // Quando o QR Code for gerado
 client.on('qr', (qr) => {
-  console.log('QR RECEIVED', qr);
-  // Gera e exibe o QR Code no terminal
-  qrcode.generate(qr, { small: true });
+  console.log('QR RECEBIDO');
 
   // Gera a imagem do QR Code e salva no servidor
-  qrcode.toFile(path.join(qrCodeDir, 'qrcode.png'), qr, (err) => {
+  const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
+  qrcode.toFile(qrCodePath, qr, (err) => {
     if (err) {
       console.error('Erro ao salvar o QR Code:', err);
     } else {
-      console.log('QR Code salvo com sucesso');
+      console.log(`QR Code salvo com sucesso em: ${qrCodePath}`);
     }
   });
 });
 
-// Quando a conexão for estabelecida
+// Quando a conexão for autenticada
 client.on('authenticated', () => {
-  console.log('Autenticado com sucesso!');
+  console.log('✅ Autenticado com sucesso!');
 });
 
-// Quando a conexão for estabelecida com sucesso
+// Quando o WhatsApp estiver pronto
 client.on('ready', () => {
-  console.log('WhatsApp Web está pronto!');
+  console.log('🚀 WhatsApp Web está pronto!');
 });
 
-// Inicia o cliente
+// Inicializa o cliente
 client.initialize();
 
 // Rota para retornar o status e a imagem do QR Code
@@ -54,21 +53,23 @@ app.get('/status', (req, res) => {
   const status = client.info ? 'Conectado' : 'Desconectado';
   res.json({
     connectionStatus: status,
-    qrCodeImage: '/qrcodes/qrcode.png',
+    qrCodeImage: '/qrcodes/qrcode.png', // Caminho acessível via navegador
   });
 });
 
+// Servir arquivos estáticos
+app.use('/qrcodes', express.static(qrCodeDir));
+
 // Rota inicial
 app.get('/', (req, res) => {
-  res.send('QR Code WhatsApp');
+  res.send('Servidor de QR Code do WhatsApp está rodando!');
 });
 
-// Servir arquivos estáticos (imagens, etc.)
-app.use('/qrcodes', express.static(path.join(__dirname, 'public', 'qrcodes')));
-
+// Inicia o servidor
 app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+  console.log(`Servidor rodando em http://localhost:${port}`);
 });
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
