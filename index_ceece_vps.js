@@ -8,7 +8,7 @@ const app = express();
 const port = 3002;
 
 
-// Diretório onde a imagem do QR Code será salva
+
 const qrCodeDir = path.join(__dirname, 'public', 'qrcodes');
 
 // Garante que o diretório existe
