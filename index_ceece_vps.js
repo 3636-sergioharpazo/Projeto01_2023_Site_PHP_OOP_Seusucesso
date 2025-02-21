@@ -2,14 +2,20 @@ const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode'); // Usar qrcode para gerar a imagem
 const path = require('path');
-const fs = require('fs');
-
 const app = express();
-const port = 3002;
+const PORT = 3002;
 
+// Servir arquivos estáticos da pasta /var/www/html
+app.use(express.static('/var/www/html'));
 
+// Rota padrão para verificar se está funcionando
+app.get('/', (req, res) => {
+  res.send('Servidor Node.js rodando na porta 3002');
+});
 
-const qrCodeDir = path.join(__dirname, 'public', 'qrcodes');
+app.listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
+});
 
 // Garante que o diretório existe
 if (!fs.existsSync(qrCodeDir)) {
