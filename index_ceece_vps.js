@@ -1,56 +1,74 @@
 const express = require('express');
-const { Client } = require('whatsapp-web.js');
-const qrcode = require('qrcode');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+const path = require('path');
+const fs = require('fs');
+
 const app = express();
 const port = 3002;
 
-let connectionStatus = 'Desconectado';
-let qrCodeImage = '';
+// Diretório onde a imagem do QR Code será salva
+const qrCodeDir = path.join(__dirname, 'public', 'qrcodes');
 
-const client = new Client();
+// Certifique-se de que o diretório existe
+if (!fs.existsSync(qrCodeDir)) {
+  fs.mkdirSync(qrCodeDir, { recursive: true });
+}
 
+// Cliente do WhatsApp Web
+const client = new Client({
+  authStrategy: new LocalAuth(),
+});
+
+// Quando o QR Code for gerado
 client.on('qr', (qr) => {
-  console.log('QR Code recebido');
-  qrcode.toDataURL(qr, (err, url) => {
+  console.log('QR RECEIVED', qr);
+  // Gera e exibe o QR Code no terminal
+  qrcode.generate(qr, { small: true });
+
+  // Gera a imagem do QR Code e salva no servidor
+  qrcode.toFile(path.join(qrCodeDir, 'qrcode.png'), qr, (err) => {
     if (err) {
-      console.error('Erro ao gerar o QR Code:', err);
+      console.error('Erro ao salvar o QR Code:', err);
     } else {
-      qrCodeImage = url; // Guarda o QR Code em formato base64
+      console.log('QR Code salvo com sucesso');
     }
   });
 });
 
+// Quando a conexão for estabelecida
+client.on('authenticated', () => {
+  console.log('Autenticado com sucesso!');
+});
+
+// Quando a conexão for estabelecida com sucesso
 client.on('ready', () => {
-  console.log('WhatsApp está pronto!');
-  connectionStatus = 'Conectado';
+  console.log('WhatsApp Web está pronto!');
 });
 
-client.on('auth_failure', (msg) => {
-  console.log('Falha na autenticação:', msg);
-  connectionStatus = 'Desconectado';
-});
-
-client.on('disconnected', (reason) => {
-  console.log('Conexão perdida:', reason);
-  connectionStatus = 'Desconectado';
-});
-
+// Inicia o cliente
 client.initialize();
 
-app.use(express.static('public')); // Serve arquivos estáticos
-
+// Rota para retornar o status e a imagem do QR Code
 app.get('/status', (req, res) => {
+  const status = client.info ? 'Conectado' : 'Desconectado';
   res.json({
-    connectionStatus: connectionStatus,
-    qrCodeImage: qrCodeImage,
+    connectionStatus: status,
+    qrCodeImage: '/qrcodes/qrcode.png',
   });
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
+// Rota inicial
+app.get('/', (req, res) => {
+  res.send('QR Code WhatsApp');
 });
 
+// Servir arquivos estáticos (imagens, etc.)
+app.use('/qrcodes', express.static(path.join(__dirname, 'public', 'qrcodes')));
 
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
+});
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
