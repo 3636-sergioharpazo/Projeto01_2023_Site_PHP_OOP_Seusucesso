@@ -1,52 +1,60 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Code WhatsApp</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script>setTimeout(() => location.reload(), 10000);</script> <!-- Atualiza a cada 10s -->
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .container {
+      margin-top: 50px;
+    }
+    .status {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
   <div class="container">
-    <h1 class="text-success">Escaneie o QR Code para conectar</h1>
-    <img id="qrCodeImage" src="" alt="QR Code" class="img-fluid my-3" />
-    <div id="status" class="fs-4 fw-bold text-danger">Desconectado</div>
-    <div id="statusMessage" class="mt-2 fs-5 text-danger">
-      Conecte seu WhatsApp escaneando o código.
-    </div>
+    <h1 class="text-success" id="statusMessage">Carregando status...</h1>
+    <div id="qrCodeContainer" class="my-4"></div>
+    <div id="status" class="status text-danger">Desconectado</div>
   </div>
 
   <script>
-    async function fetchQRCode() {
+    async function fetchStatus() {
       try {
-        const response = await fetch('http://localhost:3002/');
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        const qrImage = doc.querySelector('img');
-        const statusText = doc.querySelector('.status');
-        const statusMessage = doc.querySelector('.status-alert');
+        const response = await fetch('/status');
+        const data = await response.json();
 
-        if (qrImage) {
-          document.getElementById('qrCodeImage').src = qrImage.src;
-        }
-        if (statusText) {
-          document.getElementById('status').innerText = statusText.innerText;
-          document.getElementById('status').className = `fs-4 fw-bold ${statusText.classList.contains('text-success') ? 'text-success' : 'text-danger'}`;
-        }
-        if (statusMessage) {
-          document.getElementById('statusMessage').innerText = statusMessage.innerText;
-          document.getElementById('statusMessage').className = `mt-2 fs-5 ${statusMessage.classList.contains('text-success') ? 'text-success' : 'text-danger'}`;
+        const statusElement = document.getElementById('status');
+        const statusMessage = document.getElementById('statusMessage');
+        const qrCodeContainer = document.getElementById('qrCodeContainer');
+
+        if (data.connectionStatus === 'Conectado') {
+          statusElement.textContent = 'Conectado';
+          statusElement.classList.remove('text-danger');
+          statusElement.classList.add('text-success');
+          statusMessage.textContent = 'Você está conectado ao WhatsApp!';
+          qrCodeContainer.innerHTML = ''; // Remove o QR Code ao conectar
+        } else {
+          statusElement.textContent = 'Desconectado';
+          statusElement.classList.remove('text-success');
+          statusElement.classList.add('text-danger');
+          statusMessage.textContent = 'Escaneie o QR Code para conectar';
+          qrCodeContainer.innerHTML = `<img src="${data.qrCodeImage}" class="img-fluid my-3" alt="QR Code" />`;
         }
       } catch (error) {
-        console.error('Erro ao buscar QR Code:', error);
+        console.error('Erro ao buscar o status:', error);
       }
     }
 
-    // Atualiza o QR Code a cada 30 segundos
-    setInterval(fetchQRCode, 30000);
-    fetchQRCode();
+    fetchStatus(); // Executa ao carregar a página
   </script>
 </body>
 </html>
