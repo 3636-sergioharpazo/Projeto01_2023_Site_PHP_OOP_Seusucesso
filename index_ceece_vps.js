@@ -1,99 +1,55 @@
-
-const qrcode = require('qrcode-terminal'); // QR Code para terminal
-const qrcodeWeb = require("qrcode"); // QR Code para imagem web
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const express = require("express");
-
+const express = require('express');
+const { Client } = require('whatsapp-web.js');
+const qrcode = require('qrcode');
 const app = express();
 const port = 3002;
 
-// Middleware para interpretar JSON e URL Encoded
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+let connectionStatus = 'Desconectado';
+let qrCodeImage = '';
 
-const client = new Client({
-  authStrategy: new LocalAuth(),
+const client = new Client();
+
+client.on('qr', (qr) => {
+  console.log('QR Code recebido');
+  qrcode.toDataURL(qr, (err, url) => {
+    if (err) {
+      console.error('Erro ao gerar o QR Code:', err);
+    } else {
+      qrCodeImage = url; // Guarda o QR Code em formato base64
+    }
+  });
 });
 
-let qrCodeImage = "";
-let connectionStatus = "Desconectado"; // Inicializa como desconectado
-
-// Geração do QR Code
-client.on("qr", async (qr) => {
-  // Gera o QR Code no terminal
-  qrcode.generate(qr, { small: true });
-
-  // Gera o QR Code para imagem web
-  try {
-    qrCodeImage = await qrcodeWeb.toDataURL(qr);
-  } catch (err) {
-    console.error("Erro ao gerar QR Code para imagem", err);
-  }
+client.on('ready', () => {
+  console.log('WhatsApp está pronto!');
+  connectionStatus = 'Conectado';
 });
 
-// Eventos do cliente
-client.on("ready", () => {
-  console.log("Tudo certo! WhatsApp conectado.");
-  connectionStatus = "Conectado";
+client.on('auth_failure', (msg) => {
+  console.log('Falha na autenticação:', msg);
+  connectionStatus = 'Desconectado';
 });
 
-client.on("disconnected", () => {
-  console.log("Bot desconectado.");
-  connectionStatus = "Desconectado";
+client.on('disconnected', (reason) => {
+  console.log('Conexão perdida:', reason);
+  connectionStatus = 'Desconectado';
 });
 
-client.on("authenticated", () => {
-  console.log("📲 WhatsApp conectado ao celular!");
-});
-
-client.on("auth_failure", (msg) => {
-  console.error("Falha na autenticação:", msg);
-});
-
-client.on("error", (err) => {
-  console.error("Erro no cliente:", err);
-});
-
-// Inicializa o cliente
 client.initialize();
 
-// Rota HTTP para exibir o QR Code
-app.get("/", async (req, res) => {
-  let qrImageHtml = connectionStatus !== "Conectado" && qrCodeImage
-    ? `<img src="${qrCodeImage}" class="img-fluid my-3" alt="QR Code" />`
-    : '';
+app.use(express.static('public')); // Serve arquivos estáticos
 
-  res.send(`
-    <html>
-      <head>
-        <title>QR Code WhatsApp</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <script>setTimeout(() => location.reload(), 10000);</script>
-      </head>
-      <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
-        <div class="container">
-          <h1 class="text-success">${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Escaneie o QR Code para conectar"}</h1>
-          ${qrImageHtml}
-          <div class="status fs-4 fw-bold ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
-            ${connectionStatus}
-          </div>
-          <div class="status-alert mt-2 fs-5 ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
-            ${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Conecte seu WhatsApp escaneando o código."}
-          </div>
-        </div>
-      </body>
-    </html>
-  `);
+app.get('/status', (req, res) => {
+  res.json({
+    connectionStatus: connectionStatus,
+    qrCodeImage: qrCodeImage,
+  });
 });
 
-// Inicia o servidor
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
-// Inicia o servidor
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-});
+
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
