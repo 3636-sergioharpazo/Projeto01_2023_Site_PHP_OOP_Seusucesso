@@ -1,7 +1,6 @@
 
 const qrcode = require('qrcode-terminal'); // QR Code para terminal
 const qrcodeWeb = require("qrcode"); // QR Code para imagem web
-const axios = require('axios');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const express = require("express");
 
@@ -20,25 +19,17 @@ let qrCodeImage = "";
 let connectionStatus = "Desconectado"; // Inicializa como desconectado
 
 // Geração do QR Code
-function generateQRCode() {
-  return new Promise((resolve, reject) => {
-    client.on("qr", (qr) => {
-      // Gera o QR Code no terminal
-      qrcode.toString(qr, { small: true }, (err, qrCode) => {
-        if (!err) console.log(qrCode);
-      });
-      // Gera o QR Code para imagem web
-      qrcodeWeb.toDataURL(qr, (err, url) => {
-        if (!err) {
-          qrCodeImage = url;
-          resolve(url);
-        } else {
-          reject("Erro ao gerar QR Code para imagem");
-        }
-      });
-    });
-  });
-}
+client.on("qr", async (qr) => {
+  // Gera o QR Code no terminal
+  qrcode.generate(qr, { small: true });
+
+  // Gera o QR Code para imagem web
+  try {
+    qrCodeImage = await qrcodeWeb.toDataURL(qr);
+  } catch (err) {
+    console.error("Erro ao gerar QR Code para imagem", err);
+  }
+});
 
 // Eventos do cliente
 client.on("ready", () => {
@@ -49,21 +40,14 @@ client.on("ready", () => {
 client.on("disconnected", () => {
   console.log("Bot desconectado.");
   connectionStatus = "Desconectado";
-  // Reinicia a geração do QR Code para reconexão
-  generateQRCode();
 });
 
 client.on("authenticated", () => {
   console.log("📲 WhatsApp conectado ao celular!");
 });
 
-// Tratamento de erros e mudanças de estado
 client.on("auth_failure", (msg) => {
   console.error("Falha na autenticação:", msg);
-});
-
-client.on("change_state", (state) => {
-  console.log("Estado do cliente:", state);
 });
 
 client.on("error", (err) => {
@@ -73,58 +57,39 @@ client.on("error", (err) => {
 // Inicializa o cliente
 client.initialize();
 
-// Rota HTTP
+// Rota HTTP para exibir o QR Code
 app.get("/", async (req, res) => {
-  try {
-    if (!qrCodeImage && connectionStatus !== "Conectado") {
-      await generateQRCode();
-    }
+  let qrImageHtml = connectionStatus !== "Conectado" && qrCodeImage
+    ? `<img src="${qrCodeImage}" class="img-fluid my-3" alt="QR Code" />`
+    : '';
 
-    if (connectionStatus === "Conectado") {
-      return res.send(`
-        <html>
-          <head>
-            <title>Conectado ao WhatsApp</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <script>setTimeout(() => location.reload(), 30000);</script>
-          </head>
-          <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
-            <div class="container">
-              <h1 class="text-success">Você está conectado ao WhatsApp!</h1>
-              <p class="lead">O seu WhatsApp foi conectado com sucesso.</p>
-            </div>
-          </body>
-        </html>
-      `);
-    }
-
-    res.send(`
-      <html>
-        <head>
-          <title>QR Code WhatsApp</title>
-          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-          <script>setTimeout(() => location.reload(), 30000);</script>
-        </head>
-        <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
-          <div class="container">
-            <h1 class="text-success">Escaneie o QR Code para conectar</h1>
-            <img src="${qrCodeImage}" class="img-fluid my-3" alt="QR Code" />
-            <div class="status fs-4 fw-bold ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
-              ${connectionStatus}
-            </div>
-            <div class="status-alert mt-2 fs-5 ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
-              ${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Conecte seu WhatsApp escaneando o código."}
-            </div>
+  res.send(`
+    <html>
+      <head>
+        <title>QR Code WhatsApp</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script>setTimeout(() => location.reload(), 10000);</script>
+      </head>
+      <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
+        <div class="container">
+          <h1 class="text-success">${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Escaneie o QR Code para conectar"}</h1>
+          ${qrImageHtml}
+          <div class="status fs-4 fw-bold ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
+            ${connectionStatus}
           </div>
-        </body>
-      </html>
-    `);
-  } catch (error) {
-    console.error("Erro ao gerar QR Code:", error);
-    res.send('Erro ao gerar QR Code');
-  }
+          <div class="status-alert mt-2 fs-5 ${connectionStatus === "Conectado" ? 'text-success' : 'text-danger'}">
+            ${connectionStatus === "Conectado" ? "Você está conectado ao WhatsApp!" : "Conecte seu WhatsApp escaneando o código."}
+          </div>
+        </div>
+      </body>
+    </html>
+  `);
 });
 
+// Inicia o servidor
+app.listen(port, () => {
+  console.log(`Servidor rodando em http://localhost:${port}`);
+});
 // Inicia o servidor
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
