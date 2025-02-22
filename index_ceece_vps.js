@@ -14,11 +14,11 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
 
 // Função assíncrona para inicializar o servidor e o cliente do WhatsApp Web
 (async () => {
- const browser = await puppeteer.launch({
-  args: ['--no-sandbox', '--disable-setuid-sandbox'],
-});
- 
-
+  // Lançando o Puppeteer com um caminho explícito para o Chromium e sem a interface gráfica
+  const browser = await puppeteer.launch({
+    headless: false, // Para ver o navegador sendo iniciado
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
 
   // Servir arquivos estáticos da pasta /var/www/html
   app.use(express.static('/var/www/html'));
@@ -61,6 +61,15 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   client.on('ready', () => {
     console.log('🚀 WhatsApp Web está pronto!');
   });
+
+  // Inicia o cliente do WhatsApp Web
+  client.initialize();
+
+  // Inicia o servidor Express
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+})();
 
   // Inicializa o cliente
   client.initialize();
