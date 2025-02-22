@@ -108,8 +108,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   });
 })();
 
-// Função para criar delay
-const delay = ms => new Promise(res => setTimeout(res, ms));
+
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
