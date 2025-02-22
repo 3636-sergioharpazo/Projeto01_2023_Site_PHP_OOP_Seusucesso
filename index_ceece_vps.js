@@ -4,7 +4,8 @@ const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
-const axios = require('axios');  // Certifique-se de importar o axios, se não tiver feito ainda
+const axios = require('axios'); // Certifique-se de importar o axios, se não tiver feito ainda
+
 const app = express();
 const PORT = 3002;
 
@@ -58,7 +59,30 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   });
 
   // **Registrar evento de mensagem após a inicialização do cliente**
-    // Inicializa o cliente
+  client.on('message', async (msg) => {
+    const chat = await msg.getChat();
+    const contact = await msg.getContact();
+    const nomeCliente = contact.pushname || "Cliente";
+
+    // Mensagem de boas-vindas e menu principal
+    if (/^(menu|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
+      await chat.sendStateTyping();
+      await delay(2000);
+
+      axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
+        timeout: 10000 // 10 segundos de timeout
+      })
+      .then(response => {
+        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
+      })
+      .catch(error => {
+        console.error("Erro ao obter menu:", error);
+        client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
+      });
+    }
+  });
+
+  // Inicializa o cliente
   client.initialize();
 
   // Rota para retornar o status e a imagem do QR Code
@@ -84,29 +108,8 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   });
 })();
 
-  client.on('message', async (msg) => {
-    const chat = await msg.getChat();
-    const contact = await msg.getContact();
-    const nomeCliente = contact.pushname || "Cliente";
-
-    // Mensagem de boas-vindas e menu principal
-    if (/^(menu|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
-      await chat.sendStateTyping();
-      await delay(2000);
-
-      axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
-        timeout: 10000 // 10 segundos de timeout
-      })
-      .then(response => {
-        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
-      })
-      .catch(error => {
-        console.error("Erro ao obter menu:", error);
-        client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
-      });
-    }
-  
-
+// Função para criar delay
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
