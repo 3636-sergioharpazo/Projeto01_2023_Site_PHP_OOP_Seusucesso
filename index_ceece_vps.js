@@ -1,9 +1,9 @@
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode'); // Usar qrcode para gerar a imagem
+const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
-const puppeteer = require('puppeteer'); // Adicionar puppeteer
+const puppeteer = require('puppeteer');
 const app = express();
 const PORT = 3002;
 
@@ -55,12 +55,15 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   // Quando o WhatsApp estiver pronto
   client.on('ready', () => {
     console.log('🚀 WhatsApp Web está pronto!');
+  });
 
-    // Agora que o cliente está pronto, podemos escutar as mensagens
-    client.on('message', async (msg) => {
-      console.log('Mensagem recebida:', msg.body);
-      // Aqui você pode adicionar a lógica de resposta ou processamento da mensagem
-    });
+  // Escutando mensagens
+  client.on('message', async (msg) => {
+    console.log('Mensagem recebida:', msg.body);
+    // Aqui você pode adicionar lógica para responder às mensagens
+    if (msg.body === 'Oi') {
+      msg.reply('Olá! Como posso ajudar?');
+    }
   });
 
   // Inicializa o cliente
@@ -71,7 +74,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
     const status = client.info ? 'Conectado' : 'Desconectado';
     res.json({
       connectionStatus: status,
-      qrCodeImage: '/qrcodes/qrcode.png', // Caminho acessível via navegador
+      qrCodeImage: '/qrcodes/qrcode.png',
     });
   });
 
