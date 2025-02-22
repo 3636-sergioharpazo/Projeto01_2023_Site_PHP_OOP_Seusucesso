@@ -69,7 +69,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
-})();
+
 
   // Inicializa o cliente
 //  client.initialize();
