@@ -10,7 +10,7 @@ const PORT = 3002;
 // Diretório para salvar o QR Code
 const qrCodeDir = path.join(__dirname, 'qrcodes');
 
-// Definir o servidor para funcionar de forma assíncrona
+// Função assíncrona para inicializar o servidor e o cliente do WhatsApp Web
 (async () => {
   const browser = await puppeteer.launch(); // Usar puppeteer de forma assíncrona
 
@@ -57,7 +57,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
     console.log('Mensagem recebida:', msg.body);
     // Aqui você pode adicionar lógica para responder às mensagens
     if (msg.body === 'Oi') {
-      msg.reply('Olá! Como posso ajudar?');
+      await msg.reply('Olá! Como posso ajudar?');
     }
   });
 
