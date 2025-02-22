@@ -1,5 +1,5 @@
 const express = require('express');
-const { client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
@@ -61,29 +61,6 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   // Inicializa o cliente
   client.initialize();
 
-  // Rota para retornar o status e a imagem do QR Code
-  app.get('/status', (req, res) => {
-    const status = client.info ? 'Conectado' : 'Desconectado';
-    res.json({
-      connectionStatus: status,
-      qrCodeImage: '/qrcodes/qrcode.png', // Caminho acessível via navegador
-    });
-  });
-
-  // Servir arquivos estáticos (QR Code)
-  app.use('/qrcodes', express.static(qrCodeDir));
-
-  // Rota inicial
-  app.get('/', (req, res) => {
-    res.send('Servidor de QR Code do WhatsApp está rodando!');
-  });
-
-  // Inicia o servidor
-  app.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
-  });
-})();
-
   // **Registrar evento de mensagem após a inicialização do cliente**
   client.on('message', async (msg) => {
     const chat = await msg.getChat();
@@ -107,7 +84,6 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
       });
     }
   
-
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -351,7 +327,28 @@ setInterval(async () => {
     console.error('❌ Erro ao executar verificações:', error);
   }
 }, 2 * 60 * 1000);
+ // Rota para retornar o status e a imagem do QR Code
+  app.get('/status', (req, res) => {
+    const status = client.info ? 'Conectado' : 'Desconectado';
+    res.json({
+      connectionStatus: status,
+      qrCodeImage: '/qrcodes/qrcode.png', // Caminho acessível via navegador
+    });
+  });
 
+  // Servir arquivos estáticos (QR Code)
+  app.use('/qrcodes', express.static(qrCodeDir));
+
+  // Rota inicial
+  app.get('/', (req, res) => {
+    res.send('Servidor de QR Code do WhatsApp está rodando!');
+  });
+
+  // Inicia o servidor
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  });
+})();
 });
 // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
