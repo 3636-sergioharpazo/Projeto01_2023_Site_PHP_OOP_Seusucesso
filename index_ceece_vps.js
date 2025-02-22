@@ -72,7 +72,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
 })();
 
   // Inicializa o cliente
-  client.initialize();
+//  client.initialize();
 
   // **Registrar evento de mensagem após a inicialização do cliente**
   client.on('message', async (msg) => {
