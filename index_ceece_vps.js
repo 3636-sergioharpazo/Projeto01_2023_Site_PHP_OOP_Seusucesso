@@ -8,8 +8,8 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = 3002;
 
-// Diretório para salvar o QR Code (pasta 'public/qrcodes')
-const qrCodeDir = path.join(__dirname, 'public', 'qrcodes');
+// Diretório para salvar o QR Code (pasta 'public')
+const qrCodeDir = path.join(__dirname, 'public');
 
 // Função para gerar o QR Code de forma síncrona
 function generateQRCode(qr) {
@@ -20,6 +20,7 @@ function generateQRCode(qr) {
     console.log(`QR Code gerado com sucesso em: ${qrCodePath}`);
   } catch (err) {
     console.error('Erro ao salvar o QR Code:', err);
+    console.log('Tentando gerar o QR Code novamente em 5 segundos...');
     // Tenta novamente se falhar
     setTimeout(() => generateQRCode(qr), 5000); // Tenta novamente após 5 segundos
   }
@@ -76,7 +77,7 @@ function generateQRCode(qr) {
     } else {
       res.json({
         connectionStatus: 'Desconectado',
-        qrCodeImage: '/qrcodes/qrcode.png',  // URL do QR Code acessível ao frontend
+        qrCodeImage: '/public/qrcode.png',  // URL do QR Code acessível ao frontend
       });
     }
   });
@@ -85,6 +86,7 @@ function generateQRCode(qr) {
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
+})();
   // Inicializa o cliente
 //  client.initialize();
 
