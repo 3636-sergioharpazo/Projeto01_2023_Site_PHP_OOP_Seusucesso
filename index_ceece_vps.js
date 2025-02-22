@@ -52,7 +52,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
     console.log('🚀 WhatsApp Web está pronto!');
   });
 
-  // Escutando mensagens - agora dentro do bloco de inicialização do cliente
+  // Escutando mensagens
   client.on('message', async (msg) => {
     console.log('Mensagem recebida:', msg.body);
     // Aqui você pode adicionar lógica para responder às mensagens
