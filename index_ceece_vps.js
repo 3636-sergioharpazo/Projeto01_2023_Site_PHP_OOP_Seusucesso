@@ -14,7 +14,9 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
 
 // Função assíncrona para inicializar o servidor e o cliente do WhatsApp Web
 (async () => {
-  const browser = await puppeteer.launch(); // Usar puppeteer de forma assíncrona
+ const browser = await puppeteer.launch({
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
 
   // Servir arquivos estáticos da pasta /var/www/html
   app.use(express.static('/var/www/html'));
