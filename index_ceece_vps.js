@@ -56,6 +56,15 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
     console.log('🚀 WhatsApp Web está pronto!');
   });
 
+  // **Registrar evento de mensagem após a inicialização do cliente**
+  client.on('message', async (msg) => {
+    console.log('Mensagem recebida:', msg.body);
+    // Aqui você pode adicionar lógica para responder às mensagens
+    if (msg.body === 'Oi') {
+      await msg.reply('Olá! Como posso ajudar?');
+    }
+  });
+
   // Inicializa o cliente
   client.initialize();
 
@@ -81,6 +90,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
     console.log(`Servidor rodando em http://localhost:${PORT}`);
   });
 })();
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
