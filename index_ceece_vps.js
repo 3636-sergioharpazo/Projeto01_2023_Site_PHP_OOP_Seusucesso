@@ -42,15 +42,6 @@ client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
 });
 
-// Escutando mensagens
-client.on('message', async (msg) => {
-  console.log('Mensagem recebida:', msg.body);
-  // Aqui você pode adicionar lógica para responder às mensagens
-  if (msg.body === 'Oi') {
-    await msg.reply('Olá! Como posso ajudar?');
-  }
-});
-
 // Inicializa o cliente
 client.initialize();
 
