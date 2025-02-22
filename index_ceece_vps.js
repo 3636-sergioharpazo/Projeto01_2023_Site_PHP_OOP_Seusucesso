@@ -4,29 +4,40 @@ const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
-const axios = require('axios'); // Certifique-se de importar o axios, se não tiver feito ainda
+const axios = require('axios');
 
 const app = express();
 const PORT = 3002;
 
-// Diretório para salvar o QR Code (diretório 'public')
-const qrCodeDir = path.join(__dirname, 'public');  // Alterado para a pasta 'public'
+// Diretório para salvar o QR Code (pasta 'public' para servir arquivos estáticos)
+const qrCodeDir = path.join(__dirname, 'public', 'qrcodes');
 
-// Tempo em milissegundos para exibir o QR Code (por exemplo, 30 segundos)
-const qrCodeDisplayTime = 30000;  // 30 segundos
+// Função para tentar gerar o QR Code
+async function generateQRCode(qr) {
+  const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
+  try {
+    // Gera e salva o QR Code
+    await qrcode.toFile(qrCodePath, qr);
+    console.log(`QR Code gerado com sucesso em: ${qrCodePath}`);
+  } catch (err) {
+    console.error('Erro ao salvar o QR Code:', err);
+    // Tenta novamente se falhar
+    setTimeout(() => generateQRCode(qr), 5000); // Tenta novamente após 5 segundos
+  }
+}
 
 // Função assíncrona para inicializar o servidor e o cliente do WhatsApp Web
 (async () => {
   // Lançando o Puppeteer com um caminho explícito para o Chromium e sem a interface gráfica
   const browser = await puppeteer.launch({
-    headless: true,  // Rodar no modo sem interface gráfica
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
-  // Servir arquivos estáticos da pasta /var/www/html
-  app.use(express.static(path.join(__dirname, 'public')));  // Altera para a pasta 'public' para servir arquivos
+  // Servir arquivos estáticos da pasta 'public'
+  app.use(express.static(path.join(__dirname, 'public')));
 
-  // Garante que o diretório 'public' existe
+  // Garante que o diretório existe
   if (!fs.existsSync(qrCodeDir)) {
     fs.mkdirSync(qrCodeDir, { recursive: true });
     console.log(`Diretório criado: ${qrCodeDir}`);
@@ -37,35 +48,11 @@ const qrCodeDisplayTime = 30000;  // 30 segundos
     authStrategy: new LocalAuth(),
   });
 
-  // Função para tentar gerar o QR Code novamente
-  const tryGenerateQRCode = (qr) => {
-    const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-    console.log(`Caminho onde o QR Code será salvo: ${qrCodePath}`);
-    
-    // Gera a imagem do QR Code e salva no servidor
-    qrcode.toFile(qrCodePath, qr, (err) => {
-      if (err) {
-        console.error('Erro ao salvar o QR Code:', err);
-        // Tenta gerar novamente após 2 segundos
-        setTimeout(() => tryGenerateQRCode(qr), 2000);
-      } else {
-        console.log(`QR Code salvo com sucesso em: ${qrCodePath}`);
-        
-        // Remove o QR Code após o tempo configurado
-        setTimeout(() => {
-          fs.unlink(qrCodePath, (err) => {
-            if (err) console.error('Erro ao remover o QR Code:', err);
-            else console.log('QR Code removido após o tempo de exibição.');
-          });
-        }, qrCodeDisplayTime);  // Tempo para exibir o QR Code
-      }
-    });
-  };
-
   // Quando o QR Code for gerado
   client.on('qr', (qr) => {
     console.log('QR RECEBIDO');
-    tryGenerateQRCode(qr);  // Chama a função para gerar o QR Code
+    // Chama a função para gerar o QR Code
+    generateQRCode(qr);
   });
 
   // Quando a conexão for autenticada
@@ -90,7 +77,7 @@ const qrCodeDisplayTime = 30000;  // 30 segundos
     } else {
       res.json({
         connectionStatus: 'Desconectado',
-        qrCodeImage: '/qrcode.png',  // URL do QR Code acessível ao frontend
+        qrCodeImage: '/qrcodes/qrcode.png',  // URL do QR Code acessível ao frontend
       });
     }
   });
@@ -99,7 +86,6 @@ const qrCodeDisplayTime = 30000;  // 30 segundos
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
-
   // Inicializa o cliente
 //  client.initialize();
 
