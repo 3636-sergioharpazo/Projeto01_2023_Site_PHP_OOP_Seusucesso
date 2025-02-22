@@ -9,8 +9,11 @@ const axios = require('axios'); // Certifique-se de importar o axios, se não ti
 const app = express();
 const PORT = 3002;
 
-// Diretório para salvar o QR Code (agora será na pasta 'public' para servir arquivos estáticos)
+// Diretório para salvar o QR Code (diretório 'public')
 const qrCodeDir = path.join(__dirname, 'public');  // Alterado para a pasta 'public'
+
+// Tempo em milissegundos para exibir o QR Code (por exemplo, 30 segundos)
+const qrCodeDisplayTime = 30000;  // 30 segundos
 
 // Função assíncrona para inicializar o servidor e o cliente do WhatsApp Web
 (async () => {
@@ -23,7 +26,7 @@ const qrCodeDir = path.join(__dirname, 'public');  // Alterado para a pasta 'pub
   // Servir arquivos estáticos da pasta /var/www/html
   app.use(express.static(path.join(__dirname, 'public')));  // Altera para a pasta 'public' para servir arquivos
 
-  // Garante que o diretório existe
+  // Garante que o diretório 'public' existe
   if (!fs.existsSync(qrCodeDir)) {
     fs.mkdirSync(qrCodeDir, { recursive: true });
     console.log(`Diretório criado: ${qrCodeDir}`);
@@ -34,11 +37,8 @@ const qrCodeDir = path.join(__dirname, 'public');  // Alterado para a pasta 'pub
     authStrategy: new LocalAuth(),
   });
 
-  // Quando o QR Code for gerado
-  client.on('qr', (qr) => {
-    console.log('QR RECEBIDO');
-    
-    // Caminho onde o QR Code será salvo
+  // Função para tentar gerar o QR Code novamente
+  const tryGenerateQRCode = (qr) => {
     const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
     console.log(`Caminho onde o QR Code será salvo: ${qrCodePath}`);
     
@@ -46,10 +46,26 @@ const qrCodeDir = path.join(__dirname, 'public');  // Alterado para a pasta 'pub
     qrcode.toFile(qrCodePath, qr, (err) => {
       if (err) {
         console.error('Erro ao salvar o QR Code:', err);
+        // Tenta gerar novamente após 2 segundos
+        setTimeout(() => tryGenerateQRCode(qr), 2000);
       } else {
         console.log(`QR Code salvo com sucesso em: ${qrCodePath}`);
+        
+        // Remove o QR Code após o tempo configurado
+        setTimeout(() => {
+          fs.unlink(qrCodePath, (err) => {
+            if (err) console.error('Erro ao remover o QR Code:', err);
+            else console.log('QR Code removido após o tempo de exibição.');
+          });
+        }, qrCodeDisplayTime);  // Tempo para exibir o QR Code
       }
     });
+  };
+
+  // Quando o QR Code for gerado
+  client.on('qr', (qr) => {
+    console.log('QR RECEBIDO');
+    tryGenerateQRCode(qr);  // Chama a função para gerar o QR Code
   });
 
   // Quando a conexão for autenticada
