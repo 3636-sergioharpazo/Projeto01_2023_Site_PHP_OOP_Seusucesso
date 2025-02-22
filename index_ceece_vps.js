@@ -4,7 +4,7 @@ const qrcode = require('qrcode'); // Usar qrcode para gerar a imagem
 const path = require('path');
 const app = express();
 const PORT = 3002;
-
+const browser = await puppeteer.launch();
 // Servir arquivos estáticos da pasta /var/www/html
 app.use(express.static('/var/www/html'));
 
@@ -63,6 +63,10 @@ app.get('/status', (req, res) => {
     qrCodeImage: '/qrcodes/qrcode.png', // Caminho acessível via navegador
   });
 });
+const browser = await puppeteer.launch({
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
+
 
 // Servir arquivos estáticos
 app.use('/qrcodes', express.static(qrCodeDir));
