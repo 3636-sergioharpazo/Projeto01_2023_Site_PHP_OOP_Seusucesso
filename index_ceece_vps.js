@@ -7,7 +7,6 @@ const PORT = 3002;
 const browser = await puppeteer.launch();
 // Servir arquivos estáticos da pasta /var/www/html
 app.use(express.static('/var/www/html'));
-
 // Rota padrão para verificar se está funcionando
 app.get('/', (req, res) => {
   res.send('Servidor Node.js rodando na porta 3002');
