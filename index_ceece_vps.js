@@ -364,6 +364,7 @@ setInterval(async () => {
   app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
   });
+})();
 
   // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
