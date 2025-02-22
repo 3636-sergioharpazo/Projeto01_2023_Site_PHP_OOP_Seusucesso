@@ -9,19 +9,19 @@ const axios = require('axios'); // Certifique-se de importar o axios, se não ti
 const app = express();
 const PORT = 3002;
 
-// Diretório para salvar o QR Code
-const qrCodeDir = path.join(__dirname, 'qrcodes');
+// Diretório para salvar o QR Code (agora será na pasta 'public' para servir arquivos estáticos)
+const qrCodeDir = path.join(__dirname, 'public');  // Alterado para a pasta 'public'
 
 // Função assíncrona para inicializar o servidor e o cliente do WhatsApp Web
 (async () => {
   // Lançando o Puppeteer com um caminho explícito para o Chromium e sem a interface gráfica
- const browser = await puppeteer.launch({
-  headless: true,  // Rodar no modo sem interface gráfica
-  args: ['--no-sandbox', '--disable-setuid-sandbox'],
-});
+  const browser = await puppeteer.launch({
+    headless: true,  // Rodar no modo sem interface gráfica
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
 
   // Servir arquivos estáticos da pasta /var/www/html
-  app.use(express.static('/var/www/html'));
+  app.use(express.static(path.join(__dirname, 'public')));  // Altera para a pasta 'public' para servir arquivos
 
   // Garante que o diretório existe
   if (!fs.existsSync(qrCodeDir)) {
@@ -65,11 +65,24 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   // Inicia o cliente do WhatsApp Web
   client.initialize();
 
+  // Rota para fornecer o status e QR Code para o frontend
+  app.get('/status', (req, res) => {
+    if (client.isReady) {
+      res.json({
+        connectionStatus: 'Conectado',
+      });
+    } else {
+      res.json({
+        connectionStatus: 'Desconectado',
+        qrCodeImage: '/qrcode.png',  // URL do QR Code acessível ao frontend
+      });
+    }
+  });
+
   // Inicia o servidor Express
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
-
 
   // Inicializa o cliente
 //  client.initialize();
