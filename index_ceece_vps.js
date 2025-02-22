@@ -77,7 +77,7 @@ function generateQRCode(qr) {
     } else {
       res.json({
         connectionStatus: 'Desconectado',
-        qrCodeImage: '/public/qrcode.png',  // URL do QR Code acessível ao frontend
+        qrCodeImage: '/qrcode.png',  // Ajustado para refletir o caminho correto do QR Code
       });
     }
   });
@@ -86,7 +86,6 @@ function generateQRCode(qr) {
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
-})();
   // Inicializa o cliente
 //  client.initialize();
 
