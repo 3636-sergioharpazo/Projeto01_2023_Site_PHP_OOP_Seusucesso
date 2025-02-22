@@ -328,7 +328,10 @@ setInterval(async () => {
   }
 }, 2 * 60 * 1000);
  // Rota para retornar o status e a imagem do QR Code
-  app.get('/status', (req, res) => {
+ });
+
+  
+   app.get('/status', (req, res) => {
     const status = client.info ? 'Conectado' : 'Desconectado';
     res.json({
       connectionStatus: status,
@@ -349,8 +352,8 @@ setInterval(async () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
   });
 })();
-});
-// Mapa para rastrear quantas vezes cada cliente foi avisado
+
+  // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
 // Função para verificar pedidos e atualizar os clientes
 const verificarPedidos = async (client) => {
