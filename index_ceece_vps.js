@@ -17,11 +17,6 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
   // Servir arquivos estáticos da pasta /var/www/html
   app.use(express.static('/var/www/html'));
 
-  // Rota padrão para verificar se está funcionando
-  app.get('/', (req, res) => {
-    res.send('Servidor Node.js rodando na porta 3002');
-  });
-
   // Garante que o diretório existe
   if (!fs.existsSync(qrCodeDir)) {
     fs.mkdirSync(qrCodeDir, { recursive: true });
@@ -57,7 +52,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
     console.log('🚀 WhatsApp Web está pronto!');
   });
 
-  // Escutando mensagens
+  // Escutando mensagens - agora dentro do bloco de inicialização do cliente
   client.on('message', async (msg) => {
     console.log('Mensagem recebida:', msg.body);
     // Aqui você pode adicionar lógica para responder às mensagens
@@ -74,7 +69,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
     const status = client.info ? 'Conectado' : 'Desconectado';
     res.json({
       connectionStatus: status,
-      qrCodeImage: '/qrcodes/qrcode.png',
+      qrCodeImage: '/qrcodes/qrcode.png', // Caminho acessível via navegador
     });
   });
 
@@ -91,7 +86,6 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
     console.log(`Servidor rodando em http://localhost:${PORT}`);
   });
 })();
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
