@@ -4,20 +4,19 @@ const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
-const axios = require('axios');
 
 const app = express();
 const PORT = 3002;
 
-// Diretório para salvar o QR Code (pasta 'public' para servir arquivos estáticos)
+// Diretório para salvar o QR Code (pasta 'public/qrcodes')
 const qrCodeDir = path.join(__dirname, 'public', 'qrcodes');
 
-// Função para tentar gerar o QR Code
-async function generateQRCode(qr) {
+// Função para gerar o QR Code de forma síncrona
+function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
   try {
-    // Gera e salva o QR Code
-    await qrcode.toFile(qrCodePath, qr);
+    // Gera e salva o QR Code de forma síncrona
+    qrcode.toFileSync(qrCodePath, qr);  // Utilizando a versão síncrona
     console.log(`QR Code gerado com sucesso em: ${qrCodePath}`);
   } catch (err) {
     console.error('Erro ao salvar o QR Code:', err);
