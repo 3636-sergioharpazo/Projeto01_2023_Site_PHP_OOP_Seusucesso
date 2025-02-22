@@ -79,7 +79,7 @@ const qrCodeDir = path.join(__dirname, 'qrcodes');
         client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
       });
     }
-  });
+  
 
   // Inicializa o cliente
   client.initialize();
