@@ -1,4 +1,6 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+//const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, Auth } = require('whatsapp-web.js'); // Tente `Auth` em vez de `LocalAuth`
+
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
