@@ -2,15 +2,17 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
-const rimraf = require('rimraf'); // Adicione rimraf para remover diretórios não vazios
+const rimraf = require('rimraf'); // Para remover diretórios não vazios
 const express = require('express');
 const axios = require('axios');
+const { exec } = require('child_process');
+
 const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
-let qrCodeGeneratedAt = null;  // Registra o timestamp da geração do QR Code
+let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
 let sessionData = null; // Armazena a sessão do cliente
 
 let reconnectAttempts = 0;  // Conta tentativas de reconexão
@@ -48,17 +50,15 @@ function restartClient() {
   isQRCodeGenerated = false;
   qrCodeGeneratedAt = null;
 
-  // Diretório da sessão que será removido
-  const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default/Default');
-  
-  // Usa o rimraf para remover o diretório (mesmo que não esteja vazio)
+  // Diretório de sessão completo que será removido
+  const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
   rimraf(sessionDir, (err) => {
     if (err) {
       console.error('Erro ao remover a sessão:', err);
     } else {
       console.log('Sessão removida com sucesso.');
     }
-    client.initialize(); // Após limpar, reinicializa o cliente
+    client.initialize(); // Reinicializa o cliente após a limpeza
   });
 }
 
@@ -72,6 +72,19 @@ function attemptReconnect() {
     console.log('🛑 Tentativas de reconexão excedidas. Reiniciando o cliente com um novo QR Code...');
     restartClient(); // Reinicia o cliente após 10 tentativas
   }
+}
+
+// Função para verificar conexão com a internet (ping ao Google)
+function checkInternetConnection(callback) {
+  exec('ping -c 1 google.com', (error, stdout, stderr) => {
+    if (error) {
+      console.log('🌐 Sem conexão com a internet.');
+      callback(false);
+    } else {
+      console.log('🌐 Conexão de internet verificada.');
+      callback(true);
+    }
+  });
 }
 
 // Configuração do cliente com LocalAuth e ajustes no Puppeteer
@@ -90,7 +103,7 @@ const client = new Client({
       '--no-zygote',
       '--disable-gpu'
     ],
-    timeout: 120000, // 120 segundos de timeout
+    timeout: 180000, // 180 segundos de timeout
     ignoreHTTPSErrors: true
   }
 });
@@ -116,9 +129,6 @@ client.on('disconnected', (reason) => {
   attemptReconnect();
 });
 
-// Inicializa o cliente do WhatsApp Web
-client.initialize();
-
 // Verifica a cada 10 segundos se passaram 5 minutos sem conexão e tenta reconectar
 setInterval(() => {
   if (!client.isReady && qrCodeGeneratedAt) {
@@ -129,6 +139,15 @@ setInterval(() => {
     }
   }
 }, 10000);
+
+// Inicializa o cliente somente se houver conexão com a internet
+checkInternetConnection((isConnected) => {
+  if (isConnected) {
+    client.initialize();
+  } else {
+    console.log('Aguardando conexão com a internet...');
+  }
+});
 
 // Endpoint para fornecer o status e QR Code para o frontend
 app.get('/status', (req, res) => {
@@ -151,9 +170,10 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
 
-// Exemplo de interação com o usuário (bot responde mensagens)
+// Função para criar delay (usada para simular digitação)
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
+// Evento para interação com o usuário: responde mensagens recebidas
 client.on('message', async (msg) => {
   const chat = await msg.getChat();
   const contact = await msg.getContact();
