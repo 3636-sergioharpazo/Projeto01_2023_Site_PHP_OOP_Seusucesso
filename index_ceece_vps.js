@@ -1,6 +1,4 @@
-//const { Client, LocalAuth } = require('whatsapp-web.js');
-const { Client, Auth } = require('whatsapp-web.js'); // Tente `Auth` em vez de `LocalAuth`
-
+/const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
@@ -43,6 +41,16 @@ function generateQRCode(qr) {
   });
 }
 
+// Função para reiniciar o cliente e gerar um novo QR Code
+function restartClient() {
+  console.log('Reiniciando o cliente para gerar um novo QR Code...');
+  reconnectAttempts = 0;  // Reseta as tentativas de reconexão
+  client.removeAllListeners();
+  isQRCodeGenerated = false;
+  qrCodeGeneratedAt = null;
+  client.initialize();
+}
+
 // Função para tentar restabelecer a conexão automaticamente
 function attemptReconnect() {
   console.log('Tentando restabelecer a conexão...');
@@ -51,7 +59,8 @@ function attemptReconnect() {
   if (reconnectAttempts <= 10) {
     client.initialize();  // Tenta reconectar
   } else {
-    console.log('🛑 Tentativas de reconexão excedidas.');
+    console.log('🛑 Tentativas de reconexão excedidas. Reiniciando o cliente com um novo QR Code...');
+    restartClient();  // Reinicia o cliente após 10 tentativas
   }
 }
 
