@@ -41,10 +41,7 @@ function generateQRCode(qr) {
     });
   });
 }
-client.on('disconnected', (reason) => {
-  console.log(`❌ Cliente desconectado: ${reason}`);
-  attemptReconnect();
-});
+
 
 
 // Função para reiniciar o cliente e gerar um novo QR Code
@@ -66,7 +63,10 @@ function restartClient() {
     client.initialize(); // Reinicializa o cliente após a limpeza
   });
 }
-
+client.on('disconnected', (reason) => {
+  console.log(`❌ Cliente desconectado: ${reason}`);
+  attemptReconnect();
+});
 // Função para tentar restabelecer a conexão automaticamente
 function attemptReconnect() {
   console.log('Tentando restabelecer a conexão...');
