@@ -62,7 +62,15 @@ const client = new Client({
     }
   }),
   puppeteer: {
-    args: ['--no-sandbox', '--disable-setuid-sandbox'] // Adicionando a flag para desabilitar o sandbox
+args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--no-first-run',
+    '--no-zygote',
+    '--disable-gpu',
+  ],
   }
 });
 
