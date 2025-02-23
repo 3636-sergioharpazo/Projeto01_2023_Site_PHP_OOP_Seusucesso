@@ -33,7 +33,7 @@ function generateQRCode(qr) {
       } else {
         console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
         isQRCodeGenerated = true;
-        qrCodeGeneratedAt = new Date().toLocaleString();  // Registra a hora da geração
+        qrCodeGeneratedAt = Date.now();  // Registra o timestamp da geração
       }
     });
   });
@@ -41,14 +41,10 @@ function generateQRCode(qr) {
 
 // Função para reiniciar o cliente e gerar um novo QR Code
 function restartClient() {
-  // Remove os ouvintes antigos e reinicia o cliente
+  console.log('Reiniciando o cliente para gerar um novo QR Code...');
   client.removeAllListeners();
-  
-  // Zera a variável de controle
   isQRCodeGenerated = false;
   qrCodeGeneratedAt = null;
-  
-  // Inicializa novamente o cliente
   client.initialize();
 }
 
@@ -76,21 +72,23 @@ const client = new Client({
   }
 });
 
-// Eventos do cliente
+// Quando o QR Code for gerado
 client.on('qr', (qr) => {
   console.log('QR RECEBIDO');
   generateQRCode(qr);
 });
 
+// Quando a conexão for autenticada
 client.on('authenticated', () => {
   console.log('✅ Autenticado com sucesso!');
 });
 
+// Quando o WhatsApp estiver pronto
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
 });
 
-// Detecta desconexão e reinicia o cliente para gerar novo QR Code
+// Detecta desconexão e gera novo QR Code
 client.on('disconnected', () => {
   console.log('❌ Cliente desconectado, gerando novo QR Code...');
   restartClient();
@@ -98,6 +96,17 @@ client.on('disconnected', () => {
 
 // Inicia o cliente do WhatsApp Web
 client.initialize();
+
+// Verifica a cada 10 segundos se já se passaram 3 minutos sem conexão
+setInterval(() => {
+  if (!client.isReady && qrCodeGeneratedAt) {
+    const elapsed = Date.now() - qrCodeGeneratedAt;
+    if (elapsed >= 180000) { // 3 minutos = 180000 milissegundos
+      console.log('⏱️ 3 minutos sem conexão. Reiniciando o cliente para gerar novo QR Code.');
+      restartClient();
+    }
+  }
+}, 10000);
 
 // Rota para fornecer o status e QR Code para o frontend
 app.get('/status', (req, res) => {
@@ -109,7 +118,7 @@ app.get('/status', (req, res) => {
     res.json({
       connectionStatus: 'Desconectado!',
       qrCodeImage: '/qrcode.png',  // URL do QR Code gerado
-      qrCodeGeneratedAt: qrCodeGeneratedAt  // Hora da geração do QR Code
+      qrCodeGeneratedAt: qrCodeGeneratedAt ? new Date(qrCodeGeneratedAt).toLocaleString() : null
     });
   }
 });
@@ -121,7 +130,6 @@ app.use(express.static('/var/www/html'));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // **Registrar evento de mensagem após a inicialização do cliente**
