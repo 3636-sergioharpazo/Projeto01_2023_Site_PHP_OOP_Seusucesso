@@ -4,10 +4,8 @@ const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
-
 const app = express();
 const PORT = 3002;
-
 // Diretório para salvar o QR Code (pasta /var/www/html)
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
