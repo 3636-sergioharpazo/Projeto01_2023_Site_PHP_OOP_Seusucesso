@@ -56,31 +56,28 @@ app.get('/status', (req, res) => {
       connectionStatus: 'Conectado',
     });
   } else {
-    res.json({
-      connectionStatus: 'Desconectado !',
-      qrCodeImage: '/qrcode.png',
-    });
+    // Assegure-se de que o arquivo esteja presente no diretório
+    const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
+    if (fs.existsSync(qrCodePath)) {
+      res.json({
+        connectionStatus: 'Desconectado',
+        qrCodeImage: '/qrcode.png',  // Isso deve apontar para o arquivo gerado
+      });
+    } else {
+      res.json({
+        connectionStatus: 'Erro ao gerar QR Code',
+      });
+    }
   }
 });
 
 // Servir arquivos estáticos da pasta /var/www/html
-app.use(express.static('/var/www/html'));
+app.use(express.static(qrCodeDir));
 
 // Inicia o servidor Express
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-async function initializeClient() {
-  try {
-    await client.initialize();
-    console.log("Cliente WhatsApp Web inicializado com sucesso!");
-  } catch (error) {
-    console.error("Erro ao inicializar o cliente:", error);
-  }
-}
-
-initializeClient();
-
   // Inicializa o cliente
 //  client.initialize();
 
