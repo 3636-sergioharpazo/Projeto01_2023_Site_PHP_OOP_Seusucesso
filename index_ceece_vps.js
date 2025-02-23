@@ -368,7 +368,7 @@ setInterval(async () => {
   });
 
  
-});
+
 
   // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
