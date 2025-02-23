@@ -2,7 +2,7 @@
   "name": "antoniooliveiraceece",
   "version": "1.0.0",
   "scripts": {
-    "start": "node index_ceece.js"
+    "start": "node index_ceece_vps.js"
   },
     "dependencies": {
       "express": "^4.18.2",
