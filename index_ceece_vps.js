@@ -6,7 +6,6 @@ const fs = require('fs');
 
 const app = express();
 const PORT = 3002;
-
 // Diretório para salvar o QR Code
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
