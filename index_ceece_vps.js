@@ -48,6 +48,12 @@ function restartClient() {
   client.initialize();
 }
 
+// Função para tentar restabelecer a conexão automaticamente
+function attemptReconnect() {
+  console.log('Tentando restabelecer a conexão...');
+  client.initialize();
+}
+
 // Configuração do cliente com LocalAuth e ajustes no Puppeteer
 const client = new Client({
   authStrategy: new LocalAuth({
@@ -86,8 +92,8 @@ client.on('ready', () => {
 
 client.on('disconnected', (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
-  console.log('Reiniciando o cliente...');
-  restartClient();
+  console.log('Tentando restabelecer a conexão...');
+  attemptReconnect();  // Tenta restabelecer a conexão
 });
 
 // Inicia o cliente do WhatsApp Web
@@ -98,8 +104,8 @@ setInterval(() => {
   if (!client.isReady && qrCodeGeneratedAt) {
     const elapsed = Date.now() - qrCodeGeneratedAt;
     if (elapsed >= 300000) { // 5 minutos em milissegundos
-      console.log('⏱️ 5 minutos sem conexão. Reiniciando o cliente para gerar novo QR Code.');
-      restartClient();
+      console.log('⏱️ 5 minutos sem conexão. Tentando restabelecer a conexão...');
+      attemptReconnect();
     }
   }
 }, 10000);
