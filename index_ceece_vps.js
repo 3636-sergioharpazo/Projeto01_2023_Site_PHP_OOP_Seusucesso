@@ -8,13 +8,13 @@ const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
-let qrCodeGeneratedAt = null;  // Variável para armazenar a hora da geração
+let qrCodeGeneratedAt = null;  // Armazena o timestamp da geração do QR Code
 
 // Função para gerar o QR Code de forma assíncrona e salvar
 function generateQRCode(qr) {
   if (isQRCodeGenerated) {
     console.log("QR Code já foi gerado, não será gerado novamente.");
-    return; // Se o QR Code já foi gerado, não gera novamente
+    return;
   }
 
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
@@ -25,7 +25,6 @@ function generateQRCode(qr) {
       return;
     }
     
-    // A imagem está em base64, vamos escrever no arquivo
     const base64Data = url.replace(/^data:image\/png;base64,/, '');
     fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
       if (writeErr) {
@@ -33,7 +32,7 @@ function generateQRCode(qr) {
       } else {
         console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
         isQRCodeGenerated = true;
-        qrCodeGeneratedAt = Date.now();  // Registra o timestamp da geração
+        qrCodeGeneratedAt = Date.now();  // Registra o timestamp atual
       }
     });
   });
@@ -48,12 +47,11 @@ function restartClient() {
   client.initialize();
 }
 
-// Configuração do cliente com LocalAuth e ajustes no Puppeteer para desempenho
+// Configuração do cliente com LocalAuth e ajustes no Puppeteer
 const client = new Client({
   authStrategy: new LocalAuth({
-    clientId: 'default', // ID único do cliente (pode ser personalizado)
+    clientId: 'default', // ID único do cliente
     sessionData: {
-      // Diretório para armazenar os dados da sessão
       directory: '/var/www/html/.wwebjs_auth'
     }
   }),
@@ -72,25 +70,22 @@ const client = new Client({
   }
 });
 
-// Quando o QR Code for gerado
+// Eventos do cliente
 client.on('qr', (qr) => {
   console.log('QR RECEBIDO');
   generateQRCode(qr);
 });
 
-// Quando a conexão for autenticada
 client.on('authenticated', () => {
   console.log('✅ Autenticado com sucesso!');
 });
 
-// Quando o WhatsApp estiver pronto
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
 });
 
-// Detecta desconexão e gera novo QR Code
 client.on('disconnected', () => {
-  console.log('❌ Cliente desconectado, gerando novo QR Code...');
+  console.log('❌ Cliente desconectado, reiniciando para gerar novo QR Code...');
   restartClient();
 });
 
@@ -101,7 +96,7 @@ client.initialize();
 setInterval(() => {
   if (!client.isReady && qrCodeGeneratedAt) {
     const elapsed = Date.now() - qrCodeGeneratedAt;
-    if (elapsed >= 180000) { // 3 minutos = 180000 milissegundos
+    if (elapsed >= 180000) { // 3 minutos em milissegundos
       console.log('⏱️ 3 minutos sem conexão. Reiniciando o cliente para gerar novo QR Code.');
       restartClient();
     }
@@ -117,14 +112,14 @@ app.get('/status', (req, res) => {
   } else {
     res.json({
       connectionStatus: 'Desconectado!',
-      qrCodeImage: '/qrcode.png',  // URL do QR Code gerado
+      qrCodeImage: '/qrcode.png',
       qrCodeGeneratedAt: qrCodeGeneratedAt ? new Date(qrCodeGeneratedAt).toLocaleString() : null
     });
   }
 });
 
 // Servir arquivos estáticos da pasta /var/www/html
-app.use(express.static('/var/www/html'));
+app.use(express.static(qrCodeDir));
 
 // Inicia o servidor Express
 app.listen(PORT, () => {
