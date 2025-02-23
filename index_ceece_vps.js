@@ -42,8 +42,6 @@ function generateQRCode(qr) {
   });
 }
 
-
-
 // Função para reiniciar o cliente e gerar um novo QR Code
 function restartClient() {
   console.log('Reiniciando o cliente para gerar um novo QR Code...');
@@ -63,10 +61,7 @@ function restartClient() {
     client.initialize(); // Reinicializa o cliente após a limpeza
   });
 }
-client.on('disconnected', (reason) => {
-  console.log(`❌ Cliente desconectado: ${reason}`);
-  attemptReconnect();
-});
+
 // Função para tentar restabelecer a conexão automaticamente
 function attemptReconnect() {
   console.log('Tentando restabelecer a conexão...');
@@ -129,6 +124,11 @@ client.on('ready', () => {
   console.log('Cliente conectado com sucesso!');
 });
 
+client.on('disconnected', (reason) => {
+  console.log(`❌ Cliente desconectado: ${reason}`);
+  attemptReconnect();
+});
+
 // Verifica a cada 10 segundos se passaram 5 minutos sem conexão e tenta reconectar
 setInterval(() => {
   if (!client.isReady && qrCodeGeneratedAt) {
@@ -186,20 +186,18 @@ client.on('message', async (msg) => {
     axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
       timeout: 10000
     })
-    .then(response => {
-      client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
-    })
-    .catch(error => {
-      console.error("Erro ao obter menu:", error);
-      client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
-    });
+      .then(response => {
+        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
+      })
+      .catch(error => {
+        console.error("Erro ao obter menu:", error);
+        client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
+      });
   } else {
     await chat.sendStateTyping();
     await delay(2000);
     client.sendMessage(msg.from, `Desculpe, ${nomeCliente.split(" ")[0]}, não entendi sua mensagem. Tente digitar 'menu', 'oi' ou outra opção.`);
   }
-
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // Definição das opções do menu
