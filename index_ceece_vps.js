@@ -30,6 +30,15 @@ function generateQRCode(qr) {
   });
 }
 
+// Função para reiniciar o cliente e gerar um novo QR Code
+function restartClient() {
+  // Remove os ouvintes antigos e reinicia o cliente
+  client.removeAllListeners();
+  
+  // Inicializa novamente o cliente
+  client.initialize();
+}
+
 // Configuração do cliente com a opção de --no-sandbox e desabilitar exclusão do diretório de sessão
 const client = new Client({
   authStrategy: new LocalAuth({
@@ -58,6 +67,12 @@ client.on('authenticated', () => {
 // Quando o WhatsApp estiver pronto
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
+});
+
+// Detectar desconexão e gerar novo QR Code
+client.on('disconnected', () => {
+  console.log('❌ Cliente desconectado, gerando novo QR Code...');
+  restartClient();  // Reinicia o cliente e gera um novo QR Code
 });
 
 // Inicia o cliente do WhatsApp Web
