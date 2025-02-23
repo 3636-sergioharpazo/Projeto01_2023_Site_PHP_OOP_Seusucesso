@@ -2,16 +2,18 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
+const rimraf = require('rimraf'); // Adicione rimraf para remover diretórios não vazios
 const express = require('express');
+const axios = require('axios');
 const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
-let qrCodeGeneratedAt = null;  // Armazena o timestamp da geração do QR Code
-let sessionData = null; // Para armazenar a sessão do cliente
+let qrCodeGeneratedAt = null;  // Registra o timestamp da geração do QR Code
+let sessionData = null; // Armazena a sessão do cliente
 
-let reconnectAttempts = 0;  // Variável para contar tentativas de reconexão
+let reconnectAttempts = 0;  // Conta tentativas de reconexão
 
 // Função para gerar o QR Code de forma assíncrona e salvar
 function generateQRCode(qr) {
@@ -19,15 +21,12 @@ function generateQRCode(qr) {
     console.log("QR Code já foi gerado, não será gerado novamente.");
     return;
   }
-
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  
   qrcode.toDataURL(qr, (err, url) => {
     if (err) {
       console.error('Erro ao gerar o QR Code:', err);
       return;
     }
-    
     const base64Data = url.replace(/^data:image\/png;base64,/, '');
     fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
       if (writeErr) {
@@ -35,7 +34,7 @@ function generateQRCode(qr) {
       } else {
         console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
         isQRCodeGenerated = true;
-        qrCodeGeneratedAt = Date.now();  // Registra o timestamp atual
+        qrCodeGeneratedAt = Date.now();
       }
     });
   });
@@ -44,30 +43,41 @@ function generateQRCode(qr) {
 // Função para reiniciar o cliente e gerar um novo QR Code
 function restartClient() {
   console.log('Reiniciando o cliente para gerar um novo QR Code...');
-  reconnectAttempts = 0;  // Reseta as tentativas de reconexão
+  reconnectAttempts = 0; // Reseta as tentativas de reconexão
   client.removeAllListeners();
   isQRCodeGenerated = false;
   qrCodeGeneratedAt = null;
-  client.initialize();
+
+  // Diretório da sessão que será removido
+  const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default/Default');
+  
+  // Usa o rimraf para remover o diretório (mesmo que não esteja vazio)
+  rimraf(sessionDir, (err) => {
+    if (err) {
+      console.error('Erro ao remover a sessão:', err);
+    } else {
+      console.log('Sessão removida com sucesso.');
+    }
+    client.initialize(); // Após limpar, reinicializa o cliente
+  });
 }
 
 // Função para tentar restabelecer a conexão automaticamente
 function attemptReconnect() {
   console.log('Tentando restabelecer a conexão...');
   reconnectAttempts++;
-
   if (reconnectAttempts <= 10) {
-    client.initialize();  // Tenta reconectar
+    client.initialize(); // Tenta reconectar
   } else {
     console.log('🛑 Tentativas de reconexão excedidas. Reiniciando o cliente com um novo QR Code...');
-    restartClient();  // Reinicia o cliente após 10 tentativas
+    restartClient(); // Reinicia o cliente após 10 tentativas
   }
 }
 
 // Configuração do cliente com LocalAuth e ajustes no Puppeteer
 const client = new Client({
   authStrategy: new LocalAuth({
-    clientId: 'default', // ID único do cliente
+    clientId: 'default',
     sessionData: sessionData,
   }),
   puppeteer: {
@@ -80,7 +90,7 @@ const client = new Client({
       '--no-zygote',
       '--disable-gpu'
     ],
-    timeout: 120000,  // 120 segundos de timeout
+    timeout: 120000, // 120 segundos de timeout
     ignoreHTTPSErrors: true
   }
 });
@@ -93,39 +103,37 @@ client.on('qr', (qr) => {
 
 client.on('authenticated', (session) => {
   console.log('✅ Autenticado com sucesso!');
-  sessionData = session;  // Armazena a sessão para evitar novo login
+  sessionData = session; // Armazena a sessão para evitar novo login
 });
 
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
-  console.log('Cliente conectado com sucesso!');  // Mensagem no log quando o cliente estiver conectado
+  console.log('Cliente conectado com sucesso!');
 });
 
 client.on('disconnected', (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
-  attemptReconnect();  // Tenta restabelecer a conexão
+  attemptReconnect();
 });
 
-// Inicia o cliente do WhatsApp Web
+// Inicializa o cliente do WhatsApp Web
 client.initialize();
 
-// Verifica a cada 10 segundos se já se passaram 5 minutos sem conexão
+// Verifica a cada 10 segundos se passaram 5 minutos sem conexão e tenta reconectar
 setInterval(() => {
   if (!client.isReady && qrCodeGeneratedAt) {
     const elapsed = Date.now() - qrCodeGeneratedAt;
-    if (elapsed >= 300000) { // 5 minutos em milissegundos
+    if (elapsed >= 300000) { // 5 minutos
       console.log('⏱️ 5 minutos sem conexão. Tentando restabelecer a conexão...');
       attemptReconnect();
     }
   }
 }, 10000);
 
-// Rota para fornecer o status e QR Code para o frontend
+// Endpoint para fornecer o status e QR Code para o frontend
 app.get('/status', (req, res) => {
   if (client.isReady) {
-    res.json({
-      connectionStatus: 'Conectado'
-    });
+    res.json({ connectionStatus: 'Conectado' });
   } else {
     res.json({
       connectionStatus: 'Desconectado!',
@@ -135,12 +143,41 @@ app.get('/status', (req, res) => {
   }
 });
 
-// Servir arquivos estáticos da pasta /var/www/html
+// Servir arquivos estáticos da pasta onde o QR Code foi salvo
 app.use(express.static(qrCodeDir));
 
 // Inicia o servidor Express
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+});
+
+// Exemplo de interação com o usuário (bot responde mensagens)
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
+client.on('message', async (msg) => {
+  const chat = await msg.getChat();
+  const contact = await msg.getContact();
+  const nomeCliente = contact.pushname || "Cliente";
+
+  // Responde a comandos de saudação ou menu
+  if (/^(menu|oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
+    await chat.sendStateTyping();
+    await delay(2000);
+    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
+      timeout: 10000
+    })
+    .then(response => {
+      client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
+    })
+    .catch(error => {
+      console.error("Erro ao obter menu:", error);
+      client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
+    });
+  } else {
+    await chat.sendStateTyping();
+    await delay(2000);
+    client.sendMessage(msg.from, `Desculpe, ${nomeCliente.split(" ")[0]}, não entendi sua mensagem. Tente digitar 'menu', 'oi' ou outra opção.`);
+  }
 });
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
