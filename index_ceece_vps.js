@@ -11,33 +11,33 @@ const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
-let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
+let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code (pode ser usado para lógica adicional)
 let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
 let sessionData = null; // Armazena a sessão do cliente
 
 let reconnectAttempts = 0;  // Conta tentativas de reconexão
 
-// Função para gerar o QR Code de forma assíncrona e salvar
+// Função para gerar o QR Code e salvar (forçando a substituição da imagem)
 function generateQRCode(qr) {
-  if (isQRCodeGenerated) {
-    console.log("QR Code já foi gerado, não será gerado novamente.");
-    return;
-  }
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  qrcode.toDataURL(qr, (err, url) => {
-    if (err) {
-      console.error('Erro ao gerar o QR Code:', err);
-      return;
-    }
-    const base64Data = url.replace(/^data:image\/png;base64,/, '');
-    fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
-      if (writeErr) {
-        console.error('Erro ao salvar o QR Code:', writeErr);
-      } else {
-        console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
-        isQRCodeGenerated = true;
-        qrCodeGeneratedAt = Date.now();
+  // Tenta remover o arquivo existente (ignora erro se não existir)
+  fs.unlink(qrCodePath, (unlinkErr) => {
+    // Gera o QR Code e salva
+    qrcode.toDataURL(qr, (err, url) => {
+      if (err) {
+        console.error('Erro ao gerar o QR Code:', err);
+        return;
       }
+      const base64Data = url.replace(/^data:image\/png;base64,/, '');
+      fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
+        if (writeErr) {
+          console.error('Erro ao salvar o QR Code:', writeErr);
+        } else {
+          console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
+          isQRCodeGenerated = true;
+          qrCodeGeneratedAt = Date.now();
+        }
+      });
     });
   });
 }
@@ -198,6 +198,8 @@ client.on('message', async (msg) => {
     await delay(2000);
     client.sendMessage(msg.from, `Desculpe, ${nomeCliente.split(" ")[0]}, não entendi sua mensagem. Tente digitar 'menu', 'oi' ou outra opção.`);
   }
+});
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // Definição das opções do menu
