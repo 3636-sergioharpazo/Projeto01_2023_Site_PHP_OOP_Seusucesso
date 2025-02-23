@@ -6,6 +6,7 @@ const fs = require('fs');
 
 const app = express();
 const PORT = 3002;
+
 // Diretório para salvar o QR Code
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
@@ -18,7 +19,6 @@ function generateQRCode(qr) {
     console.log(`QR Code gerado com sucesso em: ${qrCodePath}`);
   } catch (err) {
     console.error('Erro ao salvar o QR Code:', err);
-    setTimeout(() => generateQRCode(qr), 5000); // Tenta novamente após 5 segundos
   }
 }
 
@@ -42,6 +42,13 @@ client.on('authenticated', () => {
 // Quando o WhatsApp estiver pronto
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
+});
+
+// Quando o WhatsApp se desconectar, gera um novo QR Code
+client.on('disconnected', (reason) => {
+  console.log('🛑 Conexão perdida. Gerando um novo QR Code...');
+  // Gera novamente o QR Code ao se desconectar
+  client.initialize();
 });
 
 // Inicia o cliente do WhatsApp Web
@@ -68,6 +75,7 @@ app.use(express.static('/var/www/html'));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
   // Inicializa o cliente
 //  client.initialize();
 
