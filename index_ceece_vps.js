@@ -9,6 +9,7 @@ const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
 let qrCodeGeneratedAt = null;  // Armazena o timestamp da geração do QR Code
+let sessionData = null; // Para armazenar a sessão do cliente
 
 // Função para gerar o QR Code de forma assíncrona e salvar
 function generateQRCode(qr) {
@@ -51,9 +52,7 @@ function restartClient() {
 const client = new Client({
   authStrategy: new LocalAuth({
     clientId: 'default', // ID único do cliente
-    sessionData: {
-      directory: '/var/www/html/.wwebjs_auth'
-    }
+    sessionData: sessionData,
   }),
   puppeteer: {
     args: [
@@ -76,16 +75,18 @@ client.on('qr', (qr) => {
   generateQRCode(qr);
 });
 
-client.on('authenticated', () => {
+client.on('authenticated', (session) => {
   console.log('✅ Autenticado com sucesso!');
+  sessionData = session;  // Armazena a sessão para evitar novo login
 });
 
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
 });
 
-client.on('disconnected', () => {
-  console.log('❌ Cliente desconectado, reiniciando para gerar novo QR Code...');
+client.on('disconnected', (reason) => {
+  console.log(`❌ Cliente desconectado: ${reason}`);
+  console.log('Reiniciando o cliente...');
   restartClient();
 });
 
@@ -125,6 +126,7 @@ app.use(express.static(qrCodeDir));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // **Registrar evento de mensagem após a inicialização do cliente**
