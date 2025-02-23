@@ -11,18 +11,15 @@ const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
-let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code (pode ser usado para lógica adicional)
+let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
 let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
 let sessionData = null; // Armazena a sessão do cliente
-
 let reconnectAttempts = 0;  // Conta tentativas de reconexão
 
-// Função para gerar o QR Code e salvar (forçando a substituição da imagem)
+// Função para gerar o QR Code e salvar
 function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  // Tenta remover o arquivo existente (ignora erro se não existir)
   fs.unlink(qrCodePath, (unlinkErr) => {
-    // Gera o QR Code e salva
     qrcode.toDataURL(qr, (err, url) => {
       if (err) {
         console.error('Erro ao gerar o QR Code:', err);
@@ -50,7 +47,7 @@ function restartClient() {
   isQRCodeGenerated = false;
   qrCodeGeneratedAt = null;
 
-  // Diretório de sessão completo que será removido
+  // Remover a pasta inteira de sessão
   const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
   rimraf(sessionDir, (err) => {
     if (err) {
@@ -87,7 +84,7 @@ function checkInternetConnection(callback) {
   });
 }
 
-// Configuração do cliente com LocalAuth e ajustes no Puppeteer
+// Configuração do cliente com LocalAuth
 const client = new Client({
   authStrategy: new LocalAuth({
     clientId: 'default',
@@ -103,7 +100,7 @@ const client = new Client({
       '--no-zygote',
       '--disable-gpu'
     ],
-    timeout: 180000, // 180 segundos de timeout
+    timeout: 180000, // 180 segundos
     ignoreHTTPSErrors: true
   }
 });
@@ -116,7 +113,7 @@ client.on('qr', (qr) => {
 
 client.on('authenticated', (session) => {
   console.log('✅ Autenticado com sucesso!');
-  sessionData = session; // Armazena a sessão para evitar novo login
+  sessionData = session;
 });
 
 client.on('ready', () => {
@@ -170,7 +167,7 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
 
-// Função para criar delay (usada para simular digitação)
+// Função para criar delay (simular digitação)
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 // Evento para interação com o usuário: responde mensagens recebidas
@@ -198,8 +195,6 @@ client.on('message', async (msg) => {
     await delay(2000);
     client.sendMessage(msg.from, `Desculpe, ${nomeCliente.split(" ")[0]}, não entendi sua mensagem. Tente digitar 'menu', 'oi' ou outra opção.`);
   }
-
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // Definição das opções do menu
