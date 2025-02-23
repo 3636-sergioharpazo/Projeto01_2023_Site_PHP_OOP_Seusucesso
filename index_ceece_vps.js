@@ -26,13 +26,13 @@ function generateQRCode(qr) {
     }
     
     // A imagem está em base64, vamos escrever no arquivo
-    const base64Data = url.replace(/^data:image\/png;base64,/, ''); // Remove a parte do cabeçalho base64
+    const base64Data = url.replace(/^data:image\/png;base64,/, '');
     fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
       if (writeErr) {
         console.error('Erro ao salvar o QR Code:', writeErr);
       } else {
         console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
-        isQRCodeGenerated = true; // Marca o QR Code como gerado
+        isQRCodeGenerated = true;
         qrCodeGeneratedAt = new Date().toLocaleString();  // Registra a hora da geração
       }
     });
@@ -41,59 +41,59 @@ function generateQRCode(qr) {
 
 // Função para reiniciar o cliente e gerar um novo QR Code
 function restartClient() {
-  // Remover os ouvintes antigos e reiniciar o cliente
+  // Remove os ouvintes antigos e reinicia o cliente
   client.removeAllListeners();
-
-  // Zerar a variável de controle
+  
+  // Zera a variável de controle
   isQRCodeGenerated = false;
-  qrCodeGeneratedAt = null;  // Zera a hora ao reiniciar
-
+  qrCodeGeneratedAt = null;
+  
   // Inicializa novamente o cliente
   client.initialize();
 }
 
-// Configuração do cliente com a opção de --no-sandbox e desabilitar exclusão do diretório de sessão
+// Configuração do cliente com LocalAuth e ajustes no Puppeteer para desempenho
 const client = new Client({
   authStrategy: new LocalAuth({
-    clientId: 'default', // ID único do cliente, você pode personalizar ou manter 'default'
+    clientId: 'default', // ID único do cliente (pode ser personalizado)
     sessionData: {
-      // LocalAuth normalmente salva a sessão em um diretório específico
-      directory: '/var/www/html/.wwebjs_auth'  // Diretório personalizado para armazenar dados da sessão
+      // Diretório para armazenar os dados da sessão
+      directory: '/var/www/html/.wwebjs_auth'
     }
   }),
   puppeteer: {
-args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-accelerated-2d-canvas',
-    '--no-first-run',
-    '--no-zygote',
-    '--disable-gpu',
-  ],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ],
+    timeout: 60000, // Timeout de 60 segundos para a navegação
+    ignoreHTTPSErrors: true
   }
 });
 
-// Quando o QR Code for gerado
+// Eventos do cliente
 client.on('qr', (qr) => {
   console.log('QR RECEBIDO');
   generateQRCode(qr);
 });
 
-// Quando a conexão for autenticada
 client.on('authenticated', () => {
   console.log('✅ Autenticado com sucesso!');
 });
 
-// Quando o WhatsApp estiver pronto
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
 });
 
-// Detectar desconexão e gerar novo QR Code
+// Detecta desconexão e reinicia o cliente para gerar novo QR Code
 client.on('disconnected', () => {
   console.log('❌ Cliente desconectado, gerando novo QR Code...');
-  restartClient();  // Reinicia o cliente e gera um novo QR Code
+  restartClient();
 });
 
 // Inicia o cliente do WhatsApp Web
@@ -103,13 +103,13 @@ client.initialize();
 app.get('/status', (req, res) => {
   if (client.isReady) {
     res.json({
-      connectionStatus: 'Conectado',
+      connectionStatus: 'Conectado'
     });
   } else {
     res.json({
       connectionStatus: 'Desconectado!',
       qrCodeImage: '/qrcode.png',  // URL do QR Code gerado
-      qrCodeGeneratedAt: qrCodeGeneratedAt,  // Hora da geração do QR Code
+      qrCodeGeneratedAt: qrCodeGeneratedAt  // Hora da geração do QR Code
     });
   }
 });
@@ -121,6 +121,7 @@ app.use(express.static('/var/www/html'));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // **Registrar evento de mensagem após a inicialização do cliente**
