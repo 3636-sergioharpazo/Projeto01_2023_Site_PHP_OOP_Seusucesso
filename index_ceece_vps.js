@@ -56,7 +56,7 @@ app.get('/status', (req, res) => {
       connectionStatus: 'Conectado',
     });
   } else {
-    // Assegure-se de que o arquivo esteja presente no diretório
+    // Verificar se o arquivo foi gerado corretamente
     const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
     if (fs.existsSync(qrCodePath)) {
       res.json({
@@ -78,8 +78,6 @@ app.use(express.static(qrCodeDir));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-  // Inicializa o cliente
-//  client.initialize();
 
   // **Registrar evento de mensagem após a inicialização do cliente**
   client.on('message', async (msg) => {
