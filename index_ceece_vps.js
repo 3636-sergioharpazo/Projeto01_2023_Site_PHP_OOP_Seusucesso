@@ -3,6 +3,7 @@ const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
 const puppeteer = require('puppeteer-core');
+const express = require('express');
 
 const app = express();
 const PORT = 3002;
