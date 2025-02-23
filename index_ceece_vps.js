@@ -2,24 +2,32 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
-const puppeteer = require('puppeteer-core');
 const express = require('express');
 
 const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
-// Função para gerar o QR Code de forma síncrona
+// Função para gerar o QR Code de forma assíncrona e salvar
 function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  try {
-    // Gera e salva o QR Code de forma síncrona
-    qrcode.toFileSync(qrCodePath, qr);
-    console.log(`QR Code gerado com sucesso em: ${qrCodePath}`);
-  } catch (err) {
-    console.error('Erro ao salvar o QR Code:', err);
-    setTimeout(() => generateQRCode(qr), 8000); // Tenta novamente após 8 segundos
-  }
+  
+  qrcode.toDataURL(qr, (err, url) => {
+    if (err) {
+      console.error('Erro ao gerar o QR Code:', err);
+      return;
+    }
+    
+    // A imagem está em base64, vamos escrever no arquivo
+    const base64Data = url.replace(/^data:image\/png;base64,/, ''); // Remove a parte do cabeçalho base64
+    fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
+      if (writeErr) {
+        console.error('Erro ao salvar o QR Code:', writeErr);
+      } else {
+        console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
+      }
+    });
+  });
 }
 
 // Configuração do cliente com a opção de --no-sandbox
@@ -56,29 +64,20 @@ app.get('/status', (req, res) => {
       connectionStatus: 'Conectado',
     });
   } else {
-    // Verificar se o arquivo foi gerado corretamente
-    const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-    if (fs.existsSync(qrCodePath)) {
-      res.json({
-        connectionStatus: 'Desconectado',
-        qrCodeImage: '/qrcode.png',  // Isso deve apontar para o arquivo gerado
-      });
-    } else {
-      res.json({
-        connectionStatus: 'Erro ao gerar QR Code',
-      });
-    }
+    res.json({
+      connectionStatus: 'Desconectado !',
+      qrCodeImage: '/qrcode.png',
+    });
   }
 });
 
 // Servir arquivos estáticos da pasta /var/www/html
-app.use(express.static(qrCodeDir));
+app.use(express.static('/var/www/html'));
 
 // Inicia o servidor Express
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
   // **Registrar evento de mensagem após a inicialização do cliente**
   client.on('message', async (msg) => {
     const chat = await msg.getChat();
