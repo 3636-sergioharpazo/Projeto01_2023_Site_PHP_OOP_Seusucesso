@@ -88,6 +88,7 @@ client.on('authenticated', (session) => {
 
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
+  console.log('Cliente conectado com sucesso!');  // Mensagem no log quando o cliente estiver conectado
 });
 
 client.on('disconnected', (reason) => {
