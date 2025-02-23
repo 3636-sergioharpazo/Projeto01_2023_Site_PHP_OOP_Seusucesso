@@ -2,37 +2,35 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
+const puppeteer = require('puppeteer-core');
 const express = require('express');
 
 const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
-// Função para gerar o QR Code de forma assíncrona e salvar
+// Função para gerar o QR Code de forma síncrona
 function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  
-  qrcode.toDataURL(qr, (err, url) => {
-    if (err) {
-      console.error('Erro ao gerar o QR Code:', err);
-      return;
-    }
-    
-    // A imagem está em base64, vamos escrever no arquivo
-    const base64Data = url.replace(/^data:image\/png;base64,/, ''); // Remove a parte do cabeçalho base64
-    fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
-      if (writeErr) {
-        console.error('Erro ao salvar o QR Code:', writeErr);
-      } else {
-        console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
-      }
-    });
-  });
+  try {
+    // Gera e salva o QR Code de forma síncrona
+    qrcode.toFileSync(qrCodePath, qr);
+    console.log(`QR Code gerado com sucesso em: ${qrCodePath}`);
+  } catch (err) {
+    console.error('Erro ao salvar o QR Code:', err);
+    setTimeout(() => generateQRCode(qr), 8000); // Tenta novamente após 8 segundos
+  }
 }
 
 // Configuração do cliente com a opção de --no-sandbox
 const client = new Client({
-  authStrategy: new LocalAuth(),
+  authStrategy: new LocalAuth({
+    clientId: 'client', // Nome do cliente para identificar a sessão
+    // Desabilitar a exclusão automática de diretórios de sessão
+    sessionData: {
+      removeSessionOnLogout: false, // Impede a exclusão do diretório de sessão
+    }
+  }),
   puppeteer: {
     args: ['--no-sandbox', '--disable-setuid-sandbox'] // Adicionando a flag para desabilitar o sandbox
   }
@@ -78,7 +76,6 @@ app.use(express.static('/var/www/html'));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // **Registrar evento de mensagem após a inicialização do cliente**
