@@ -2,33 +2,41 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
-const puppeteer = require('puppeteer-core');
 const express = require('express');
 
 const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
-// Função para gerar o QR Code de forma síncrona
+// Função para gerar o QR Code de forma assíncrona e salvar
 function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  try {
-    // Gera e salva o QR Code de forma síncrona
-    qrcode.toFileSync(qrCodePath, qr);
-    console.log(`QR Code gerado com sucesso em: ${qrCodePath}`);
-  } catch (err) {
-    console.error('Erro ao salvar o QR Code:', err);
-    setTimeout(() => generateQRCode(qr), 8000); // Tenta novamente após 8 segundos
-  }
+  
+  qrcode.toDataURL(qr, (err, url) => {
+    if (err) {
+      console.error('Erro ao gerar o QR Code:', err);
+      return;
+    }
+    
+    // A imagem está em base64, vamos escrever no arquivo
+    const base64Data = url.replace(/^data:image\/png;base64,/, ''); // Remove a parte do cabeçalho base64
+    fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
+      if (writeErr) {
+        console.error('Erro ao salvar o QR Code:', writeErr);
+      } else {
+        console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
+      }
+    });
+  });
 }
 
-// Configuração do cliente com a opção de --no-sandbox
+// Configuração do cliente com a opção de --no-sandbox e desabilitar exclusão do diretório de sessão
 const client = new Client({
   authStrategy: new LocalAuth({
-    clientId: 'client', // Nome do cliente para identificar a sessão
-    // Desabilitar a exclusão automática de diretórios de sessão
+    clientId: 'default', // ID único do cliente, você pode personalizar ou manter 'default'
     sessionData: {
-      removeSessionOnLogout: false, // Impede a exclusão do diretório de sessão
+      // LocalAuth normalmente salva a sessão em um diretório específico
+      directory: '/var/www/html/.wwebjs_auth'  // Diretório personalizado para armazenar dados da sessão
     }
   }),
   puppeteer: {
@@ -64,7 +72,7 @@ app.get('/status', (req, res) => {
   } else {
     res.json({
       connectionStatus: 'Desconectado !',
-      qrCodeImage: '/qrcode.png',
+      qrCodeImage: '/qrcode.png',  // URL do QR Code gerado
     });
   }
 });
