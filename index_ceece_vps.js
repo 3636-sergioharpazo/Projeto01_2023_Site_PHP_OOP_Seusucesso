@@ -8,6 +8,7 @@ const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
+let qrCodeGeneratedAt = null;  // Variável para armazenar a hora da geração
 
 // Função para gerar o QR Code de forma assíncrona e salvar
 function generateQRCode(qr) {
@@ -32,6 +33,7 @@ function generateQRCode(qr) {
       } else {
         console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
         isQRCodeGenerated = true; // Marca o QR Code como gerado
+        qrCodeGeneratedAt = new Date().toLocaleString();  // Registra a hora da geração
       }
     });
   });
@@ -44,6 +46,7 @@ function restartClient() {
 
   // Zerar a variável de controle
   isQRCodeGenerated = false;
+  qrCodeGeneratedAt = null;  // Zera a hora ao reiniciar
 
   // Inicializa novamente o cliente
   client.initialize();
@@ -98,6 +101,7 @@ app.get('/status', (req, res) => {
     res.json({
       connectionStatus: 'Desconectado!',
       qrCodeImage: '/qrcode.png',  // URL do QR Code gerado
+      qrCodeGeneratedAt: qrCodeGeneratedAt,  // Hora da geração do QR Code
     });
   }
 });
