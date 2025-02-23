@@ -41,6 +41,11 @@ function generateQRCode(qr) {
     });
   });
 }
+client.on('disconnected', (reason) => {
+  console.log(`❌ Cliente desconectado: ${reason}`);
+  attemptReconnect();
+});
+
 
 // Função para reiniciar o cliente e gerar um novo QR Code
 function restartClient() {
@@ -122,11 +127,6 @@ client.on('authenticated', (session) => {
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
   console.log('Cliente conectado com sucesso!');
-});
-
-client.on('disconnected', (reason) => {
-  console.log(`❌ Cliente desconectado: ${reason}`);
-  attemptReconnect();
 });
 
 // Verifica a cada 10 segundos se passaram 5 minutos sem conexão e tenta reconectar
