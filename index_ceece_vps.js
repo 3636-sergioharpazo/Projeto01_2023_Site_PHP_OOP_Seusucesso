@@ -198,7 +198,7 @@ client.on('message', async (msg) => {
     await delay(2000);
     client.sendMessage(msg.from, `Desculpe, ${nomeCliente.split(" ")[0]}, não entendi sua mensagem. Tente digitar 'menu', 'oi' ou outra opção.`);
   }
-});
+
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
