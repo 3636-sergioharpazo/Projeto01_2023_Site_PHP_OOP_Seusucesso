@@ -57,7 +57,7 @@ app.get('/status', (req, res) => {
     });
   } else {
     res.json({
-      connectionStatus: 'Desconectado',
+      connectionStatus: 'Desconectado !',
       qrCodeImage: '/qrcode.png',
     });
   }
