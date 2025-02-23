@@ -1,13 +1,11 @@
-const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
+const puppeteer = require('puppeteer-core');
 
 const app = express();
 const PORT = 3002;
-
-// Diretório para salvar o QR Code
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
 // Função para gerar o QR Code de forma síncrona
@@ -19,18 +17,21 @@ function generateQRCode(qr) {
     console.log(`QR Code gerado com sucesso em: ${qrCodePath}`);
   } catch (err) {
     console.error('Erro ao salvar o QR Code:', err);
+    setTimeout(() => generateQRCode(qr), 8000); // Tenta novamente após 8 segundos
   }
 }
 
-// Cliente do WhatsApp Web
+// Configuração do cliente com a opção de --no-sandbox
 const client = new Client({
   authStrategy: new LocalAuth(),
+  puppeteer: {
+    args: ['--no-sandbox', '--disable-setuid-sandbox'] // Adicionando a flag para desabilitar o sandbox
+  }
 });
 
 // Quando o QR Code for gerado
 client.on('qr', (qr) => {
   console.log('QR RECEBIDO');
-  // Chama a função para gerar o QR Code
   generateQRCode(qr);
 });
 
@@ -42,13 +43,6 @@ client.on('authenticated', () => {
 // Quando o WhatsApp estiver pronto
 client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
-});
-
-// Quando o WhatsApp se desconectar, gera um novo QR Code
-client.on('disconnected', (reason) => {
-  console.log('🛑 Conexão perdida. Gerando um novo QR Code...');
-  // Gera novamente o QR Code ao se desconectar
-  client.initialize();
 });
 
 // Inicia o cliente do WhatsApp Web
