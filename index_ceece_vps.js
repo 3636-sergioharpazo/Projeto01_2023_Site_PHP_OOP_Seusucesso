@@ -9,7 +9,7 @@ const app = express();
 const PORT = 3002;
 
 // Diretório para salvar o QR Code (pasta /var/www/html)
-const qrCodeDir = '/var/www/html';
+const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
 // Função para gerar o QR Code de forma síncrona
 function generateQRCode(qr) {
@@ -86,7 +86,6 @@ function generateQRCode(qr) {
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
-
   // Inicializa o cliente
 //  client.initialize();
 
