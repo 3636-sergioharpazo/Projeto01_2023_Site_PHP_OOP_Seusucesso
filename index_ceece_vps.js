@@ -78,6 +78,9 @@ app.use(express.static('/var/www/html'));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
+// Função para criar delay
+const delay = ms => new Promise(res => setTimeout(res, ms));
   // **Registrar evento de mensagem após a inicialização do cliente**
   client.on('message', async (msg) => {
     const chat = await msg.getChat();
