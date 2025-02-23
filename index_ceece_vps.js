@@ -3,13 +3,19 @@ const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
-const axios = require('axios');
 const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
+let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
+
 // Função para gerar o QR Code de forma assíncrona e salvar
 function generateQRCode(qr) {
+  if (isQRCodeGenerated) {
+    console.log("QR Code já foi gerado, não será gerado novamente.");
+    return; // Se o QR Code já foi gerado, não gera novamente
+  }
+
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
   
   qrcode.toDataURL(qr, (err, url) => {
@@ -25,6 +31,7 @@ function generateQRCode(qr) {
         console.error('Erro ao salvar o QR Code:', writeErr);
       } else {
         console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
+        isQRCodeGenerated = true; // Marca o QR Code como gerado
       }
     });
   });
@@ -32,9 +39,12 @@ function generateQRCode(qr) {
 
 // Função para reiniciar o cliente e gerar um novo QR Code
 function restartClient() {
-  // Remove os ouvintes antigos e reinicia o cliente
+  // Remover os ouvintes antigos e reiniciar o cliente
   client.removeAllListeners();
-  
+
+  // Zerar a variável de controle
+  isQRCodeGenerated = false;
+
   // Inicializa novamente o cliente
   client.initialize();
 }
@@ -86,7 +96,7 @@ app.get('/status', (req, res) => {
     });
   } else {
     res.json({
-      connectionStatus: 'Desconectado !',
+      connectionStatus: 'Desconectado!',
       qrCodeImage: '/qrcode.png',  // URL do QR Code gerado
     });
   }
