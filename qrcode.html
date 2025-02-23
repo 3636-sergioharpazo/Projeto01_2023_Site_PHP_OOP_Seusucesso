@@ -47,7 +47,7 @@
           statusElement.classList.remove('text-success');
           statusElement.classList.add('text-danger');
           statusMessage.textContent = 'Escaneie o QR Code para conectar';
-          qrCodeContainer.innerHTML = `<img src="${data.qrCodeImage}" class="img-fluid my-3" alt="QR Code" />`;
+          qrCodeContainer.innerHTML = `<img src="qrcode.png" class="img-fluid my-3" alt="QR Code" />`;
         }
       } catch (error) {
         console.error('Erro ao buscar o status:', error);
