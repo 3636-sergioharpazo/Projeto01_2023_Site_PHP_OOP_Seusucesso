@@ -61,18 +61,19 @@ const client = new Client({
     sessionData: sessionData,
   }),
   puppeteer: {
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu'
-    ],
-    timeout: 60000, // Timeout de 60 segundos para a navegação
-    ignoreHTTPSErrors: true
-  }
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--no-first-run',
+    '--no-zygote',
+    '--disable-gpu'
+  ],
+  timeout: 120000,  // 120 segundos de timeout
+  ignoreHTTPSErrors: true
+}
+
 });
 
 // Eventos do cliente
