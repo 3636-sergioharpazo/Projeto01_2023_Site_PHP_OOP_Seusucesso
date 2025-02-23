@@ -75,6 +75,16 @@ app.use(express.static('/var/www/html'));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+async function initializeClient() {
+  try {
+    await client.initialize();
+    console.log("Cliente WhatsApp Web inicializado com sucesso!");
+  } catch (error) {
+    console.error("Erro ao inicializar o cliente:", error);
+  }
+}
+
+initializeClient();
 
   // Inicializa o cliente
 //  client.initialize();
@@ -357,19 +367,8 @@ setInterval(async () => {
     });
   });
 
-  // Servir arquivos estáticos (QR Code)
-  app.use('/qrcodes', express.static(qrCodeDir));
-
-  // Rota inicial
-  app.get('/', (req, res) => {
-    res.send('Servidor de QR Code do WhatsApp está rodando!');
-  });
-
-  // Inicia o servidor
-  app.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
-  });
-})();
+ 
+});
 
   // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
