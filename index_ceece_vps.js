@@ -93,16 +93,17 @@ client.on('disconnected', (reason) => {
 // Inicia o cliente do WhatsApp Web
 client.initialize();
 
-// Verifica a cada 10 segundos se já se passaram 3 minutos sem conexão
+// Verifica a cada 10 segundos se já se passaram 5 minutos sem conexão
 setInterval(() => {
   if (!client.isReady && qrCodeGeneratedAt) {
     const elapsed = Date.now() - qrCodeGeneratedAt;
-    if (elapsed >= 180000) { // 3 minutos em milissegundos
-      console.log('⏱️ 3 minutos sem conexão. Reiniciando o cliente para gerar novo QR Code.');
+    if (elapsed >= 300000) { // 5 minutos em milissegundos
+      console.log('⏱️ 5 minutos sem conexão. Reiniciando o cliente para gerar novo QR Code.');
       restartClient();
     }
   }
 }, 10000);
+
 
 // Rota para fornecer o status e QR Code para o frontend
 app.get('/status', (req, res) => {
