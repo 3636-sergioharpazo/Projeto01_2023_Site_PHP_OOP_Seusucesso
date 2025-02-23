@@ -56,11 +56,11 @@ function attemptReconnect() {
   console.log('Tentando restabelecer a conexão...');
   reconnectAttempts++;
 
-  if (reconnectAttempts <= 3) {
+  if (reconnectAttempts <= 10) {
     client.initialize();  // Tenta reconectar
   } else {
     console.log('🛑 Tentativas de reconexão excedidas. Reiniciando o cliente com um novo QR Code...');
-    restartClient();  // Reinicia o cliente após 3 tentativas
+    restartClient();  // Reinicia o cliente após 10 tentativas
   }
 }
 
@@ -142,7 +142,6 @@ app.use(express.static(qrCodeDir));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // **Registrar evento de mensagem após a inicialização do cliente**
