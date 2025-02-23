@@ -11,6 +11,8 @@ let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
 let qrCodeGeneratedAt = null;  // Armazena o timestamp da geração do QR Code
 let sessionData = null; // Para armazenar a sessão do cliente
 
+let reconnectAttempts = 0;  // Variável para contar tentativas de reconexão
+
 // Função para gerar o QR Code de forma assíncrona e salvar
 function generateQRCode(qr) {
   if (isQRCodeGenerated) {
@@ -42,6 +44,7 @@ function generateQRCode(qr) {
 // Função para reiniciar o cliente e gerar um novo QR Code
 function restartClient() {
   console.log('Reiniciando o cliente para gerar um novo QR Code...');
+  reconnectAttempts = 0;  // Reseta as tentativas de reconexão
   client.removeAllListeners();
   isQRCodeGenerated = false;
   qrCodeGeneratedAt = null;
@@ -51,7 +54,14 @@ function restartClient() {
 // Função para tentar restabelecer a conexão automaticamente
 function attemptReconnect() {
   console.log('Tentando restabelecer a conexão...');
-  client.initialize();
+  reconnectAttempts++;
+
+  if (reconnectAttempts <= 3) {
+    client.initialize();  // Tenta reconectar
+  } else {
+    console.log('🛑 Tentativas de reconexão excedidas. Reiniciando o cliente com um novo QR Code...');
+    restartClient();  // Reinicia o cliente após 3 tentativas
+  }
 }
 
 // Configuração do cliente com LocalAuth e ajustes no Puppeteer
@@ -61,19 +71,18 @@ const client = new Client({
     sessionData: sessionData,
   }),
   puppeteer: {
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-accelerated-2d-canvas',
-    '--no-first-run',
-    '--no-zygote',
-    '--disable-gpu'
-  ],
-  timeout: 120000,  // 120 segundos de timeout
-  ignoreHTTPSErrors: true
-}
-
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ],
+    timeout: 120000,  // 120 segundos de timeout
+    ignoreHTTPSErrors: true
+  }
 });
 
 // Eventos do cliente
@@ -94,7 +103,6 @@ client.on('ready', () => {
 
 client.on('disconnected', (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
-  console.log('Tentando restabelecer a conexão...');
   attemptReconnect();  // Tenta restabelecer a conexão
 });
 
@@ -111,7 +119,6 @@ setInterval(() => {
     }
   }
 }, 10000);
-
 
 // Rota para fornecer o status e QR Code para o frontend
 app.get('/status', (req, res) => {
