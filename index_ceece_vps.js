@@ -8,8 +8,8 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = 3002;
 
-// Diretório para salvar o QR Code (pasta 'public')
-const qrCodeDir = path.join(__dirname, 'public');
+// Diretório para salvar o QR Code (pasta /var/www/html)
+const qrCodeDir = '/var/www/html';
 
 // Função para gerar o QR Code de forma síncrona
 function generateQRCode(qr) {
@@ -34,8 +34,8 @@ function generateQRCode(qr) {
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
-  // Servir arquivos estáticos da pasta 'public'
-  app.use(express.static(path.join(__dirname, 'public')));
+  // Servir arquivos estáticos da pasta /var/www/html
+  app.use(express.static('/var/www/html'));
 
   // Garante que o diretório existe
   if (!fs.existsSync(qrCodeDir)) {
@@ -86,6 +86,7 @@ function generateQRCode(qr) {
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
+
   // Inicializa o cliente
 //  client.initialize();
 
