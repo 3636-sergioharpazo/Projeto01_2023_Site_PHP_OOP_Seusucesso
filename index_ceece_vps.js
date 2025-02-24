@@ -122,6 +122,21 @@ client.on('ready', () => {
   console.log('🚀 WhatsApp Web está pronto!');
   console.log('Cliente conectado com sucesso!');
 });
+// Endpoint para fornecer o status e QR Code para o frontend
+app.get('/status', (req, res) => {
+  if (isClientReady) {
+    res.json({ connectionStatus: 'Conectado' });
+  } else {
+    res.json({
+      connectionStatus: 'Desconectado!',
+      qrCodeImage: '/qrcode.png',
+      qrCodeGeneratedAt: qrCodeGeneratedAt ? new Date(qrCodeGeneratedAt).toLocaleString() : null
+    });
+  }
+});
+
+
+
 
 
 client.on('disconnected', (reason) => {
@@ -148,20 +163,6 @@ checkInternetConnection((isConnected) => {
     console.log('Aguardando conexão com a internet...');
   }
 });
-
-// Endpoint para fornecer o status e QR Code para o frontend
-app.get('/status', (req, res) => {
-  if (isClientReady) {
-    res.json({ connectionStatus: 'Conectado' });
-  } else {
-    res.json({
-      connectionStatus: 'Desconectado!',
-      qrCodeImage: '/qrcode.png',
-      qrCodeGeneratedAt: qrCodeGeneratedAt ? new Date(qrCodeGeneratedAt).toLocaleString() : null
-    });
-  }
-});
-
 
 // Servir arquivos estáticos da pasta onde o QR Code foi salvo
 app.use(express.static(qrCodeDir));
