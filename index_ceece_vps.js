@@ -177,17 +177,26 @@ client.on('message', async (msg) => {
   const nomeCliente = contact.pushname || "Cliente";
 
   // Responde a comandos de saudação ou menu
-  if (/^(menu|oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
-    await chat.sendStateTyping();
-    await delay(2000);
-    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu').then(response => {
-        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
-      })
-      .catch(error => {
-        console.error("Erro ao obter menu:", error);
-        client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
-      });
-  } 
+  if (/^(menu|oi|ol[áa]|boa noite|bom dia|voltar)$/i.test(msg.body)) {
+  await chat.sendStateTyping();
+  await delay(2000);
+
+  axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
+    .then(response => {
+      console.log("Resposta do menu:", response.data); // Log da resposta
+      console.log("Nome do cliente:", nomeCliente); // Verificar se nomeCliente está definido
+
+      client.sendMessage(
+        msg.from, 
+        `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}\n\nDigite *voltar* para retornar ao menu.`
+      );
+    })
+    .catch(error => {
+      console.error("Erro ao obter menu:", error); // Log do erro
+      client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
+    });
+}
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
   // Definição das opções do menu
