@@ -180,10 +180,7 @@ client.on('message', async (msg) => {
   if (/^(menu|oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
     await chat.sendStateTyping();
     await delay(2000);
-    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
-      timeout: 10000
-    })
-      .then(response => {
+    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu').then(response => {
         client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
       })
       .catch(error => {
