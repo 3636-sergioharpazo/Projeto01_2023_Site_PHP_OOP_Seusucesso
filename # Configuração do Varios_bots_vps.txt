@@ -1,0 +1,78 @@
+# Configuração do Bot 1
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name chatceecegril.antoniooliveira.shop;
+
+    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+
+    root /var/www/html/bot1;
+    index index.html index.htm;
+
+    location / {
+        proxy_pass http://127.0.0.1:3002;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# Configuração do Bot 2
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name bot2.antoniooliveira.shop;
+
+    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+
+    root /var/www/html/bot2;
+    index index.html index.htm;
+
+    location / {
+        proxy_pass http://127.0.0.1:3003;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# Configuração do Bot 3
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name bot3.antoniooliveira.shop;
+
+    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+
+    root /var/www/html/bot3;
+    index index.html index.htm;
+
+    location / {
+        proxy_pass http://127.0.0.1:3004;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# Redirecionamento de HTTP para HTTPS
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name chatceecegril.antoniooliveira.shop bot2.antoniooliveira.shop bot3.antoniooliveira.shop;
+
+    return 301 https://$host$request_uri;
+}
