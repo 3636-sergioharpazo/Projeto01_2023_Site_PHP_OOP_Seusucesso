@@ -39,14 +39,14 @@ server {
     listen 8443 ssl;
     listen [::]:8443 ssl;
 
-    server_name chatlojaterel.antoniooliveira.shop;
+    server_name chatlojasterel.antoniooliveira.shop;
 
     # Configuração do SSL
     ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
     ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
 
     # Raiz do site
-    root /var/www/html;
+    root /var/www/html/bot2;
     index index.html index.htm;
 
     # Proxy para o serviço na porta 3003
@@ -65,7 +65,7 @@ server {
     listen 8080;
     listen [::]:8080;
 
-    server_name chatlojaterel.antoniooliveira.shop;
+    server_name chatlojasterel.antoniooliveira.shop;
 
     return 301 https://$host:8443$request_uri;  # Redireciona HTTP para HTTPS
 }
