@@ -87,8 +87,8 @@ function checkInternetConnection(callback) {
 // Configuração do cliente com LocalAuth
 const client = new Client({
   authStrategy: new LocalAuth({
-    clientId: 'ceecegril'
-    }),
+    dataPath: qrCodeDir,  // Usando o diretório especificado para armazenar os dados de autenticação
+  }),
   puppeteer: {
     args: [
       '--no-sandbox',
