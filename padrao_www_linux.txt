@@ -34,10 +34,10 @@ server {
     return 301 https://$host:8443$request_uri;  # Redireciona HTTP para HTTPS
 }
 
-# Configuração para o domínio chatlojaterel.antoniooliveira.shop (HTTPS na porta 8443)
+# Configuração para o domínio chatlojasterel.antoniooliveira.shop (HTTPS na porta 8080)
 server {
-    listen 8443 ssl;
-    listen [::]:8443 ssl;
+    listen 8080 ssl;
+    listen [::]:8080 ssl;
 
     server_name chatlojasterel.antoniooliveira.shop;
 
@@ -60,12 +60,12 @@ server {
     }
 }
 
-# Redirecionar HTTP para HTTPS para chatlojaterel.antoniooliveira.shop (porta 8080 para 8443)
+# Redirecionar HTTP para HTTPS para chatlojasterel.antoniooliveira.shop (porta 8080 para 8080)
 server {
     listen 8080;
     listen [::]:8080;
 
     server_name chatlojasterel.antoniooliveira.shop;
 
-    return 301 https://$host:8443$request_uri;  # Redireciona HTTP para HTTPS
+    return 301 https://$host:8080$request_uri;  # Redireciona HTTP para HTTPS
 }
