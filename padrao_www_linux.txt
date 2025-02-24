@@ -1,16 +1,8 @@
-# nano /etc/nginx/sites-available/default
-# pm2 start app.js --name my-app
-# sudo lsof -i :3002
-# sudo systemctl restart nginx
-
-
-
-
 server {
-    listen 443 ssl default_server;
-    listen [::]:443 ssl default_server;
+    listen 443 ssl;
+    listen [::]:443 ssl;
 
-    server_name 92.112.179.191;
+    server_name chatceecegril.antoniooliveira.shop;
 
     # Configuração do SSL
     ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
@@ -19,20 +11,7 @@ server {
     # Raiz do site
     root /var/www/html;
     index index.html index.htm;
-
-    # Servir diretamente o arquivo qrcode.html
-    location = /qrcode.html {
-        root /var/www/html;  # Define o diretório raiz
-        try_files $uri =404;  # Verifica se o arquivo existe e serve diretamente
-    }
-
-    # Servir diretamente o arquivo qrcode.png
-    location = /qrcode.png {
-        root /var/www/html;
-        try_files $uri =404;
-    }
-
-    # Proxy para o serviço na porta 3002
+   # Proxy para o serviço na porta 3002
     location / {
         proxy_pass http://127.0.0.1:3002;
         proxy_http_version 1.1;
@@ -48,6 +27,11 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
-    server_name 92.112.179.191;
+    server_name chatceecegril.antoniooliveira.shop;
 
-    root /var/www/html;
+    return 301 https://$host$request_uri;  # Redireciona HTTP para HTTPS
+}
+
+
+
+
