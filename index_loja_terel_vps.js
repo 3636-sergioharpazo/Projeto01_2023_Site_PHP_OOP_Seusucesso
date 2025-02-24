@@ -10,6 +10,7 @@ const app = express();
 
 const PORT = 3003;
 const qrCodeDir = '/var/www/html/bot2';  // Diretório onde o QR será salvo
+require('events').EventEmitter.defaultMaxListeners = 100; // Ou um número maior, se necessário
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
 let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
