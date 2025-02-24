@@ -176,8 +176,6 @@ app.listen(PORT, () => {
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-// Função para criar delay
-const delay = ms => new Promise(res => setTimeout(res, ms));
 
 // Variáveis para armazenar os dados do cliente e do agendamento
 let cliente_nome = '';
