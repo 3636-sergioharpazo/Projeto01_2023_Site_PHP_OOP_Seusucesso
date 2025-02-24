@@ -116,10 +116,13 @@ client.on('authenticated', (session) => {
   sessionData = session;
 });
 
+let isClientReady = false;
 client.on('ready', () => {
+   isClientReady = true;
   console.log('🚀 WhatsApp Web está pronto!');
   console.log('Cliente conectado com sucesso!');
 });
+
 
 client.on('disconnected', (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
@@ -148,7 +151,7 @@ checkInternetConnection((isConnected) => {
 
 // Endpoint para fornecer o status e QR Code para o frontend
 app.get('/status', (req, res) => {
-  if (client.isReady) {
+  if (isClientReady) {
     res.json({ connectionStatus: 'Conectado' });
   } else {
     res.json({
@@ -158,6 +161,7 @@ app.get('/status', (req, res) => {
     });
   }
 });
+
 
 // Servir arquivos estáticos da pasta onde o QR Code foi salvo
 app.use(express.static(qrCodeDir));
