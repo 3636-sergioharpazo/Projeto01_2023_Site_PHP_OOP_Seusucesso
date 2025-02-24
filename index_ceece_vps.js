@@ -15,6 +15,7 @@ let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
 let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
 let sessionData = null; // Armazena a sessão do cliente
 let reconnectAttempts = 0;  // Conta tentativas de reconexão
+require('events').EventEmitter.defaultMaxListeners = 100; // Ou um número maior, se necessário
 
 // Função para gerar o QR Code e salvar
 function generateQRCode(qr) {
