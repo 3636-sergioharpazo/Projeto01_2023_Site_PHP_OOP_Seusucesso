@@ -87,8 +87,7 @@ function checkInternetConnection(callback) {
 // Configuração do cliente com LocalAuth
 const client = new Client({
   authStrategy: new LocalAuth({
-    clientId: 'default',
-    sessionData: sessionData,
+    clientId: 'lojasterel'
   }),
   puppeteer: {
     args: [
