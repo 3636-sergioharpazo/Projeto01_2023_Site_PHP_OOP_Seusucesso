@@ -167,38 +167,35 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
 
-// Função para criar delay (simular digitação)
-const delay = ms => new Promise(res => setTimeout(res, ms));
 
-// Evento para interação com o usuário: responde mensagens recebidas
+
+// Função para criar delay
+const delay = ms => new Promise(res => setTimeout(res, ms));
+// Manipulação de Mensagens
+const pedidosPendentes = {};
+
 client.on('message', async (msg) => {
   const chat = await msg.getChat();
   const contact = await msg.getContact();
   const nomeCliente = contact.pushname || "Cliente";
 
-  // Responde a comandos de saudação ou menu
-  if (/^(menu|oi|ol[áa]|boa noite|bom dia|voltar)$/i.test(msg.body)) {
-  await chat.sendStateTyping();
-  await delay(2000);
+  // Mensagem de boas-vindas e menu principal
+ if (/^(menu|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
+    await chat.sendStateTyping();
+    await delay(2000);
 
-  axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu')
-    .then(response => {
-      console.log("Resposta do menu:", response.data); // Log da resposta
-      console.log("Nome do cliente:", nomeCliente); // Verificar se nomeCliente está definido
+    axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
+          timeout: 10000 // 10 segundos de timeout
+        })
+      .then(response => {
+        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
+      })
+      .catch(error => {
+        console.error("Erro ao obter menu:", error);
+        client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
+      });
+  }
 
-      client.sendMessage(
-        msg.from, 
-        `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}\n\nDigite *voltar* para retornar ao menu.`
-      );
-    })
-    .catch(error => {
-      console.error("Erro ao obter menu:", error); // Log do erro
-      client.sendMessage(msg.from, "Desculpe, não foi possível obter o menu no momento. Tente novamente mais tarde.");
-    });
-}
-
-// Função para criar delay
-const delay = ms => new Promise(res => setTimeout(res, ms));
   // Definição das opções do menu
   const menuOpcoes = {
     '1': 'cardapio',
@@ -439,22 +436,9 @@ setInterval(async () => {
     console.error('❌ Erro ao executar verificações:', error);
   }
 }, 2 * 60 * 1000);
- // Rota para retornar o status e a imagem do QR Code
- });
 
-  
-   app.get('/status', (req, res) => {
-    const status = client.info ? 'Conectado' : 'Desconectado';
-    res.json({
-      connectionStatus: status,
-      qrCodeImage: '/qrcodes/qrcode.png', // Caminho acessível via navegador
-    });
-  });
-
- 
-
-
-  // Mapa para rastrear quantas vezes cada cliente foi avisado
+});
+// Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
 // Função para verificar pedidos e atualizar os clientes
 const verificarPedidos = async (client) => {
