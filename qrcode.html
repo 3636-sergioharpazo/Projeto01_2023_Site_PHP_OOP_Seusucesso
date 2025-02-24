@@ -27,34 +27,35 @@
   </div>
 
   <script>
-    async function fetchStatus() {
-      try {
-        const response = await fetch('/status');
-        const data = await response.json();
+   async function fetchStatus() {
+  try {
+    const response = await fetch('/status?' + new Date().getTime());
+    const data = await response.json();
 
-        const statusElement = document.getElementById('status');
-        const statusMessage = document.getElementById('statusMessage');
-        const qrCodeContainer = document.getElementById('qrCodeContainer');
+    const statusElement = document.getElementById('status');
+    const statusMessage = document.getElementById('statusMessage');
+    const qrCodeContainer = document.getElementById('qrCodeContainer');
 
-        if (data.connectionStatus === 'Conectado') {
-          statusElement.textContent = 'Conectado';
-          statusElement.classList.remove('text-danger');
-          statusElement.classList.add('text-success');
-          statusMessage.textContent = 'Você está conectado ao WhatsApp!';
-          qrCodeContainer.innerHTML = ''; // Remove o QR Code ao conectar
-        } else {
-          statusElement.textContent = 'Desconectado';
-          statusElement.classList.remove('text-success');
-          statusElement.classList.add('text-danger');
-          statusMessage.textContent = 'Escaneie o QR Code para conectar';
-          qrCodeContainer.innerHTML = `<img src="qrcode.png" class="img-fluid my-3" alt="QR Code" />`;
-        }
-      } catch (error) {
-        console.error('Erro ao buscar o status:', error);
-      }
+    if (data.connectionStatus === 'Conectado') {
+      statusElement.textContent = 'Conectado';
+      statusElement.classList.remove('text-danger');
+      statusElement.classList.add('text-success');
+      statusMessage.textContent = 'Você está conectado ao WhatsApp!';
+      qrCodeContainer.innerHTML = ''; // Remove o QR Code ao conectar
+    } else {
+      statusElement.textContent = 'Desconectado';
+      statusElement.classList.remove('text-success');
+      statusElement.classList.add('text-danger');
+      statusMessage.textContent = 'Escaneie o QR Code para conectar';
+      qrCodeContainer.innerHTML = `<img src="qrcode.png" class="img-fluid my-3" alt="QR Code" />`;
     }
+  } catch (error) {
+    console.error('Erro ao buscar o status:', error);
+  }
+}
 
-    fetchStatus(); // Executa ao carregar a página
-  </script>
+fetchStatus();
+setInterval(fetchStatus, 5000); // atualiza a cada 5 segundos
+</script>
 </body>
 </html>
