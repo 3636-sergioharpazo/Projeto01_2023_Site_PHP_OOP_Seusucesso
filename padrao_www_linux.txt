@@ -1,7 +1,7 @@
-# Configuração para o domínio chatceecegril.antoniooliveira.shop
+# Configuração para o domínio chatceecegril.antoniooliveira.shop (HTTPS na porta 8443)
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen 8443 ssl;
+    listen [::]:8443 ssl;
 
     server_name chatceecegril.antoniooliveira.shop;
 
@@ -24,20 +24,20 @@ server {
     }
 }
 
-# Redirecionar HTTP para HTTPS para chatceecegril.antoniooliveira.shop
+# Redirecionar HTTP para HTTPS para chatceecegril.antoniooliveira.shop (porta 8080 para 8443)
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    listen 8080;
+    listen [::]:8080;
 
     server_name chatceecegril.antoniooliveira.shop;
 
-    return 301 https://$host$request_uri;  # Redireciona HTTP para HTTPS
+    return 301 https://$host:8443$request_uri;  # Redireciona HTTP para HTTPS
 }
 
-# Configuração para o domínio chatlojaterel.antoniooliveira.shop
+# Configuração para o domínio chatlojaterel.antoniooliveira.shop (HTTPS na porta 8443)
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen 8443 ssl;
+    listen [::]:8443 ssl;
 
     server_name chatlojaterel.antoniooliveira.shop;
 
@@ -60,12 +60,12 @@ server {
     }
 }
 
-# Redirecionar HTTP para HTTPS para chatlojaterel.antoniooliveira.shop
+# Redirecionar HTTP para HTTPS para chatlojaterel.antoniooliveira.shop (porta 8080 para 8443)
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    listen 8080;
+    listen [::]:8080;
 
     server_name chatlojaterel.antoniooliveira.shop;
 
-    return 301 https://$host$request_uri;  # Redireciona HTTP para HTTPS
+    return 301 https://$host:8443$request_uri;  # Redireciona HTTP para HTTPS
 }
