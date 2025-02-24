@@ -6,7 +6,6 @@ const rimraf = require('rimraf'); // Para remover diretórios não vazios
 const express = require('express');
 const axios = require('axios');
 const { exec } = require('child_process');
-
 const app = express();
 const PORT = 3003;
 const qrCodeDir = '/var/www/html/bot2';  // Diretório onde o QR será salvo
