@@ -2,6 +2,12 @@
 # cd /var/www/html
 # mkdir bot1 bot2 bot3
 #####passo 2 #########
+#cd /var/www/html/bot2
+#npm init -y
+#npm install whatsapp-web.js qrcode path fs rimraf express axios
+#cd /var/www/html/bot3
+#npm init -y
+#npm install whatsapp-web.js qrcode path fs rimraf express axios
 # npm install -g pm2
 #####passo 3 #########
 #cd /var/www/html/bot1
