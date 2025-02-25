@@ -6,36 +6,32 @@ const rimraf = require('rimraf'); // Para remover diretórios não vazios
 const express = require('express');
 const axios = require('axios');
 const { exec } = require('child_process');
-const app = express();
 
+const app = express();
 const PORT = 3003;
 const qrCodeDir = '/var/www/html/bot2';  // Diretório onde o QR será salvo
-require('events').EventEmitter.defaultMaxListeners = 100; // Ou um número maior, se necessário
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
 let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
 let sessionData = null; // Armazena a sessão do cliente
 let reconnectAttempts = 0;  // Conta tentativas de reconexão
+require('events').EventEmitter.defaultMaxListeners = 100; // Ou um número maior, se necessário
 
 // Função para gerar o QR Code e salvar
 function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
   fs.unlink(qrCodePath, (unlinkErr) => {
-    qrcode.toDataURL(qr, (err, url) => {
+    qrcode.toFile(qrCodePath, qr, {
+      width: 400, // Definir o tamanho do QR Code
+      margin: 1   // Definir a margem
+    }, (err) => {
       if (err) {
         console.error('Erro ao gerar o QR Code:', err);
         return;
       }
-      const base64Data = url.replace(/^data:image\/png;base64,/, '');
-      fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
-        if (writeErr) {
-          console.error('Erro ao salvar o QR Code:', writeErr);
-        } else {
-          console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
-          isQRCodeGenerated = true;
-          qrCodeGeneratedAt = Date.now();
-        }
-      });
+      console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
+      isQRCodeGenerated = true;
+      qrCodeGeneratedAt = Date.now();
     });
   });
 }
@@ -89,7 +85,9 @@ function checkInternetConnection(callback) {
 const client = new Client({
   authStrategy: new LocalAuth({
     clientId: 'bot2'
+  
   }),
+
   puppeteer: {
     args: [
       '--no-sandbox',
@@ -100,7 +98,7 @@ const client = new Client({
       '--no-zygote',
       '--disable-gpu'
     ],
-    timeout: 180000, // 180 segundos
+    timeout: 30000, // Timeout de 30 segundos
     ignoreHTTPSErrors: true
   }
 });
@@ -118,10 +116,11 @@ client.on('authenticated', (session) => {
 
 let isClientReady = false;
 client.on('ready', () => {
-   isClientReady = true;
+  isClientReady = true;
   console.log('🚀 WhatsApp Web está pronto!');
   console.log('Cliente conectado com sucesso!');
 });
+
 // Endpoint para fornecer o status e QR Code para o frontend
 app.get('/status', (req, res) => {
   if (isClientReady) {
@@ -135,12 +134,15 @@ app.get('/status', (req, res) => {
   }
 });
 
-
-
-
-
 client.on('disconnected', (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
+  // Apaga o QR code e gera um novo quando desconectar
+  fs.unlink(path.join(qrCodeDir, 'qrcode.png'), (err) => {
+    if (err) {
+      console.error('Erro ao apagar o QR Code:', err);
+    }
+    generateQRCode(reason); // Gera um novo QR Code após a desconexão
+  });
   attemptReconnect();
 });
 
@@ -171,9 +173,6 @@ app.use(express.static(qrCodeDir));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
-
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
