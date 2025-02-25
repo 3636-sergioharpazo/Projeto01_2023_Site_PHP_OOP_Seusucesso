@@ -301,7 +301,7 @@ let isListening = true;
 let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
 
 // Aguarda o ID do pedido ou comando para voltar ao menu principal
-client.on('message', async (newMsg) => {
+
   if (!isListening) return; // Impede que o código continue se já estiver processando
 
   isListening = false; // Impede novos ouvintes enquanto o processo está em andamento
@@ -357,7 +357,7 @@ client.on('message', async (newMsg) => {
   }
 
   isListening = true; // Permite novos ouvintes para o próximo fluxo
-});
+
  // Menu 6 - Atendimento
  
   // Menu 2 - Fazer Pedido
