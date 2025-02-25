@@ -10,6 +10,7 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
+const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
 let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
@@ -27,8 +28,8 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Função para gerar o QR Code e salvar
 function generateQRCode(qr) {
-  const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  fs.unlink(qrCodePath, () => {
+  // Antes de gerar, remove o arquivo de QR Code, se existir
+  fs.unlink(qrCodePath, (unlinkErr) => {
     // Ignoramos erro caso o arquivo não exista
     qrcode.toDataURL(qr, (err, url) => {
       if (err) {
@@ -57,17 +58,25 @@ function restartClient() {
   isQRCodeGenerated = false;
   qrCodeGeneratedAt = null;
 
-  // Remover a pasta inteira de sessão
-  const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
-  rimraf(sessionDir, (err) => {
-    if (err) {
-      console.error('Erro ao remover a sessão:', err);
+  // Remove o QR Code existente, se houver
+  fs.unlink(qrCodePath, (err) => {
+    if (err && err.code !== 'ENOENT') {
+      console.error('Erro ao remover o QR Code:', err);
     } else {
-      console.log('Sessão removida com sucesso.');
+      console.log('QR Code removido com sucesso ou inexistente.');
     }
-    // Reinicializa o cliente após a limpeza
-    client.initialize().catch((error) => {
-      console.error('Erro ao reinicializar o cliente:', error);
+    // Remover a pasta inteira de sessão
+    const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
+    rimraf(sessionDir, (rimrafErr) => {
+      if (rimrafErr) {
+        console.error('Erro ao remover a sessão:', rimrafErr);
+      } else {
+        console.log('Sessão removida com sucesso.');
+      }
+      // Reinicializa o cliente após a limpeza
+      client.initialize().catch((error) => {
+        console.error('Erro ao reinicializar o cliente:', error);
+      });
     });
   });
 }
@@ -154,7 +163,15 @@ client.on('error', (error) => {
 client.on('disconnected', (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
   isClientReady = false;
-  attemptReconnect();
+  // Remove o QR Code para garantir que um novo seja gerado na reconexão
+  fs.unlink(qrCodePath, (err) => {
+    if (err && err.code !== 'ENOENT') {
+      console.error('Erro ao remover o QR Code durante desconexão:', err);
+    } else {
+      console.log('QR Code removido com sucesso após desconexão.');
+    }
+    attemptReconnect();
+  });
 });
 
 // Verifica a cada 10 segundos se passaram 5 minutos sem conexão e tenta reconectar
