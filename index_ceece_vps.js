@@ -21,21 +21,17 @@ require('events').EventEmitter.defaultMaxListeners = 100; // Ou um número maior
 function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
   fs.unlink(qrCodePath, (unlinkErr) => {
-    qrcode.toDataURL(qr, (err, url) => {
+    qrcode.toFile(qrCodePath, qr, {
+      width: 400, // Definir o tamanho do QR Code
+      margin: 1   // Definir a margem
+    }, (err) => {
       if (err) {
         console.error('Erro ao gerar o QR Code:', err);
         return;
       }
-      const base64Data = url.replace(/^data:image\/png;base64,/, '');
-      fs.writeFile(qrCodePath, base64Data, 'base64', (writeErr) => {
-        if (writeErr) {
-          console.error('Erro ao salvar o QR Code:', writeErr);
-        } else {
-          console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
-          isQRCodeGenerated = true;
-          qrCodeGeneratedAt = Date.now();
-        }
-      });
+      console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
+      isQRCodeGenerated = true;
+      qrCodeGeneratedAt = Date.now();
     });
   });
 }
