@@ -48,11 +48,11 @@ function restartClient() {
   isQRCodeGenerated = false;
   qrCodeGeneratedAt = null;
 
-  // Remover a pasta inteira de sessão, incluindo subdiretórios não vazios
+  // Remover a pasta inteira de sessão
   const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
-  rimraf(sessionDir, { glob: false }, (rimrafErr) => {
-    if (rimrafErr) {
-      console.error('Erro ao remover a sessão:', rimrafErr);
+  rimraf(sessionDir, (err) => {
+    if (err) {
+      console.error('Erro ao remover a sessão:', err);
     } else {
       console.log('Sessão removida com sucesso.');
     }
@@ -86,7 +86,6 @@ function checkInternetConnection(callback) {
 }
 
 // Configuração do cliente com LocalAuth
-
 const client = new Client({
   authStrategy: new LocalAuth({
     clientId: 'default',
@@ -103,7 +102,7 @@ const client = new Client({
       '--no-zygote',
       '--disable-gpu'
     ],
-    timeout: 180000, // 180 segundos
+    timeout: 30000, // Timeout de 30 segundos
     ignoreHTTPSErrors: true
   }
 });
@@ -121,7 +120,7 @@ client.on('authenticated', (session) => {
 
 let isClientReady = false;
 client.on('ready', () => {
-   isClientReady = true;
+  isClientReady = true;
   console.log('🚀 WhatsApp Web está pronto!');
   console.log('Cliente conectado com sucesso!');
 });
@@ -139,9 +138,15 @@ app.get('/status', (req, res) => {
   }
 });
 
-// Quando o cliente se desconectar, tenta reconectar
 client.on('disconnected', (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
+  // Apaga o QR code e gera um novo quando desconectar
+  fs.unlink(path.join(qrCodeDir, 'qrcode.png'), (err) => {
+    if (err) {
+      console.error('Erro ao apagar o QR Code:', err);
+    }
+    generateQRCode(reason); // Gera um novo QR Code após a desconexão
+  });
   attemptReconnect();
 });
 
