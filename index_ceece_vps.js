@@ -1,7 +1,13 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
+const path = require('path');
 const fs = require('fs');
-const rimraf = require('rimraf'); // Certifique-se de ter instalado o rimraf
+const rimraf = require('rimraf'); // Para remover diretórios não vazios
+const express = require('express');
+const axios = require('axios');
+const { exec } = require('child_process');
+const app = express();
+
 
 const client = new Client({
   authStrategy: new LocalAuth(),
