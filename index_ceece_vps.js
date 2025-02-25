@@ -357,7 +357,7 @@ let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
   }
 
   isListening = true; // Permite novos ouvintes para o próximo fluxo
-
+}
  // Menu 6 - Atendimento
  
   // Menu 2 - Fazer Pedido
