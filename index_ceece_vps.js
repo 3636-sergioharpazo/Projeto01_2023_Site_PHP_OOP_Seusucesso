@@ -17,10 +17,19 @@ let sessionData = null; // Armazena a sessão do cliente
 let reconnectAttempts = 0;  // Conta tentativas de reconexão
 require('events').EventEmitter.defaultMaxListeners = 100; // Ou um número maior, se necessário
 
+// Captura de exceções não tratadas
+process.on('uncaughtException', (err) => {
+  console.error('Exceção não tratada:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Rejeição não tratada em:', promise, 'Motivo:', reason);
+});
+
 // Função para gerar o QR Code e salvar
 function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  fs.unlink(qrCodePath, (unlinkErr) => {
+  fs.unlink(qrCodePath, () => {
+    // Ignoramos erro caso o arquivo não exista
     qrcode.toDataURL(qr, (err, url) => {
       if (err) {
         console.error('Erro ao gerar o QR Code:', err);
@@ -56,25 +65,30 @@ function restartClient() {
     } else {
       console.log('Sessão removida com sucesso.');
     }
-    client.initialize(); // Reinicializa o cliente após a limpeza
+    // Reinicializa o cliente após a limpeza
+    client.initialize().catch((error) => {
+      console.error('Erro ao reinicializar o cliente:', error);
+    });
   });
 }
 
 // Função para tentar restabelecer a conexão automaticamente
 function attemptReconnect() {
-  console.log('Tentando restabelecer a conexão...');
+  console.log('Tentando restabelecer a conexão... (Tentativa:', reconnectAttempts + 1, ')');
   reconnectAttempts++;
   if (reconnectAttempts <= 10) {
-    client.initialize(); // Tenta reconectar
+    client.initialize().catch((error) => {
+      console.error('Erro na tentativa de reconexão:', error);
+    });
   } else {
     console.log('🛑 Tentativas de reconexão excedidas. Reiniciando o cliente com um novo QR Code...');
-    restartClient(); // Reinicia o cliente após 10 tentativas
+    restartClient();
   }
 }
 
 // Função para verificar conexão com a internet (ping ao Google)
 function checkInternetConnection(callback) {
-  exec('ping -c 1 google.com', (error, stdout, stderr) => {
+  exec('ping -c 1 google.com', (error) => {
     if (error) {
       console.log('🌐 Sem conexão com a internet.');
       callback(false);
@@ -86,13 +100,11 @@ function checkInternetConnection(callback) {
 }
 
 // Configuração do cliente com LocalAuth
-
 const client = new Client({
   authStrategy: new LocalAuth({
     clientId: 'default',
     sessionData: sessionData,
   }),
-
   puppeteer: {
     args: [
       '--no-sandbox',
@@ -121,10 +133,55 @@ client.on('authenticated', (session) => {
 
 let isClientReady = false;
 client.on('ready', () => {
-   isClientReady = true;
+  isClientReady = true;
   console.log('🚀 WhatsApp Web está pronto!');
   console.log('Cliente conectado com sucesso!');
+  reconnectAttempts = 0; // Reseta contagem de reconexão
 });
+
+client.on('auth_failure', (msg) => {
+  console.error('Falha na autenticação:', msg);
+  // Reinicia o cliente para gerar novo QR Code
+  restartClient();
+});
+
+client.on('error', (error) => {
+  console.error('Erro no cliente:', error);
+  // Tenta reconectar ou reiniciar conforme necessário
+  attemptReconnect();
+});
+
+client.on('disconnected', (reason) => {
+  console.log(`❌ Cliente desconectado: ${reason}`);
+  isClientReady = false;
+  attemptReconnect();
+});
+
+// Verifica a cada 10 segundos se passaram 5 minutos sem conexão e tenta reconectar
+setInterval(() => {
+  if (!isClientReady && qrCodeGeneratedAt) {
+    const elapsed = Date.now() - qrCodeGeneratedAt;
+    if (elapsed >= 300000) { // 5 minutos
+      console.log('⏱️ 5 minutos sem conexão. Tentando restabelecer a conexão...');
+      attemptReconnect();
+    }
+  }
+}, 10000);
+
+// Inicializa o cliente somente se houver conexão com a internet
+checkInternetConnection((isConnected) => {
+  if (isConnected) {
+    client.initialize().catch((error) => {
+      console.error('Erro ao iniciar o cliente:', error);
+    });
+  } else {
+    console.log('Aguardando conexão com a internet...');
+  }
+});
+
+// Servir arquivos estáticos da pasta onde o QR Code foi salvo
+app.use(express.static(qrCodeDir));
+
 // Endpoint para fornecer o status e QR Code para o frontend
 app.get('/status', (req, res) => {
   if (isClientReady) {
@@ -138,45 +195,10 @@ app.get('/status', (req, res) => {
   }
 });
 
-
-
-
-
-client.on('disconnected', (reason) => {
-  console.log(`❌ Cliente desconectado: ${reason}`);
-  attemptReconnect();
-});
-
-// Verifica a cada 10 segundos se passaram 5 minutos sem conexão e tenta reconectar
-setInterval(() => {
-  if (!client.isReady && qrCodeGeneratedAt) {
-    const elapsed = Date.now() - qrCodeGeneratedAt;
-    if (elapsed >= 300000) { // 5 minutos
-      console.log('⏱️ 5 minutos sem conexão. Tentando restabelecer a conexão...');
-      attemptReconnect();
-    }
-  }
-}, 10000);
-
-// Inicializa o cliente somente se houver conexão com a internet
-checkInternetConnection((isConnected) => {
-  if (isConnected) {
-    client.initialize();
-  } else {
-    console.log('Aguardando conexão com a internet...');
-  }
-});
-
-// Servir arquivos estáticos da pasta onde o QR Code foi salvo
-app.use(express.static(qrCodeDir));
-
 // Inicia o servidor Express
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
-
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
