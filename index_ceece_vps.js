@@ -33,6 +33,9 @@ client.on('authenticated', () => {
 // Evento de login
 client.on('ready', () => {
   console.log('Cliente está pronto!');
+  // Limpa o cache e verifica a conexão após o cliente estar pronto
+  clearCache();
+  startReconnectCheck(); // Inicia a verificação de conexão após o cliente estar pronto
 });
 
 // Evento de desconexão
@@ -54,16 +57,16 @@ async function attemptReconnect() {
 }
 
 // Função de reconexão com intervalo
-reconnectInterval = setInterval(async () => {
-  try {
-    if (!client.pupPage.isConnected()) {
+function startReconnectCheck() {
+  reconnectInterval = setInterval(async () => {
+    if (client.pupPage && client.pupPage.isConnected()) {
+      console.log('Cliente conectado');
+    } else {
       console.log('Tentando reconectar...');
-      await client.initialize();
+      await attemptReconnect();
     }
-  } catch (error) {
-    console.log('Erro ao tentar reconectar:', error);
-  }
-}, 5000); // tenta reconectar a cada 5 segundos
+  }, 5000); // Tenta reconectar a cada 5 segundos
+}
 
 // Exemplo de envio de mensagem com erro de socket
 async function sendMessageToChat(chatId, message) {
