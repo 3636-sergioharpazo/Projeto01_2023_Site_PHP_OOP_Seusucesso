@@ -5,6 +5,9 @@ const rimraf = require('rimraf'); // Certifique-se de ter instalado o rimraf
 
 const client = new Client({
   authStrategy: new LocalAuth(),
+  puppeteer: {
+    args: ['--no-sandbox', '--disable-setuid-sandbox'], // Adiciona a flag para evitar o erro no servidor root
+  },
 });
 
 let reconnectInterval; // Para controle de reconexão
@@ -127,6 +130,7 @@ client.on('disconnected', (reason) => {
 client.on('error', (error) => {
   console.log('Erro do cliente:', error);
 });
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
