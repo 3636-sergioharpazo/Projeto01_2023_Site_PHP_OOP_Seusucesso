@@ -239,41 +239,54 @@ if (msg.body.trim() === '4') {
 
   client.sendMessage(msg.from, "Digite o *ID do seu pedido*, o *ID do produto* e a *quantidade* para adicionar (ex: '123 1 2').\nOu digite 'voltar' ou 'menu' para retornar ao menu principal.");
 
-  // Função para tratar a resposta do usuário
-  const handleUserMessage = async (newMsg) => {
-    const mensagem = newMsg.body.trim().toLowerCase();
+ // Objeto para armazenar o estado de erro por usuário
+const erroExibido = {};
 
-    // Verifica se o usuário quer voltar ao menu principal
-    if (mensagem === 'voltar' || mensagem === 'menu') {
-      client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
-      // Aqui você pode chamar a função que reinicia o menu principal, se necessário
-      return; // Retorna ao menu principal
-    }
+// Função para tratar a resposta do usuário
+const handleUserMessage = async (newMsg) => {
+  const mensagem = newMsg.body.trim().toLowerCase();
+  const telefoneCliente = newMsg.from;
 
-    // Verificar se a entrada está no formato correto
-    if (/^\d+\s\d+\s\d+$/.test(mensagem)) {
-      const [idPedido, idProduto, quantidade] = mensagem.split(' ');
-      const qtd = parseInt(quantidade, 10);
-      const telefoneCliente = msg.from;
+  // Verifica se o usuário quer voltar ao menu principal
+  if (mensagem === 'voltar' || mensagem === 'menu') {
+    client.sendMessage(telefoneCliente, "🔙 Retornando ao menu principal...");
+    erroExibido[telefoneCliente] = false; // Resetar o controlador de erro
+    return;
+  }
 
-      if (isNaN(qtd) || qtd <= 0) {
-        client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
-        return;
+  // Verificar se a entrada está no formato correto
+  if (/^\d+\s\d+\s\d+$/.test(mensagem)) {
+    const [idPedido, idProduto, quantidade] = mensagem.split(' ');
+    const qtd = parseInt(quantidade, 10);
+
+    if (isNaN(qtd) || qtd <= 0) {
+      if (!erroExibido[telefoneCliente]) {
+        client.sendMessage(telefoneCliente, "Erro: A quantidade deve ser um número inteiro positivo.");
+        erroExibido[telefoneCliente] = true; // Marca que o erro já foi exibido
       }
-
-      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
-        .then(() => {
-          client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
-        })
-        .catch(error => {
-          console.error('Erro ao adicionar item:', error);
-          client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
-        });
-    } else {
-      // Exibir a mensagem apenas se a entrada não for válida
-      client.sendMessage(msg.from, "⚠️ Formato inválido. Por favor, digite no formato correto (ex: '123 1 2').");
+      return;
     }
-  };
+
+    // Se tudo estiver certo, reseta o erro e faz a requisição
+    erroExibido[telefoneCliente] = false;
+
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
+      .then(() => {
+        client.sendMessage(telefoneCliente, "Item adicionado ao pedido com sucesso! ✅");
+      })
+      .catch(error => {
+        console.error('Erro ao adicionar item:', error);
+        client.sendMessage(telefoneCliente, "Erro ao adicionar item ao pedido. Tente novamente.");
+      });
+  } else {
+    // Exibir a mensagem de erro apenas se ainda não foi exibida
+    if (!erroExibido[telefoneCliente]) {
+      client.sendMessage(telefoneCliente, "⚠️ Formato inválido. Por favor, digite no formato correto (ex: '123 1 2').");
+      erroExibido[telefoneCliente] = true; // Marca que o erro já foi exibido
+    }
+  }
+};
+
 
   // Registra o handler de mensagem
   client.on('message', handleUserMessage);
