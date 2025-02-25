@@ -296,61 +296,68 @@ if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
   await delay(2000);
   client.sendMessage(msg.from, "Digite o *ID do pedido* para visualizar os detalhes.\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
+// Variável de controle para evitar múltiplos ouvintes de eventos
+let isListening = true;
+let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
 
-  // Variável de controle para evitar múltiplos ouvintes de eventos
-  let isListening = true;
+// Aguarda o ID do pedido ou comando para voltar ao menu principal
+client.on('message', async (newMsg) => {
+  if (!isListening) return; // Impede que o código continue se já estiver processando
 
-  // Aguarda o ID do pedido ou comando para voltar ao menu principal
-  client.on('message', async (newMsg) => {
-    if (!isListening) return; // Impede que o código continue se já estiver processando
+  isListening = false; // Impede novos ouvintes enquanto o processo está em andamento
 
-    isListening = false; // Impede novos ouvintes enquanto o processo está em andamento
+  const mensagem = newMsg.body.trim().toLowerCase();
 
-    const mensagem = newMsg.body.trim().toLowerCase();
-
-    // Verifica se o cliente deseja voltar ou ir ao menu principal
-    if (mensagem === 'voltar' || mensagem === 'menu') {
-      client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
-      // Aqui você pode chamar a função que reinicia o menu principal, se necessário
-      isListening = true; // Permite novos ouvintes para o próximo fluxo
-      return;  // Retorna ao fluxo do menu principal
-    }
-
-    // Verifica se o ID do pedido é um número
-    if (/^\d+$/.test(mensagem)) {
-      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
-        .then(response => {
-          if (response.data && response.data.id) {
-            let mensagemResposta = `📦 *Pedido #${response.data.id}*\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
-
-            if (response.data.itens && response.data.itens.length > 0) {
-              response.data.itens.forEach(item => {
-                mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
-              });
-            } else {
-              mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
-            }
-
-            mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
-
-            client.sendMessage(msg.from, mensagemResposta);
-          } else {
-            client.sendMessage(msg.from, "⚠️ Pedido não encontrado.");
-          }
-        })
-        .catch(error => {
-          console.error("Erro ao buscar pedido:", error);
-          client.sendMessage(msg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
-        });
-    } else {
-      // Caso o ID não seja válido, a mensagem de erro é enviada
-      client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
-    }
-
+  // Verifica se o cliente deseja voltar ou ir ao menu principal
+  if (mensagem === 'voltar' || mensagem === 'menu') {
+    client.sendMessage(newMsg.from, "🔙 Retornando ao menu principal...");
+    // Aqui você pode chamar a função que reinicia o menu principal, se necessário
     isListening = true; // Permite novos ouvintes para o próximo fluxo
-  });
-}
+    return;  // Retorna ao fluxo do menu principal
+  }
 
+  // Verifica se o ID do pedido é um número
+  if (/^\d+$/.test(mensagem)) {
+    try {
+      const response = await axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`);
+      
+      if (response.data && response.data.id) {
+        let mensagemResposta = `📦 *Pedido #${response.data.id}*\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+
+        if (response.data.itens && response.data.itens.length > 0) {
+          response.data.itens.forEach(item => {
+            mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
+          });
+        } else {
+          mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
+        }
+
+        mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
+
+        client.sendMessage(newMsg.from, mensagemResposta);
+        invalidIdMessageSent = false; // Reseta a flag de mensagem de erro
+      } else {
+        if (!invalidIdMessageSent) {
+          client.sendMessage(newMsg.from, "⚠️ Pedido não encontrado.");
+          invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar pedido:", error);
+      if (!invalidIdMessageSent) {
+        client.sendMessage(newMsg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
+        invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
+      }
+    }
+  } else {
+    if (!invalidIdMessageSent) {
+      client.sendMessage(newMsg.from, "⚠️ Por favor, digite um ID de pedido válido.");
+      invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
+    }
+  }
+
+  isListening = true; // Permite novos ouvintes para o próximo fluxo
+});
  // Menu 6 - Atendimento
  
   // Menu 2 - Fazer Pedido
