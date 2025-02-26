@@ -342,6 +342,10 @@ if (msg.body.trim() === '5') {
  // Menu 6 - Atendimento
  
   // Menu 2 - Fazer Pedido
+const pedidosPendentes = {};
+const ultimosPedidos = {}; // Armazena o timestamp do último pedido de cada usuário
+const TEMPO_ESPERA = 30 * 1000; // 30 segundos
+
 if (msg.body.trim() === '2') {
   await chat.sendStateTyping();
   await delay(2000);
@@ -352,6 +356,13 @@ if (msg.body.trim() === '2') {
     const mensagem = newMsg.body.trim();
 
     if (/^\d+\s?\d+$/.test(mensagem)) {
+      const agora = Date.now();
+
+      // Verifica se o usuário fez um pedido recentemente
+      if (ultimosPedidos[newMsg.from] && agora - ultimosPedidos[newMsg.from] < TEMPO_ESPERA) {
+        return client.sendMessage(newMsg.from, "Você já fez um pedido recentemente. Aguarde um momento antes de fazer outro.");
+      }
+
       const [prato, qtd] = mensagem.split(' ');
       const quantidade = parseInt(qtd, 10);
 
@@ -369,7 +380,7 @@ if (msg.body.trim() === '2') {
               `Seu pedido: ${nome} x ${quantidade}\nValor total: R$ ${valorTotal.toFixed(2)}\n` +
               `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
             );
-            pedidosPendentes[newMsg.from] = { prato, quantidade, nomeCliente: newMsg.from }; // armazena o pedido pendente
+            pedidosPendentes[newMsg.from] = { prato, quantidade, nomeCliente: newMsg.from };
           }
         })
         .catch(error => {
@@ -382,16 +393,15 @@ if (msg.body.trim() === '2') {
     if (mensagem.trim().toLowerCase() === 'confirmar' && pedidosPendentes[newMsg.from]) {
       const { prato, quantidade } = pedidosPendentes[newMsg.from];
       const contact = await msg.getContact();
-      let nomeCliente = contact.pushname || "Cliente";  // Usando 'let' para permitir a reatribuição
+      let nomeCliente = contact.pushname || "Cliente";
       let cliente_telefone = newMsg.from.split('@')[0];
-      
-    
 
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${cliente_telefone}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
         .then(response => {
           if (response.data.pedido_id) {
             client.sendMessage(newMsg.from, `Pedido registrado com sucesso! ✅\nSeu número de pedido é: *${response.data.pedido_id}*`);
-            delete pedidosPendentes[newMsg.from]; // limpa o pedido pendente
+            delete pedidosPendentes[newMsg.from]; // Limpa o pedido pendente
+            ultimosPedidos[newMsg.from] = Date.now(); // Registra o horário do pedido
           } else {
             client.sendMessage(newMsg.from, "Erro ao registrar o pedido. Tente novamente.");
           }
@@ -405,17 +415,11 @@ if (msg.body.trim() === '2') {
     // Cancelar Pedido
     if (mensagem.trim().toLowerCase() === 'voltar' && pedidosPendentes[newMsg.from]) {
       client.sendMessage(newMsg.from, "Pedido cancelado. Digite novamente o número do prato e a quantidade.");
-      delete pedidosPendentes[newMsg.from]; // cancela o pedido pendente
+      delete pedidosPendentes[newMsg.from]; // Cancela o pedido pendente
     }
   });
 }
 
-
-  // Cancelar Pedido
-  if (msg.body.trim().toLowerCase() === 'voltar' && pedidosPendentes[msg.from]) {
-    client.sendMessage(msg.from, "Pedido cancelado. Digite novamente o número do prato e a quantidade.");
-    delete pedidosPendentes[msg.from];
-  }
 // client on ready ----------------------final
 setInterval(async () => {
   if (!client) {
