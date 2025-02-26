@@ -346,8 +346,8 @@ if (msg.body.trim() === '5') {
       client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
       isProcessing = false; // Libera para novas tentativas
     }
-  });
-}
+  
+
 
  // Menu 6 - Atendimento
  
