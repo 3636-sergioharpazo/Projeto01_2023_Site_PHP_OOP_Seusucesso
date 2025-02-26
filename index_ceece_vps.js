@@ -328,7 +328,7 @@ if (msg.body.trim() === '5') {
         .catch(error => {
             console.error("Erro ao buscar pedido:", error);
         });
-}
+
 
             } else {
               mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
