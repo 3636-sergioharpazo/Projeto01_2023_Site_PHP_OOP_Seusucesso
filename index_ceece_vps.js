@@ -294,6 +294,10 @@ const ultimosPedidos = {}; // Armazena o timestamp do último pedido de cada usu
 const TEMPO_ESPERA = 30 * 1000; // 30 segundos
 
 if (msg.body.trim() === '2') {
+  if (pedidosPendentes[msg.from]) {
+    return client.sendMessage(msg.from, "⚠ Você já iniciou um pedido. Digite *Confirmar* para finalizar ou *Voltar* para refazer.");
+  }
+  
   await chat.sendStateTyping();
   await delay(2000);
   client.sendMessage(msg.from, "Digite o número do *prato* seguido da *quantidade* (exemplo: '1 2' para 2 unidades do prato 1). Para cancelar, digite *Cancelar*.");
@@ -311,7 +315,7 @@ client.on('message', async (newMsg) => {
     return;
   }
 
-  if (/^\d+\s?\d+$/.test(mensagem)) {
+  if (/^\d+\s?\d+$/.test(mensagem) && pedidosPendentes[newMsg.from].aguardandoPedido) {
     const agora = Date.now();
 
     // Verifica se o usuário fez um pedido recentemente
@@ -325,6 +329,8 @@ client.on('message', async (newMsg) => {
     if (isNaN(quantidade) || quantidade <= 0) {
       return client.sendMessage(newMsg.from, "❌ Erro: A quantidade deve ser um número inteiro positivo.");
     }
+
+    pedidosPendentes[newMsg.from].aguardandoPedido = false; // Evita múltiplas requisições
 
     axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
       .then(response => {
@@ -353,12 +359,13 @@ client.on('message', async (newMsg) => {
     let nomeCliente = contact.pushname || "Cliente";
     let cliente_telefone = newMsg.from.split('@')[0];
 
+    delete pedidosPendentes[newMsg.from]; // Remove o pedido pendente para evitar duplicação
+
     axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${cliente_telefone}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
       .then(response => {
         if (response.data.pedido_id) {
           client.sendMessage(newMsg.from, `✅ Pedido registrado com sucesso!
           📝 Número do pedido: *${response.data.pedido_id}*`);
-          delete pedidosPendentes[newMsg.from]; // Limpa o pedido pendente
           ultimosPedidos[newMsg.from] = Date.now(); // Registra o horário do pedido
         } else {
           client.sendMessage(newMsg.from, "❌ Erro ao registrar o pedido. Tente novamente.");
