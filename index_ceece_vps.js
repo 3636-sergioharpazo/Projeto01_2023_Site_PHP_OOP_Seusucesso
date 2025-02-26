@@ -317,7 +317,7 @@ let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
 
   isListening = false; // Impede novos ouvintes enquanto o processo está em andamento
 
-  const mensagem = msg.body.trim().toLowerCase();
+ 
 
   // Verifica se o cliente deseja voltar ou ir ao menu principal
   if (mensagem === 'voltar' || mensagem === 'menu') {
