@@ -306,11 +306,11 @@ let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
 
   isListening = false; // Impede novos ouvintes enquanto o processo está em andamento
 
-  const mensagem = newMsg.body.trim().toLowerCase();
+  const mensagem = msg.body.trim().toLowerCase();
 
   // Verifica se o cliente deseja voltar ou ir ao menu principal
   if (mensagem === 'voltar' || mensagem === 'menu') {
-    client.sendMessage(newMsg.from, "🔙 Retornando ao menu principal...");
+    client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
     // Aqui você pode chamar a função que reinicia o menu principal, se necessário
     isListening = true; // Permite novos ouvintes para o próximo fluxo
     return;  // Retorna ao fluxo do menu principal
