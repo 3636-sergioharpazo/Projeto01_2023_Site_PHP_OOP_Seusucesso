@@ -360,11 +360,17 @@ let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
 }
  // Menu 6 - Atendimento
  
-  // Menu 2 - Fazer Pedido
+// Menu 2 - Fazer Pedido
 if (msg.body.trim() === '2') {
   await chat.sendStateTyping();
   await delay(2000);
-  client.sendMessage(msg.from, "Digite o número do *prato* seguido da *quantidade* (exemplo: '1 2' para 2 unidades do prato 1).");
+
+  // Verifica se há um pedido pendente
+  if (pedidosPendentes[msg.from]) {
+    return client.sendMessage(msg.from, "Você já tem um pedido pendente. Por favor, confirme ou cancele o pedido anterior antes de fazer outro.");
+  }
+
+  await client.sendMessage(msg.from, "Digite o número do *prato* seguido da *quantidade* (exemplo: '1 2' para 2 unidades do prato 1).");
 
   // Confirmação de Pedido
   client.on('message', async (newMsg) => {
@@ -403,8 +409,6 @@ if (msg.body.trim() === '2') {
       const contact = await msg.getContact();
       let nomeCliente = contact.pushname || "Cliente";  // Usando 'let' para permitir a reatribuição
       let cliente_telefone = newMsg.from.split('@')[0];
-      
-    
 
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${cliente_telefone}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
         .then(response => {
@@ -428,6 +432,7 @@ if (msg.body.trim() === '2') {
     }
   });
 }
+
 
 
   // Cancelar Pedido
