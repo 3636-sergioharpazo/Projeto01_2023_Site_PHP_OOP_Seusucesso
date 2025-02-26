@@ -173,6 +173,7 @@ app.use(express.static(qrCodeDir));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
@@ -184,7 +185,7 @@ client.on('message', async (msg) => {
   const nomeCliente = contact.pushname || "Cliente";
 
   // Mensagem de boas-vindas e menu principal
- if (/^(menu|voltar|sair|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
+ if (/^(menu|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
     await chat.sendStateTyping();
     await delay(2000);
 
@@ -239,136 +240,105 @@ if (msg.body.trim() === '4') {
 
   client.sendMessage(msg.from, "Digite o *ID do seu pedido*, o *ID do produto* e a *quantidade* para adicionar (ex: '123 1 2').\nOu digite 'voltar' ou 'menu' para retornar ao menu principal.");
 
- // Objeto para armazenar o estado de erro por usuário
-const erroExibido = {};
+  // Função para tratar a resposta do usuário
+  const handleUserMessage = async (newMsg) => {
+    const mensagem = newMsg.body.trim().toLowerCase();
 
-// Função para tratar a resposta do usuário
-const handleUserMessage = async (newMsg) => {
-  const mensagem = newMsg.body.trim().toLowerCase();
-  const telefoneCliente = newMsg.from;
+    // Verifica se o usuário quer voltar ao menu principal
+    if (mensagem === 'voltar' || mensagem === 'menu') {
+      client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
+      // Aqui você pode chamar a função que reinicia o menu principal, se necessário
+      return; // Retorna ao menu principal
+    }
 
-  // Verifica se o usuário quer voltar ao menu principal
-  if (mensagem === 'voltar' || mensagem === 'menu') {
-    client.sendMessage(telefoneCliente, "🔙 Retornando ao menu principal...");
-    erroExibido[telefoneCliente] = false; // Resetar o controlador de erro
-    return;
-  }
+    // Verificar se a entrada está no formato correto
+    if (/^\d+\s\d+\s\d+$/.test(mensagem)) {
+      const [idPedido, idProduto, quantidade] = mensagem.split(' ');
+      const qtd = parseInt(quantidade, 10);
+      const telefoneCliente = msg.from;
 
-  // Verificar se a entrada está no formato correto
-  if (/^\d+\s\d+\s\d+$/.test(mensagem)) {
-    const [idPedido, idProduto, quantidade] = mensagem.split(' ');
-    const qtd = parseInt(quantidade, 10);
-
-    if (isNaN(qtd) || qtd <= 0) {
-      if (!erroExibido[telefoneCliente]) {
-        client.sendMessage(telefoneCliente, "Erro: A quantidade deve ser um número inteiro positivo.");
-        erroExibido[telefoneCliente] = true; // Marca que o erro já foi exibido
+      if (isNaN(qtd) || qtd <= 0) {
+        client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
+        return;
       }
-      return;
+
+      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
+        .then(() => {
+          client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
+        })
+        .catch(error => {
+          console.error('Erro ao adicionar item:', error);
+          client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
+        });
+    } else {
+      // Exibir a mensagem apenas se a entrada não for válida
+      client.sendMessage(msg.from, "⚠️ Formato inválido. Por favor, digite no formato correto (ex: '123 1 2').");
     }
+  };
 
-    // Se tudo estiver certo, reseta o erro e faz a requisição
-    erroExibido[telefoneCliente] = false;
-
-    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
-      .then(() => {
-        client.sendMessage(telefoneCliente, "Item adicionado ao pedido com sucesso! ✅");
-      })
-      .catch(error => {
-        console.error('Erro ao adicionar item:', error);
-        client.sendMessage(telefoneCliente, "Erro ao adicionar item ao pedido. Tente novamente.");
-      });
-  } else {
-    // Exibir a mensagem de erro apenas se ainda não foi exibida
-    if (!erroExibido[telefoneCliente]) {
-      client.sendMessage(telefoneCliente, "⚠️ Formato inválido. Por favor, digite no formato correto (ex: '123 1 2').");
-      erroExibido[telefoneCliente] = true; // Marca que o erro já foi exibido
-    }
-  }
-};
-
-
-
+  // Registra o handler de mensagem
+  client.on('message', handleUserMessage);
+}
 // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
   await delay(2000);
-
-
-  // Função para tratar a resposta do usuário
-const handleUserMessage = async (newMsg) => {
-  const mensagem = newMsg.body.trim().toLowerCase();
-  const telefoneCliente = newMsg.from;
-
-  // Verifica se o usuário quer voltar ao menu principal
-  if (mensagem === 'voltar' || mensagem === 'menu') {
-    client.sendMessage(telefoneCliente, "🔙 Retornando ao menu principal...");
-    erroExibido[telefoneCliente] = false; // Resetar o controlador de erro
-    return;
-  }
   client.sendMessage(msg.from, "Digite o *ID do pedido* para visualizar os detalhes.\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
-// Variável de controle para evitar múltiplos ouvintes de eventos
-let isListening = true;
-let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
 
-// Aguarda o ID do pedido ou comando para voltar ao menu principal
+  // Variável de controle para evitar múltiplos ouvintes de eventos
+  let isListening = true;
 
-  if (!isListening) return; // Impede que o código continue se já estiver processando
+  // Aguarda o ID do pedido ou comando para voltar ao menu principal
+  client.on('message', async (newMsg) => {
+    if (!isListening) return; // Impede que o código continue se já estiver processando
 
-  isListening = false; // Impede novos ouvintes enquanto o processo está em andamento
+    isListening = false; // Impede novos ouvintes enquanto o processo está em andamento
 
- 
+    const mensagem = newMsg.body.trim().toLowerCase();
 
-  // Verifica se o cliente deseja voltar ou ir ao menu principal
-  if (mensagem === 'voltar' || mensagem === 'menu') {
-    client.sendMessage(newMsg.from, "🔙 Retornando ao menu principal...");
-    // Aqui você pode chamar a função que reinicia o menu principal, se necessário
+    // Verifica se o cliente deseja voltar ou ir ao menu principal
+    if (mensagem === 'voltar' || mensagem === 'menu') {
+      client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
+      // Aqui você pode chamar a função que reinicia o menu principal, se necessário
+      isListening = true; // Permite novos ouvintes para o próximo fluxo
+      return;  // Retorna ao fluxo do menu principal
+    }
+
+    // Verifica se o ID do pedido é um número
+    if (/^\d+$/.test(mensagem)) {
+      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
+        .then(response => {
+          if (response.data && response.data.id) {
+            let mensagemResposta = `📦 *Pedido #${response.data.id}*\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+
+            if (response.data.itens && response.data.itens.length > 0) {
+              response.data.itens.forEach(item => {
+                mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
+              });
+            } else {
+              mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
+            }
+
+            mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
+
+            client.sendMessage(msg.from, mensagemResposta);
+          } else {
+            client.sendMessage(msg.from, "⚠️ Pedido não encontrado.");
+          }
+        })
+        .catch(error => {
+          console.error("Erro ao buscar pedido:", error);
+          client.sendMessage(msg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
+        });
+    } else {
+      // Caso o ID não seja válido, a mensagem de erro é enviada
+      client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
+    }
+
     isListening = true; // Permite novos ouvintes para o próximo fluxo
-    return;  // Retorna ao fluxo do menu principal
-  }
-
-  // Verifica se o ID do pedido é um número
-  if (/^\d+$/.test(mensagem)) {
-    try {
-      const response = await axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`);
-      
-      if (response.data && response.data.id) {
-        let mensagemResposta = `📦 *Pedido #${response.data.id}*\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
-
-        if (response.data.itens && response.data.itens.length > 0) {
-          response.data.itens.forEach(item => {
-            mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
-          });
-        } else {
-          mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
-        }
-
-        mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
-
-        client.sendMessage(newMsg.from, mensagemResposta);
-        invalidIdMessageSent = false; // Reseta a flag de mensagem de erro
-      } else {
-        if (!invalidIdMessageSent) {
-          client.sendMessage(newMsg.from, "⚠️ Pedido não encontrado.");
-          invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
-        }
-      }
-    } catch (error) {
-      console.error("Erro ao buscar pedido:", error);
-      if (!invalidIdMessageSent) {
-        client.sendMessage(newMsg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
-        invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
-      }
-    }
-  } else {
-    if (!invalidIdMessageSent) {
-      client.sendMessage(newMsg.from, "⚠️ Por favor, digite um ID de pedido válido.");
-      invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
-    }
-  }
-
-  isListening = true; // Permite novos ouvintes para o próximo fluxo
+  });
 }
+
  // Menu 6 - Atendimento
  
   // Menu 2 - Fazer Pedido
