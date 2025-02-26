@@ -333,9 +333,7 @@ if (msg.body.trim() === '5') {
 
             mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
             client.sendMessage(msg.from, mensagemResposta);
-          } else {
-            client.sendMessage(msg.from, "⚠️ Pedido não encontrado.");
-          }
+        
         })
         .catch(error => {
           console.error("Erro ao buscar pedido:", error);
