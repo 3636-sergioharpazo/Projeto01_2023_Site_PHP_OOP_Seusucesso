@@ -287,83 +287,94 @@ if (msg.body.trim() === '4') {
 
   client.on('message', handleUserMessage);
 }
-// Menu 5 - Ver Pedido
-if (msg.body.trim() === '5') {
+const pedidosPendentes = {};
+const ultimosPedidos = {}; // Armazena o timestamp do último pedido de cada usuário
+const TEMPO_ESPERA = 30 * 1000; // 30 segundos
+
+if (msg.body.trim() === '2') {
   await chat.sendStateTyping();
   await delay(2000);
-  client.sendMessage(msg.from, "Digite o *ID do pedido* para visualizar os detalhes.\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
-
-  let isProcessing = false; // Variável de controle para evitar múltiplos processamentos
-
-  const messageHandler = async (newMsg) => {
-    if (isProcessing) return;
-    isProcessing = true;
-
-    const mensagem = newMsg.body.trim().toLowerCase();
-
-    if (mensagem === 'voltar' || mensagem === 'menu') {
-      client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
-      isProcessing = false;
-      client.removeListener('message', messageHandler);
-      return;
-    }
-
-    if (/^\d+$/.test(mensagem)) {
-      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
-        .then(response => {
-          let memeList = [
-            "https://i.imgur.com/5R7p6Hh.jpeg",
-            "https://i.imgur.com/3vTWrGp.jpeg",
-            "https://i.imgur.com/nPezP4I.jpeg",
-            "https://i.imgur.com/MTmGv7e.jpeg"
-          ];
-          let randomMeme = memeList[Math.floor(Math.random() * memeList.length)];
-
-          if (response.data && response.data.id) {
-            let dataFormatada = new Date(response.data.data_pedido).toLocaleString('pt-BR', { 
-              day: '2-digit', 
-              month: '2-digit', 
-              year: 'numeric', 
-              hour: '2-digit', 
-              minute: '2-digit',
-              second: '2-digit'
-            });
-
-            let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataFormatada}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
-
-            if (response.data.itens && response.data.itens.length > 0) {
-              response.data.itens.forEach(item => {
-                mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
-              });
-            } else {
-              mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
-            }
-
-            mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
-            client.sendMessage(msg.from, mensagemResposta);
-          } else {
-            client.sendMessage(msg.from, "⚠️ Pedido não encontrado. Verifique o ID informado.");
-          }
-
-          // Envia um meme aleatório
-          client.sendMessage(msg.from, randomMeme);
-        })
-        .catch(error => {
-          console.error("Erro ao buscar pedido:", error);
-          client.sendMessage(msg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
-        })
-        .finally(() => {
-          isProcessing = false;
-        });
-    } else {
-      client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
-    }
-  };
-
-  client.on('message', messageHandler);
+  client.sendMessage(msg.from, "Digite o número do *prato* seguido da *quantidade* (exemplo: '1 2' para 2 unidades do prato 1). Para cancelar, digite *Cancelar*.");
+  pedidosPendentes[msg.from] = { aguardandoPedido: true };
 }
 
- // Menu 6 - Atendimento
+client.on('message', async (newMsg) => {
+  if (!pedidosPendentes[newMsg.from]) return; // Ignora mensagens de quem não iniciou um pedido
+
+  const mensagem = newMsg.body.trim();
+
+  if (mensagem.toLowerCase() === 'cancelar') {
+    client.sendMessage(newMsg.from, "Pedido cancelado. Caso queira fazer um pedido, digite *2* novamente.");
+    delete pedidosPendentes[newMsg.from];
+    return;
+  }
+
+  if (/^\d+\s?\d+$/.test(mensagem)) {
+    const agora = Date.now();
+
+    // Verifica se o usuário fez um pedido recentemente
+    if (ultimosPedidos[newMsg.from] && agora - ultimosPedidos[newMsg.from] < TEMPO_ESPERA) {
+      return client.sendMessage(newMsg.from, "⚠ Você já fez um pedido recentemente. Aguarde antes de fazer outro.");
+    }
+
+    const [prato, qtd] = mensagem.split(' ');
+    const quantidade = parseInt(qtd, 10);
+
+    if (isNaN(quantidade) || quantidade <= 0) {
+      return client.sendMessage(newMsg.from, "❌ Erro: A quantidade deve ser um número inteiro positivo.");
+    }
+
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
+      .then(response => {
+        if (response.data?.produto) {
+          const { nome, preco } = response.data.produto;
+          const valorTotal = preco * quantidade;
+          client.sendMessage(
+            newMsg.from,
+            `🔹 *Seu pedido:*
+            🍽 ${nome} x ${quantidade}
+            💰 Valor total: R$ ${valorTotal.toFixed(2)}
+            🔄 Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
+          );
+          pedidosPendentes[newMsg.from] = { prato, quantidade, aguardandoConfirmacao: true };
+        } else {
+          client.sendMessage(newMsg.from, "❌ O prato informado não foi encontrado no cardápio. Tente novamente.");
+        }
+      })
+      .catch(error => {
+        console.error("Erro ao verificar cardápio:", error);
+        client.sendMessage(newMsg.from, "❌ Erro ao verificar o cardápio. Tente novamente mais tarde.");
+      });
+  } else if (mensagem.toLowerCase() === 'confirmar' && pedidosPendentes[newMsg.from]?.aguardandoConfirmacao) {
+    const { prato, quantidade } = pedidosPendentes[newMsg.from];
+    const contact = await newMsg.getContact();
+    let nomeCliente = contact.pushname || "Cliente";
+    let cliente_telefone = newMsg.from.split('@')[0];
+
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${cliente_telefone}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
+      .then(response => {
+        if (response.data.pedido_id) {
+          client.sendMessage(newMsg.from, `✅ Pedido registrado com sucesso!
+          📝 Número do pedido: *${response.data.pedido_id}*`);
+          delete pedidosPendentes[newMsg.from]; // Limpa o pedido pendente
+          ultimosPedidos[newMsg.from] = Date.now(); // Registra o horário do pedido
+        } else {
+          client.sendMessage(newMsg.from, "❌ Erro ao registrar o pedido. Tente novamente.");
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao criar pedido:', error);
+        client.sendMessage(newMsg.from, "❌ Erro ao registrar o pedido. Tente novamente.");
+      });
+  } else if (mensagem.toLowerCase() === 'voltar' && pedidosPendentes[newMsg.from]?.aguardandoConfirmacao) {
+    client.sendMessage(newMsg.from, "🔄 Pedido cancelado. Digite novamente o número do prato e a quantidade.");
+    pedidosPendentes[newMsg.from] = { aguardandoPedido: true };
+  } else {
+    client.sendMessage(newMsg.from, "❌ Entrada inválida. Digite o número do prato seguido da quantidade. Exemplo: '1 2' para 2 unidades do prato 1.");
+  }
+});
+  
+  // Menu 6 - Atendimento
  const pedidosPendentes = {};
 const ultimosPedidos = {}; // Armazena o timestamp do último pedido de cada usuário
 const TEMPO_ESPERA = 30 * 1000; // 30 segundos
