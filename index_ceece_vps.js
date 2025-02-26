@@ -223,11 +223,10 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
     }
   }
 
- 
+ // Criamos um objeto para armazenar os itens adicionados recentemente
+const itensAdicionados = new Map();
 
- 
-
- // Menu 4 - Adicionar Mais Itens ao Pedido
+// Menu 4 - Adicionar Mais Itens ao Pedido
 if (msg.body.trim() === '4') {
   await chat.sendStateTyping();
   await delay(2000);
@@ -244,14 +243,11 @@ if (msg.body.trim() === '4') {
   const handleUserMessage = async (newMsg) => {
     const mensagem = newMsg.body.trim().toLowerCase();
 
-    // Verifica se o usuário quer voltar ao menu principal
     if (mensagem === 'voltar' || mensagem === 'menu') {
       client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
-      // Aqui você pode chamar a função que reinicia o menu principal, se necessário
-      return; // Retorna ao menu principal
+      return;
     }
 
-    // Verificar se a entrada está no formato correto
     if (/^\d+\s\d+\s\d+$/.test(mensagem)) {
       const [idPedido, idProduto, quantidade] = mensagem.split(' ');
       const qtd = parseInt(quantidade, 10);
@@ -262,6 +258,18 @@ if (msg.body.trim() === '4') {
         return;
       }
 
+      // Criamos uma chave única para verificar se o mesmo item já foi adicionado
+      const chaveItem = `${telefoneCliente}-${idPedido}-${idProduto}-${qtd}`;
+
+      if (itensAdicionados.has(chaveItem)) {
+        client.sendMessage(msg.from, "⚠️ Este item já foi adicionado recentemente. Aguarde um momento antes de adicionar novamente.");
+        return;
+      }
+
+      // Adicionamos o item ao mapa com um tempo de expiração
+      itensAdicionados.set(chaveItem, true);
+      setTimeout(() => itensAdicionados.delete(chaveItem), 30000); // Remove o item após 30 segundos
+
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
         .then(() => {
           client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
@@ -269,16 +277,17 @@ if (msg.body.trim() === '4') {
         .catch(error => {
           console.error('Erro ao adicionar item:', error);
           client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
+          // Caso haja erro, remove o item do mapa para permitir uma nova tentativa
+          itensAdicionados.delete(chaveItem);
         });
     } else {
-      // Exibir a mensagem apenas se a entrada não for válida
       client.sendMessage(msg.from, "⚠️ Formato inválido. Por favor, digite no formato correto (ex: '123 1 2').");
     }
   };
 
-  // Registra o handler de mensagem
   client.on('message', handleUserMessage);
 }
+
 // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
