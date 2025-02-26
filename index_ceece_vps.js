@@ -185,7 +185,7 @@ client.on('message', async (msg) => {
   const nomeCliente = contact.pushname || "Cliente";
 
   // Mensagem de boas-vindas e menu principal
- if (/^(menu|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
+ if (/^(menu|voltar|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
     await chat.sendStateTyping();
     await delay(2000);
 
@@ -238,7 +238,7 @@ if (msg.body.trim() === '4') {
       client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
     });
 
-  client.sendMessage(msg.from, "Digite o *ID do seu pedido*, o *ID do produto* e a *quantidade* para adicionar (ex: '123 1 2').\nOu digite 'voltar' ou 'menu' para retornar ao menu principal.");
+  client.sendMessage(msg.from, "Digite o *ID do seu pedido*, o *ID do produto* e a *quantidade* para adicionar (ex: '123 1 2').\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
 
   // Função para tratar a resposta do usuário
   const handleUserMessage = async (newMsg) => {
