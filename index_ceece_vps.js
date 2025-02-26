@@ -296,34 +296,40 @@ if (msg.body.trim() === '5') {
   let isProcessing = false; // Variável de controle para evitar múltiplos processamentos
 
   const messageHandler = async (newMsg) => {
-    if (isProcessing) return; // Se já estiver processando, evita duplicação
-    isProcessing = true; // Bloqueia novas execuções até finalizar o processo
+    if (isProcessing) return;
+    isProcessing = true;
 
     const mensagem = newMsg.body.trim().toLowerCase();
 
-    // Verifica se o cliente deseja voltar ou ir ao menu principal
     if (mensagem === 'voltar' || mensagem === 'menu') {
       client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
-      isProcessing = false; // Libera para novos fluxos
+      isProcessing = false;
       client.removeListener('message', messageHandler);
       return;
     }
 
-    // Verifica se o ID do pedido é um número válido
     if (/^\d+$/.test(mensagem)) {
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
         .then(response => {
-          if (response.data && response.data.id) {
-      let dataFormatada = new Date(response.data.data_pedido).toLocaleString('pt-BR', { 
-    day: '2-digit', 
-    month: '2-digit', 
-    year: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit',
-    second: '2-digit'
-});
+          let memeList = [
+            "https://i.imgur.com/5R7p6Hh.jpeg",
+            "https://i.imgur.com/3vTWrGp.jpeg",
+            "https://i.imgur.com/nPezP4I.jpeg",
+            "https://i.imgur.com/MTmGv7e.jpeg"
+          ];
+          let randomMeme = memeList[Math.floor(Math.random() * memeList.length)];
 
-let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataFormatada}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+          if (response.data && response.data.id) {
+            let dataFormatada = new Date(response.data.data_pedido).toLocaleString('pt-BR', { 
+              day: '2-digit', 
+              month: '2-digit', 
+              year: 'numeric', 
+              hour: '2-digit', 
+              minute: '2-digit',
+              second: '2-digit'
+            });
+
+            let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataFormatada}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
 
             if (response.data.itens && response.data.itens.length > 0) {
               response.data.itens.forEach(item => {
@@ -338,13 +344,16 @@ let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataF
           } else {
             client.sendMessage(msg.from, "⚠️ Pedido não encontrado. Verifique o ID informado.");
           }
+
+          // Envia um meme aleatório
+          client.sendMessage(msg.from, randomMeme);
         })
         .catch(error => {
           console.error("Erro ao buscar pedido:", error);
           client.sendMessage(msg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
         })
         .finally(() => {
-          isProcessing = false; // Libera para novas consultas
+          isProcessing = false;
         });
     } else {
       client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
@@ -353,8 +362,6 @@ let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataF
 
   client.on('message', messageHandler);
 }
-
-
 
  // Menu 6 - Atendimento
  
