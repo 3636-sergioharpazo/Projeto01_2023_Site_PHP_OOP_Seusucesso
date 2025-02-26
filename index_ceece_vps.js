@@ -288,13 +288,24 @@ const handleUserMessage = async (newMsg) => {
 };
 
 
-  // Registra o handler de mensagem
-  client.on('message', handleUserMessage);
-}
+
 // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
   await delay(2000);
+
+
+  // Função para tratar a resposta do usuário
+const handleUserMessage = async (newMsg) => {
+  const mensagem = newMsg.body.trim().toLowerCase();
+  const telefoneCliente = newMsg.from;
+
+  // Verifica se o usuário quer voltar ao menu principal
+  if (mensagem === 'voltar' || mensagem === 'menu') {
+    client.sendMessage(telefoneCliente, "🔙 Retornando ao menu principal...");
+    erroExibido[telefoneCliente] = false; // Resetar o controlador de erro
+    return;
+  }
   client.sendMessage(msg.from, "Digite o *ID do pedido* para visualizar os detalhes.\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
 // Variável de controle para evitar múltiplos ouvintes de eventos
 let isListening = true;
