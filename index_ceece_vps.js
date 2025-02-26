@@ -310,16 +310,26 @@ if (msg.body.trim() === '5') {
     }
 
     // Verifica se o ID do pedido é um número válido
-    if (/^\d+$/.test(mensagem)) {
-      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
+  if (/^\d+$/.test(mensagem)) {
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
         .then(response => {
-          if (response.data && response.data.id) {
-            let mensagemResposta = `📦 *Pedido #${response.data.id}*\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+            if (response.data && response.data.id) {
+                let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${response.data.data_pedido}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
 
-            if (response.data.itens && response.data.itens.length > 0) {
-              response.data.itens.forEach(item => {
-                mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
-              });
+                if (response.data.itens && response.data.itens.length > 0) {
+                    response.data.itens.forEach(item => {
+                        mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
+                    });
+                }
+
+                // Aqui você deve enviar a mensagem de resposta pelo WhatsApp
+            }
+        })
+        .catch(error => {
+            console.error("Erro ao buscar pedido:", error);
+        });
+}
+
             } else {
               mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
             }
