@@ -454,66 +454,80 @@ setInterval(async () => {
 });
 // Mapa para rastrear quantas vezes cada cliente foi avisado
 const avisosEnviados = new Map();
+
 // Função para verificar pedidos e atualizar os clientes
 const verificarPedidos = async (client) => {
-  if (!client) {
-    //console.error('❌ Erro: client não está definido.');
-    return;
-  }
+  if (!client) return;
 
-  //console.log('📦 Iniciando verificação de pedidos...');
   try {
     const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php');
-    if (!response.data || !response.data.pedidos) {
-      //console.error('⚠️ Nenhum pedido encontrado.');
-      return;
-    }
+    if (!response.data || !response.data.pedidos) return;
 
     const pedidos = response.data.pedidos;
 
     for (const { id, telefone_cliente, nome_cliente, status, criado_em } of pedidos) {
-      const numeroWhatsApp = `${telefone_cliente}@s.whatsapp.net`; // Formato correto
+      const numeroWhatsApp = `${telefone_cliente}@s.whatsapp.net`;
 
       try {
         if (status === "aberto") {
-          // Obtém a posição na fila
           const filaResponse = await axios.get(`https://ceecegril.antoniooliveira.shop/contar_pedidos.php?criado_em=${criado_em}`);
           const { posicao } = filaResponse.data;
       
           if (posicao !== undefined) {
-            // Obtém quantos avisos já foram enviados para esse cliente
             const avisos = avisosEnviados.get(numeroWhatsApp) || 0;
       
-            if (avisos < 6) { // Limite de 6 avisos
-              await client.sendMessage(numeroWhatsApp, `⏳ Olá, ${nome_cliente}! Seu pedido (*ID: ${id}*) está atualmente na posição ${posicao} da nossa fila. Agradecemos pela paciência!`);
-              avisosEnviados.set(numeroWhatsApp, avisos + 1);
+            if (avisos < 6) {
+              setTimeout(async () => {
+                await client.sendMessage(numeroWhatsApp, `⏳ Olá, ${nome_cliente}! Seu pedido (*ID: ${id}*) está atualmente na posição ${posicao} da nossa fila. Agradecemos pela paciência!`);
+                avisosEnviados.set(numeroWhatsApp, avisos + 1);
+              }, 3000); // Pequeno atraso para evitar mensagens simultâneas
             }
-          }
-        } else if (status === "saiu") {
-          // Obtém quantos avisos já foram enviados para esse cliente
-          const avisos = avisosEnviados.get(numeroWhatsApp) || 0;
-      
-          if (avisos < 4) { // Limite de 4 avisos para o status "saiu"
-            await client.sendMessage(numeroWhatsApp, `🚀 Olá, ${nome_cliente}! Temos uma ótima notícia para você! 🎉
-
-Seu pedido (*ID: ${id}*) já saiu para entrega e em breve estará com você. Fique atento ao telefone e aguarde com expectativa. 🍽️😋
-
-Se precisar de algo, estamos à disposição! Obrigado por escolher a Ceece Gril. 🥩🔥`);
-            avisosEnviados.set(numeroWhatsApp, avisos + 1);
           }
         }
       } catch (error) {
-        //console.error(`❌ Erro ao enviar mensagem para ${numeroWhatsApp}:`, error.message);
+        console.error(`❌ Erro ao enviar mensagem para ${numeroWhatsApp}:`, error.message);
       }
-
-    } // Aqui fechamos o "for" corretamente
+    }
   } catch (error) {
     console.error(`❌ Erro ao enviar pedido:`, error.message);
   }
-} // Aqui fechamos a função corretamente
-  
-  
+};
 
+const verificarSaiu = async (client) => {
+  if (!client) return;
+
+  try {
+    const response = await axios.get('https://ceecegril.antoniooliveira.shop/obter_pedidos.php');
+    if (!response.data || !response.data.pedidos) return;
+
+    const pedidos = response.data.pedidos;
+
+    for (const { id, telefone_cliente, nome_cliente, status } of pedidos) {
+      const numeroWhatsApp = `${telefone_cliente}@s.whatsapp.net`;
+
+      try {
+        if (status === "saiu") {
+          const avisos = avisosEnviados.get(numeroWhatsApp) || 0;
+      
+          if (avisos < 4) {
+            setTimeout(async () => {
+              await client.sendMessage(numeroWhatsApp, `🚀 Olá, ${nome_cliente}! Temos uma ótima notícia para você! 🎉\n\nSeu pedido (*ID: ${id}*) já saiu para entrega e em breve estará com você. Fique atento ao telefone e aguarde com expectativa. 🍽️😋\n\nSe precisar de algo, estamos à disposição! Obrigado por escolher a Ceece Gril. 🥩🔥`);
+              avisosEnviados.set(numeroWhatsApp, avisos + 1);
+            }, 3000); // Pequeno atraso para evitar mensagens simultâneas
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao enviar mensagem para ${numeroWhatsApp}:`, error.message);
+      }
+    }
+  } catch (error) {
+    console.error(`❌ Erro ao enviar pedido:`, error.message);
+  }
+};
+
+// Agendar as verificações com intervalos diferentes
+setInterval(() => verificarPedidos(client), 180000); // 3 minutos
+setInterval(() => verificarSaiu(client), 120000); // 2 minutos
 
 let enviosHoje = 0; // Variável global para contar os envios no dia
 const maxEnviosPorDia = 2; // Limite de envios por dia
