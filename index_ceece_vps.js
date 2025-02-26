@@ -441,7 +441,7 @@ setInterval(async () => {
       return;
     }
 
-    await verificarPedidos(client);
+  //  await verificarPedidos(client);
     await enviarMensagensAniversario(client);
     await verificarCliente(client, cliente_telefone);
     
