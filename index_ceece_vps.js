@@ -325,10 +325,7 @@ if (msg.body.trim() === '5') {
                 // Aqui você deve enviar a mensagem de resposta pelo WhatsApp
             }
         })
-        .catch(error => {
-            console.error("Erro ao buscar pedido:", error);
-        });
-
+        
 
             } else {
               mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
