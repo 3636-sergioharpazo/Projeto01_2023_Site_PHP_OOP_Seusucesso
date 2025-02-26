@@ -285,26 +285,22 @@ if (msg.body.trim() === '5') {
   await delay(2000);
   client.sendMessage(msg.from, "Digite o *ID do pedido* para visualizar os detalhes.\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
 
-  // Variável de controle para evitar múltiplos ouvintes de eventos
-  let isListening = true;
+  let isProcessing = false; // Variável de controle para evitar múltiplos processamentos
 
-  // Aguarda o ID do pedido ou comando para voltar ao menu principal
-  client.on('message', async (newMsg) => {
-    if (!isListening) return; // Impede que o código continue se já estiver processando
-
-    isListening = false; // Impede novos ouvintes enquanto o processo está em andamento
+  client.once('message', async (newMsg) => {
+    if (isProcessing) return; // Se já estiver processando, evita duplicação
+    isProcessing = true; // Bloqueia novas execuções até finalizar o processo
 
     const mensagem = newMsg.body.trim().toLowerCase();
 
     // Verifica se o cliente deseja voltar ou ir ao menu principal
     if (mensagem === 'voltar' || mensagem === 'menu') {
       client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
-      // Aqui você pode chamar a função que reinicia o menu principal, se necessário
-      isListening = true; // Permite novos ouvintes para o próximo fluxo
-      return;  // Retorna ao fluxo do menu principal
+      isProcessing = false; // Libera para novos fluxos
+      return;
     }
 
-    // Verifica se o ID do pedido é um número
+    // Verifica se o ID do pedido é um número válido
     if (/^\d+$/.test(mensagem)) {
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
         .then(response => {
@@ -320,7 +316,6 @@ if (msg.body.trim() === '5') {
             }
 
             mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
-
             client.sendMessage(msg.from, mensagemResposta);
           } else {
             client.sendMessage(msg.from, "⚠️ Pedido não encontrado.");
@@ -329,13 +324,14 @@ if (msg.body.trim() === '5') {
         .catch(error => {
           console.error("Erro ao buscar pedido:", error);
           client.sendMessage(msg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
+        })
+        .finally(() => {
+          isProcessing = false; // Libera para novas consultas
         });
     } else {
-      // Caso o ID não seja válido, a mensagem de erro é enviada
       client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
+      isProcessing = false; // Libera para novas tentativas
     }
-
-    isListening = true; // Permite novos ouvintes para o próximo fluxo
   });
 }
 
