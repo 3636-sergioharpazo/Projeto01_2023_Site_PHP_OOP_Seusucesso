@@ -287,7 +287,6 @@ if (msg.body.trim() === '4') {
 
   client.on('message', handleUserMessage);
 }
-
 // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
@@ -296,7 +295,7 @@ if (msg.body.trim() === '5') {
 
   let isProcessing = false; // Variável de controle para evitar múltiplos processamentos
 
-  client.once('message', async (newMsg) => {
+  const messageHandler = async (newMsg) => {
     if (isProcessing) return; // Se já estiver processando, evita duplicação
     isProcessing = true; // Bloqueia novas execuções até finalizar o processo
 
@@ -306,34 +305,30 @@ if (msg.body.trim() === '5') {
     if (mensagem === 'voltar' || mensagem === 'menu') {
       client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
       isProcessing = false; // Libera para novos fluxos
+      client.removeListener('message', messageHandler);
       return;
     }
 
     // Verifica se o ID do pedido é um número válido
-  if (/^\d+$/.test(mensagem)) {
-    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
+    if (/^\d+$/.test(mensagem)) {
+      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
         .then(response => {
-            if (response.data && response.data.id) {
-                let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${response.data.data_pedido}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+          if (response.data && response.data.id) {
+            let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${response.data.data_pedido}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
 
-                if (response.data.itens && response.data.itens.length > 0) {
-                    response.data.itens.forEach(item => {
-                        mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
-                    });
-                }
-
-                // Aqui você deve enviar a mensagem de resposta pelo WhatsApp
-            }
-        })
-        
-
+            if (response.data.itens && response.data.itens.length > 0) {
+              response.data.itens.forEach(item => {
+                mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
+              });
             } else {
               mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
             }
 
             mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
             client.sendMessage(msg.from, mensagemResposta);
-        
+          } else {
+            client.sendMessage(msg.from, "⚠️ Pedido não encontrado. Verifique o ID informado.");
+          }
         })
         .catch(error => {
           console.error("Erro ao buscar pedido:", error);
@@ -344,9 +339,12 @@ if (msg.body.trim() === '5') {
         });
     } else {
       client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
-      isProcessing = false; // Libera para novas tentativas
     }
-  
+  };
+
+  client.on('message', messageHandler);
+}
+
 
 
  // Menu 6 - Atendimento
