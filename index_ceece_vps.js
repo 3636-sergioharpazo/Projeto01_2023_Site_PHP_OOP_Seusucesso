@@ -314,7 +314,16 @@ if (msg.body.trim() === '5') {
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
         .then(response => {
           if (response.data && response.data.id) {
-            let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${response.data.data_pedido}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+      let dataFormatada = new Date(response.data.data_pedido).toLocaleString('pt-BR', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit',
+    second: '2-digit'
+});
+
+let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataFormatada}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
 
             if (response.data.itens && response.data.itens.length > 0) {
               response.data.itens.forEach(item => {
