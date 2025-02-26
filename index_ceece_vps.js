@@ -310,7 +310,7 @@ let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
 
   // Verifica se o cliente deseja voltar ou ir ao menu principal
   if (mensagem === 'voltar' || mensagem === 'menu') {
-    client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
+    client.sendMessage(newMsg.from, "🔙 Retornando ao menu principal...");
     // Aqui você pode chamar a função que reinicia o menu principal, se necessário
     isListening = true; // Permite novos ouvintes para o próximo fluxo
     return;  // Retorna ao fluxo do menu principal
@@ -334,24 +334,24 @@ let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
 
         mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
 
-        client.sendMessage(msg.from, mensagemResposta);
+        client.sendMessage(newMsg.from, mensagemResposta);
         invalidIdMessageSent = false; // Reseta a flag de mensagem de erro
       } else {
         if (!invalidIdMessageSent) {
-          client.sendMessage(msg.from, "⚠️ Pedido não encontrado.");
+          client.sendMessage(newMsg.from, "⚠️ Pedido não encontrado.");
           invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
         }
       }
     } catch (error) {
       console.error("Erro ao buscar pedido:", error);
       if (!invalidIdMessageSent) {
-        client.sendMessage(msg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
+        client.sendMessage(newMsg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
         invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
       }
     }
   } else {
     if (!invalidIdMessageSent) {
-      client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
+      client.sendMessage(newMsg.from, "⚠️ Por favor, digite um ID de pedido válido.");
       invalidIdMessageSent = true; // Marca que a mensagem de erro foi enviada
     }
   }
@@ -361,20 +361,13 @@ let invalidIdMessageSent = false; // Controla se a mensagem de erro foi enviada
  // Menu 6 - Atendimento
  
   // Menu 2 - Fazer Pedido
-// Menu 2 - Fazer Pedido
 if (msg.body.trim() === '2') {
   await chat.sendStateTyping();
   await delay(2000);
-
-  // Verificar se já existe um pedido pendente
-  if (pedidosPendentes[msg.from]) {
-    return client.sendMessage(msg.from, "Você já tem um pedido pendente. Finalize ou cancele o pedido atual antes de fazer um novo.");
-  }
-
-  await client.sendMessage(msg.from, "Digite o número do *prato* seguido da *quantidade* (exemplo: '1 2' para 2 unidades do prato 1).");
+  client.sendMessage(msg.from, "Digite o número do *prato* seguido da *quantidade* (exemplo: '1 2' para 2 unidades do prato 1).");
 
   // Confirmação de Pedido
-  client.on('message', async (msg) => {
+  client.on('message', async (newMsg) => {
     const mensagem = newMsg.body.trim();
 
     if (/^\d+\s?\d+$/.test(mensagem)) {
@@ -382,7 +375,7 @@ if (msg.body.trim() === '2') {
       const quantidade = parseInt(qtd, 10);
 
       if (isNaN(quantidade) || quantidade <= 0) {
-        return client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
+        return client.sendMessage(newMsg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
       }
 
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=verificar_cardapio2&id_produto=${prato}`)
@@ -391,54 +384,57 @@ if (msg.body.trim() === '2') {
             const { nome, preco } = response.data.produto;
             const valorTotal = preco * quantidade;
             client.sendMessage(
-              msg.from,
+              newMsg.from,
               `Seu pedido: ${nome} x ${quantidade}\nValor total: R$ ${valorTotal.toFixed(2)}\n` +
               `Digite *Confirmar* para finalizar ou *Voltar* para alterar.`
             );
-            pedidosPendentes[newMsg.from] = { prato, quantidade, nomeCliente: msg.from }; // armazena o pedido pendente
+            pedidosPendentes[newMsg.from] = { prato, quantidade, nomeCliente: newMsg.from }; // armazena o pedido pendente
           }
         })
         .catch(error => {
           console.error("Erro ao verificar cardápio:", error);
-          client.sendMessage(msg.from, "Erro ao verificar o cardápio. Tente novamente.");
+          client.sendMessage(newMsg.from, "Erro ao verificar o cardápio. Tente novamente.");
         });
     }
 
     // Confirmar Pedido
-    if (mensagem.trim().toLowerCase() === 'confirmar' && pedidosPendentes[msg.from]) {
-      const { prato, quantidade } = pedidosPendentes[msg.from];
+    if (mensagem.trim().toLowerCase() === 'confirmar' && pedidosPendentes[newMsg.from]) {
+      const { prato, quantidade } = pedidosPendentes[newMsg.from];
       const contact = await msg.getContact();
       let nomeCliente = contact.pushname || "Cliente";  // Usando 'let' para permitir a reatribuição
-      let cliente_telefone = msg.from.split('@')[0];
+      let cliente_telefone = newMsg.from.split('@')[0];
+      
+    
 
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=fazer_pedido2&telefone_cliente=${cliente_telefone}&nome_cliente=${encodeURIComponent(nomeCliente)}&id_produto=${prato}&quantidade=${quantidade}`)
         .then(response => {
           if (response.data.pedido_id) {
-            client.sendMessage(msg.from, `Pedido registrado com sucesso! ✅\nSeu número de pedido é: *${response.data.pedido_id}*`);
-            delete pedidosPendentes[msg.from]; // limpa o pedido pendente
+            client.sendMessage(newMsg.from, `Pedido registrado com sucesso! ✅\nSeu número de pedido é: *${response.data.pedido_id}*`);
+            delete pedidosPendentes[newMsg.from]; // limpa o pedido pendente
           } else {
-            client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+            client.sendMessage(newMsg.from, "Erro ao registrar o pedido. Tente novamente.");
           }
         })
         .catch(error => {
           console.error('Erro ao criar pedido:', error);
-          client.sendMessage(msg.from, "Erro ao registrar o pedido. Tente novamente.");
+          client.sendMessage(newMsg.from, "Erro ao registrar o pedido. Tente novamente.");
         });
     }
 
     // Cancelar Pedido
-    if (mensagem.trim().toLowerCase() === 'voltar' && pedidosPendentes[msg.from]) {
-      client.sendMessage(msg.from, "Pedido cancelado. Digite novamente o número do prato e a quantidade.");
-      delete pedidosPendentes[msg.from]; // cancela o pedido pendente
+    if (mensagem.trim().toLowerCase() === 'voltar' && pedidosPendentes[newMsg.from]) {
+      client.sendMessage(newMsg.from, "Pedido cancelado. Digite novamente o número do prato e a quantidade.");
+      delete pedidosPendentes[newMsg.from]; // cancela o pedido pendente
     }
   });
 }
 
-// Cancelar Pedido
-if (msg.body.trim().toLowerCase() === 'voltar' && pedidosPendentes[msg.from]) {
-  client.sendMessage(msg.from, "Pedido cancelado. Digite novamente o número do prato e a quantidade.");
-  delete pedidosPendentes[msg.from];
-}
+
+  // Cancelar Pedido
+  if (msg.body.trim().toLowerCase() === 'voltar' && pedidosPendentes[msg.from]) {
+    client.sendMessage(msg.from, "Pedido cancelado. Digite novamente o número do prato e a quantidade.");
+    delete pedidosPendentes[msg.from];
+  }
 // client on ready ----------------------final
 setInterval(async () => {
   if (!client) {
