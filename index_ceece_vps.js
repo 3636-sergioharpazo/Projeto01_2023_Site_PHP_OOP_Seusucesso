@@ -185,8 +185,8 @@ client.on('message', async (msg) => {
   const nomeCliente = contact.pushname || "Cliente";
 
   // Mensagem de boas-vindas e menu principal
- if (/^(menu|voltar|oi|Oi|ol[áa]|boa noite|bom dia)$/i.test(msg.body)) {
-    await chat.sendStateTyping();
+if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bom (dia|tarde|noite))$/i.test(msg.body)) {
+  await chat.sendStateTyping();
     await delay(2000);
 
     axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=menu', {
