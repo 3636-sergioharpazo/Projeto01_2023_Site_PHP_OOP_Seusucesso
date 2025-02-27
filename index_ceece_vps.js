@@ -226,7 +226,7 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
  
 
       // Adicionamos o item ao mapa com um tempo de expiração
-     /MEU ADICIONAR ITENS
+     //MEU ADICIONAR ITENS
 
 if (msg.body.trim() === '4') {
     await chat.sendStateTyping();
