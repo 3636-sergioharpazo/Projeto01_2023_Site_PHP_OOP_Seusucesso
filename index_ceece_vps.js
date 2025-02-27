@@ -209,7 +209,20 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
           timeout: 10000 // 10 segundos de timeout
         })
       .then(response => {
-        client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
+      const hora = new Date().getHours();
+    let saudacao = "Olá";
+
+    if (hora >= 5 && hora < 12) {
+        saudacao = "Bom dia !";
+    } else if (hora >= 12 && hora < 18) {
+        saudacao = "Boa tarde !";
+    } else {
+        saudacao = "Boa noite !";
+    }
+
+    client.sendMessage(msg.from, `${saudacao}, ${nomeCliente.split(" ")[0]}! 👋\n\nSou o assistente virtual e estou aqui para te ajudar. 😊\n\n${response.data}`);
+        
+        //   client.sendMessage(msg.from, `Olá, ${nomeCliente.split(" ")[0]}! 👋\n\n${response.data}`);
       })
       .catch(error => {
         console.error("Erro ao obter menu:", error);
