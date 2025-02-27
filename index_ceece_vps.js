@@ -133,6 +133,22 @@ app.get('/status', (req, res) => {
     });
   }
 });
+// Endpoint para desconectar e gerar um novo QR Code
+app.get('/disconnect', (req, res) => {
+  if (client) {
+    client.destroy().then(() => {
+      console.log('Cliente desconectado e sessão reiniciada');
+      restartClient(); // Reinicia o cliente, gerando um novo QR Code
+      res.json({ message: 'Cliente desconectado e QR Code gerado novamente.' });
+    }).catch((err) => {
+      console.error('Erro ao desconectar cliente:', err);
+      res.status(500).json({ error: 'Erro ao desconectar cliente' });
+    });
+  } else {
+    res.status(400).json({ error: 'Cliente não está ativo.' });
+  }
+});
+
 
 client.on('disconnected', (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
