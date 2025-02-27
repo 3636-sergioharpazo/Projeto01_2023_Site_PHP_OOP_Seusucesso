@@ -287,6 +287,74 @@ if (msg.body.trim() === '4') {
 
   client.on('message', handleUserMessage);
 }
+/ Menu 5 - Ver Pedido
+if (msg.body.trim() === '5') {
+  await chat.sendStateTyping();
+  await delay(2000);
+  client.sendMessage(msg.from, "Digite o *ID do pedido* para visualizar os detalhes.\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
+
+  let isProcessing = false; // Variável de controle para evitar múltiplos processamentos
+
+  const messageHandler = async (newMsg) => {
+    if (isProcessing) return; // Se já estiver processando, evita duplicação
+    isProcessing = true; // Bloqueia novas execuções até finalizar o processo
+
+    const mensagem = newMsg.body.trim().toLowerCase();
+
+    // Verifica se o cliente deseja voltar ou ir ao menu principal
+    if (mensagem === 'voltar' || mensagem === 'menu') {
+      client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
+      isProcessing = false; // Libera para novos fluxos
+      client.removeListener('message', messageHandler);
+      return;
+    }
+
+    // Verifica se o ID do pedido é um número válido
+    if (/^\d+$/.test(mensagem)) {
+      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
+        .then(response => {
+          if (response.data && response.data.id) {
+      let dataFormatada = new Date(response.data.data_pedido).toLocaleString('pt-BR', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit',
+    second: '2-digit'
+});
+
+let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataFormatada}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+
+            if (response.data.itens && response.data.itens.length > 0) {
+              response.data.itens.forEach(item => {
+                mensagemResposta += `🔹 *Produto:* ${item.nome_produto} (ID: ${item.id_produto})\n   ➡️ Quantidade: ${item.quantidade}\n   💰 Subtotal: R$ ${item.subtotal}\n\n`;
+              });
+            } else {
+              mensagemResposta += "⚠️ Nenhum item encontrado neste pedido.\n";
+            }
+
+            mensagemResposta += `💳 *Total do Pedido:* R$ ${response.data.total}`;
+            client.sendMessage(msg.from, mensagemResposta);
+          } else {
+            client.sendMessage(msg.from, "⚠️ Pedido não encontrado. Verifique o ID informado.");
+          }
+        })
+        .catch(error => {
+          console.error("Erro ao buscar pedido:", error);
+          client.sendMessage(msg.from, "⚠️ Erro ao buscar pedido. Tente novamente.");
+        })
+        .finally(() => {
+          isProcessing = false; // Libera para novas consultas
+        });
+    } else {
+      client.sendMessage(msg.from, "⚠️ Por favor, digite um ID de pedido válido.");
+    }
+  };
+
+  client.on('message', messageHandler);
+}
+
+
 
   // Menu 2 fazer pedido
  const pedidosPendentes = {};
