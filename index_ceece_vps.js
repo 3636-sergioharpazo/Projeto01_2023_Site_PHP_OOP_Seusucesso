@@ -223,18 +223,13 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
     }
   }
 
- // Criamos um objeto para armazenar os itens adicionados 
-      if (itensAdicionados.has(chaveItem)) {
-        client.sendMessage(msg.from, "⚠️ Este item já foi adicionado recentemente. Aguarde um momento antes de adicionar novamente.");
-        return;
-      }
+ 
 
       // Adicionamos o item ao mapa com um tempo de expiração
       // Criamos um objeto para armazenar os itens adicionados recentemente
 
   // MENU ADICIONAR NO PEDIDO
-  const itensAdicionados = new Map();
-
+ 
 
   if (msg.body.trim() === '4') {
   await chat.sendStateTyping();
