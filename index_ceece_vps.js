@@ -266,25 +266,27 @@ if (msg.body.trim() === '4') {
         return;
       }
 
-      // Adicionamos o item ao mapa com um tempo de expiração
-      itensAdicionados.set(chaveItem, true);
-      setTimeout(() => itensAdicionados.delete(chaveItem), 30000); // Remove o item após 30 segundos
+// Adicionamos o item ao mapa com um tempo de expiração
+itensAdicionados.set(chaveItem, true);
+setTimeout(() => itensAdicionados.delete(chaveItem), 30000); // Remove o item após 30 segundos
 
-      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
-        .then(() => {
-          client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
-        })
-        .catch(error => {
-          console.error('Erro ao adicionar item:', error);
-          client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
-          // Caso haja erro, remove o item do mapa para permitir uma nova tentativa
-          itensAdicionados.delete(chaveItem);
-        });
+axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
+  .then(response => {
+    const data = response.data;
+
+    if (data.erro) {
+      // Se a API retornou um erro, mostramos a mensagem de erro ao usuário
+      client.sendMessage(msg.from, `⚠️ Erro: ${data.mensagem}`);
+      itensAdicionados.delete(chaveItem); // Permite uma nova tentativa
     } else {
-      client.sendMessage(msg.from, "⚠️ Formato inválido. Por favor, digite no formato correto (ex: '123 1 2').");
+      client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
     }
-  };
-
+  })
+  .catch(error => {
+    console.error('Erro ao adicionar item:', error);
+    client.sendMessage(msg.from, "❌ Erro ao adicionar item ao pedido. Tente novamente.");
+    itensAdicionados.delete(chaveItem); // Permite nova tentativa em caso de falha na requisição
+  });
   client.on('message', handleUserMessage);
 }
 // Menu 5 - Ver Pedido
