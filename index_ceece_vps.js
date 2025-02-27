@@ -303,7 +303,7 @@ axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar
         client.sendMessage(telefoneCliente, "❌ Erro ao adicionar item ao pedido. Tente novamente.\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*");
     });
   
-}
+
 // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
