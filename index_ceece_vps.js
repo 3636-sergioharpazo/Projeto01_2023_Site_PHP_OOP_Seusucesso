@@ -302,6 +302,7 @@ axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar
         console.error('Erro ao adicionar item:', error);
         client.sendMessage(telefoneCliente, "❌ Erro ao adicionar item ao pedido. Tente novamente.\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*");
     });
+    });
   
 
 // Menu 5 - Ver Pedido
