@@ -305,25 +305,27 @@ if (msg.body.trim() === '4') {
   });
 }
 
-          // Caso haja erro, remove o item do mapa para permitir uma 
+// Menu 5 - Ver Pedido
 // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
   await delay(2000);
-  client.sendMessage(msg.from, "Digite o *ID do pedido* para visualizar os detalhes.\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
+  client.sendMessage(msg.from, "Digite o *ID do pedido* para visualizar os detalhes.\nOu digite *voltar*, *menu* ou *sair* para retornar ao menu principal.");
 
-  let isProcessing = false; // Variável de controle para evitar múltiplos processamentos
+  let isProcessing = false; // Evita múltiplos processamentos simultâneos
+  let contextActive = true; // Indica se o usuário ainda está nesse fluxo
 
   const messageHandler = async (newMsg) => {
-    if (isProcessing) return; // Se já estiver processando, evita duplicação
-    isProcessing = true; // Bloqueia novas execuções até finalizar o processo
+    if (!contextActive || isProcessing) return; // Sai se o contexto não estiver ativo ou já estiver processando
 
+    isProcessing = true; // Bloqueia novas execuções até finalizar o processo
     const mensagem = newMsg.body.trim().toLowerCase();
 
-    // Verifica se o cliente deseja voltar ou ir ao menu principal
-    if (mensagem === 'voltar' || mensagem === 'menu') {
+    // Se o usuário sair do fluxo, remove o listener
+    if (['voltar', 'menu', 'sair'].includes(mensagem)) {
       client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
-      isProcessing = false; // Libera para novos fluxos
+      contextActive = false; // Desativa o fluxo atual
+      isProcessing = false;
       client.removeListener('message', messageHandler);
       return;
     }
@@ -333,16 +335,12 @@ if (msg.body.trim() === '5') {
       axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=ver_pedido&id_pedido=${mensagem}`)
         .then(response => {
           if (response.data && response.data.id) {
-      let dataFormatada = new Date(response.data.data_pedido).toLocaleString('pt-BR', { 
-    day: '2-digit', 
-    month: '2-digit', 
-    year: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit',
-    second: '2-digit'
-});
+            let dataFormatada = new Date(response.data.data_pedido).toLocaleString('pt-BR', { 
+              day: '2-digit', month: '2-digit', year: 'numeric', 
+              hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
 
-let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataFormatada}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
+            let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataFormatada}\n🔹 *Status:* ${response.data.status}\n👤 *Nome:* ${response.data.nome_cliente}\n\n🛒 *Itens do Pedido:*\n`;
 
             if (response.data.itens && response.data.itens.length > 0) {
               response.data.itens.forEach(item => {
@@ -372,8 +370,6 @@ let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataF
 
   client.on('message', messageHandler);
 }
-
-
 
   // Menu 2 fazer pedido
  const pedidosPendentes = {};
