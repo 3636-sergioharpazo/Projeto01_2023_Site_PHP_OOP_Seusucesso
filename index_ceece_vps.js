@@ -287,7 +287,7 @@ if (msg.body.trim() === '4') {
 
   client.on('message', handleUserMessage);
 }
-/ Menu 5 - Ver Pedido
+// Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
   await delay(2000);
