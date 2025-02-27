@@ -361,16 +361,21 @@ let mensagemResposta = `📦 *Pedido #${response.data.id}*\n📅 *Data:* ${dataF
 const ultimosPedidos = {}; // Armazena o timestamp do último pedido de cada usuário
 const TEMPO_ESPERA = 30 * 1000; // 30 segundos
 
-if (msg.body.trim() === '2') {
-  if (pedidosPendentes[msg.from]) {
-    return client.sendMessage(msg.from, "⚠ Você já iniciou um pedido. Digite *Confirmar* para finalizar ou *Voltar* para refazer.");
+client.on('message', async (msg) => {
+  const mensagem = msg.body.trim();
+
+  if (mensagem === '2') {
+    if (pedidosPendentes[msg.from]) {
+      return client.sendMessage(msg.from, "⚠ Você já iniciou um pedido. Digite *Confirmar* para finalizar ou *Voltar* para refazer.");
+    }
+    
+    await msg.getChat().then(chat => chat.sendStateTyping());
+    setTimeout(() => {
+      client.sendMessage(msg.from, "Digite o número do *prato* seguido da *quantidade* (exemplo: '1 2' para 2 unidades do prato 1). Para cancelar, digite *Cancelar*.");
+      pedidosPendentes[msg.from] = { aguardandoPedido: true };
+    }, 2000);
   }
-  
-  await chat.sendStateTyping();
-  await delay(2000);
-  client.sendMessage(msg.from, "Digite o número do *prato* seguido da *quantidade* (exemplo: '1 2' para 2 unidades do prato 1). Para cancelar, digite *Cancelar*.");
-  pedidosPendentes[msg.from] = { aguardandoPedido: true };
-}
+});
 
 client.on('message', async (newMsg) => {
   if (!pedidosPendentes[newMsg.from]) return; // Ignora mensagens de quem não iniciou um pedido
@@ -446,7 +451,7 @@ client.on('message', async (newMsg) => {
   } else if (mensagem.toLowerCase() === 'voltar' && pedidosPendentes[newMsg.from]?.aguardandoConfirmacao) {
     client.sendMessage(newMsg.from, "🔄 Pedido cancelado. Digite novamente o número do prato e a quantidade.");
     pedidosPendentes[newMsg.from] = { aguardandoPedido: true };
-  } else {
+  } else if (pedidosPendentes[newMsg.from]?.aguardandoPedido || pedidosPendentes[newMsg.from]?.aguardandoConfirmacao) {
     client.sendMessage(newMsg.from, "❌ Entrada inválida. Digite o número do prato seguido da quantidade. Exemplo: '1 2' para 2 unidades do prato 1.");
   }
 });
