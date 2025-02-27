@@ -227,7 +227,7 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
 
       // Adicionamos o item ao mapa com um tempo de expiração
      //MEU ADICIONAR ITENS
-  if (msg.body.trim() === '4') {
+ if (msg.body.trim() === '4') {
     await chat.sendStateTyping();
     await delay(2000);
 
@@ -281,21 +281,15 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
             .then(response => {
                 const resposta = response.data;
 
+                // Log para verificar a resposta da API
+                console.log('Resposta da API:', resposta);
+
                 if (resposta.erro) {
                     // Se erro for true, exibe a mensagem de erro
                     client.sendMessage(telefoneCliente, `⚠️ ${resposta.mensagem}\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*`);
                 } else {
-                    // Se erro for false, exibe os detalhes do produto adicionado
-                    client.sendMessage(telefoneCliente, 
-                        `✅ Item adicionado ao pedido *${idPedido}* com sucesso!\n\n` +
-                        `🛒 Produto: ${resposta.produto.nome}\n` +
-                        `💰 Valor unitário: R$ ${resposta.produto.preco}\n` +
-                        `📦 Quantidade: ${quantidade}\n` +
-                        `🧾 Total: R$ ${Number(resposta.precoTotal).toFixed(2).replace('.', ',')}\n\n` +
-                        "➡️ Para adicionar mais itens, digite apenas o *ID do produto* e a *quantidade* (ex: '1 2').\n" +
-                        "✏️ Para mudar de pedido, informe um novo ID do pedido (ex: '124 3 1').\n\n" +
-                        "🔙 *Para sair, digite 'menu' ou 'sair'.*"
-                    );
+                    // Exibe a mensagem completa com os detalhes
+                    client.sendMessage(telefoneCliente, resposta.mensagem);
                 }
             })
             .catch(error => {
@@ -304,7 +298,6 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
             });
     });
 }
-
 
 // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
