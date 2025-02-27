@@ -231,82 +231,101 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
 
       // Adicionamos o item ao mapa com um tempo de expiração
       // Criamos um objeto para armazenar os itens adicionados recentemente
-const itensAdicionados = new Map();
 
-// Menu 4 - Adicionar Mais Itens ao Pedido
-if (msg.body.trim() === '4') {
+  // MENU ADICIONAR NO PEDIDO
+  const itensAdicionados = new Map();
+
+
+  if (msg.body.trim() === '4') {
   await chat.sendStateTyping();
   await delay(2000);
-  
+
   axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
     .then(response => client.sendMessage(msg.from, response.data))
     .catch(error => {
       console.error("Erro ao obter cardápio:", error);
-      client.sendMessage(msg.from, "Desculpe, não conseguimos obter o cardápio no momento.");
+      client.sendMessage(msg.from, "❌ Desculpe, não conseguimos obter o cardápio no momento.");
     });
 
-  client.sendMessage(msg.from, "Digite o *ID do seu pedido*, o *ID do produto* e a *quantidade* para adicionar (ex: '123 1 2').\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
+  client.sendMessage(msg.from, 
+    "📋 Digite o *ID do seu pedido*, o *ID do produto* e a *quantidade* para adicionar (ex: '123 1 2').\n" +
+    "➡️ Após adicionar um item, o *ID do pedido será salvo automaticamente* para os próximos itens.\n" +
+    "✏️ Se quiser mudar o ID do pedido, basta informar outro ID normalmente.\n" +
+    "🔙 *Para sair, digite 'menu' ou 'sair'.*"
+  );
 
-  // Criamos um coletor de mensagens para capturar apenas as próximas respostas do usuário
-  const filtro = (newMsg) => newMsg.from === msg.from; 
-  const coletor = client.createMessageCollector({ filtro, time: 60000 }); // Coletor expira em 60 segundos
+  let idPedidoSalvo = null; // Variável para armazenar o ID do pedido
+  const filtro = (newMsg) => newMsg.from === msg.from;
+  const coletor = client.createMessageCollector({ filtro, time: 120000 }); // Coletor válido por 2 minutos
 
   coletor.on('collect', async (newMsg) => {
     const mensagem = newMsg.body.trim().toLowerCase();
 
-    if (mensagem === 'voltar' || mensagem === 'menu') {
-      client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
+    if (['sair', 'menu'].includes(mensagem)) {
+      client.sendMessage(msg.from, "🔙 Saindo do contexto... Digite *menu* caso precise de algo.");
       coletor.stop();
       return;
     }
 
-    if (/^\d+\s\d+\s\d+$/.test(mensagem)) {
-      const [idPedido, idProduto, quantidade] = mensagem.split(' ');
-      const qtd = parseInt(quantidade, 10);
-      const telefoneCliente = msg.from;
+    let idPedido, idProduto, quantidade;
 
-      if (isNaN(qtd) || qtd <= 0) {
-        client.sendMessage(msg.from, "Erro: A quantidade deve ser um número inteiro positivo.");
-        return;
-      }
-
-      // Criamos uma chave única para verificar se o mesmo item já foi adicionado
-      const chaveItem = `${telefoneCliente}-${idPedido}-${idProduto}-${qtd}`;
-
-      if (itensAdicionados.has(chaveItem)) {
-        client.sendMessage(msg.from, "⚠️ Este item já foi adicionado recentemente. Aguarde um momento antes de adicionar novamente.");
-        return;
-      }
-
-      // Adicionamos o item ao mapa com um tempo de expiração
-      itensAdicionados.set(chaveItem, true);
-      setTimeout(() => itensAdicionados.delete(chaveItem), 30000); // Remove o item após 30 segundos
-
-      axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
-        .then(() => {
-          client.sendMessage(msg.from, "Item adicionado ao pedido com sucesso! ✅");
-        })
-        .catch(error => {
-          console.error('Erro ao adicionar item:', error);
-          client.sendMessage(msg.from, "Erro ao adicionar item ao pedido. Tente novamente.");
-          // Caso haja erro, remove o item do mapa para permitir uma nova tentativa
-          itensAdicionados.delete(chaveItem);
-        });
+    // Verifica se o usuário já salvou um ID de pedido e digitou apenas produto e quantidade
+    if (idPedidoSalvo && /^\d+\s\d+$/.test(mensagem)) {
+      [idProduto, quantidade] = mensagem.split(' ');
+      idPedido = idPedidoSalvo;
+    } 
+    // Verifica se a mensagem está no formato completo (ID do pedido, ID do produto e quantidade)
+    else if (/^\d+\s\d+\s\d+$/.test(mensagem)) {
+      [idPedido, idProduto, quantidade] = mensagem.split(' ');
+      idPedidoSalvo = idPedido; // Salva o ID do pedido para os próximos itens
     } else {
-      client.sendMessage(msg.from, "⚠️ Formato inválido. Por favor, digite no formato correto (ex: '123 1 2').");
+      client.sendMessage(msg.from, "⚠️ Formato inválido. Digite no formato correto:\n🔹 '123 1 2' (ID Pedido, ID Produto, Quantidade)\n🔹 '1 2' (ID Produto, Quantidade) *se já tiver um pedido salvo*.\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*");
+      return;
     }
+
+    const qtd = parseInt(quantidade, 10);
+    const telefoneCliente = msg.from;
+
+    if (isNaN(qtd) || qtd <= 0) {
+      client.sendMessage(msg.from, "⚠️ A quantidade deve ser um número inteiro positivo.\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*");
+      return;
+    }
+
+    const chaveItem = `${telefoneCliente}-${idPedido}-${idProduto}-${qtd}`;
+
+    if (itensAdicionados.has(chaveItem)) {
+      client.sendMessage(msg.from, "⚠️ Este item já foi adicionado recentemente. Aguarde antes de tentar novamente.\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*");
+      return;
+    }
+
+    itensAdicionados.set(chaveItem, true);
+    setTimeout(() => itensAdicionados.delete(chaveItem), 30000);
+
+    axios.get(`https://ceecegril.antoniooliveira.shop/menus_bot.php?action=adicionar_item&id_pedido=${idPedido}&id_produto=${idProduto}&quantidade=${qtd}&telefone=${telefoneCliente}`)
+      .then(response => {
+        const resposta = response.data;
+
+        if (resposta.erro) {
+          client.sendMessage(msg.from, `⚠️ ${resposta.mensagem}\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*`);
+        } else {
+          client.sendMessage(msg.from, `✅ Item adicionado ao pedido *${idPedido}* com sucesso!\n\n🛒 Para adicionar mais itens, digite apenas o *ID do produto* e a *quantidade* (ex: '1 2').\n✏️ Para mudar de pedido, informe um novo ID do pedido (ex: '124 3 1').\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*`);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao adicionar item:', error);
+        client.sendMessage(msg.from, "❌ Erro ao adicionar item ao pedido. Tente novamente.\n\n🔙 *Para sair, digite 'menu' ou 'sair'.*");
+        itensAdicionados.delete(chaveItem);
+      });
   });
 
-  // Encerra automaticamente após o tempo limite
   coletor.on('end', (collected, reason) => {
     if (reason === 'time') {
-      client.sendMessage(msg.from, "⏳ Tempo limite atingido. Retornando ao menu principal.");
+      client.sendMessage(msg.from, "⏳ Tempo limite atingido. Saindo do contexto.\n\nℹ️ Digite *menu* caso precise de algo.");
     }
   });
 }
 
-// Menu 5 - Ver Pedido
-// Menu 5 - Ver Pedido
+  // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
   await delay(2000);
