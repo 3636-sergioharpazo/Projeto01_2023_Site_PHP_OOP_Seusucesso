@@ -223,13 +223,21 @@ if (/^(menu|voltar|oi+|ol[áa]+|e?a[íi]+|opa|fala|e?ae|boa (noite|tarde|dia)|bo
     }
   }
 
- // Criamos um objeto para armazenar os itens adicionados recentemente
+ // Criamos um objeto para armazenar os itens adicionados 
+      if (itensAdicionados.has(chaveItem)) {
+        client.sendMessage(msg.from, "⚠️ Este item já foi adicionado recentemente. Aguarde um momento antes de adicionar novamente.");
+        return;
+      }
+
+      // Adicionamos o item ao mapa com um tempo de expiração
+      // Criamos um objeto para armazenar os itens adicionados recentemente
 const itensAdicionados = new Map();
 
 // Menu 4 - Adicionar Mais Itens ao Pedido
 if (msg.body.trim() === '4') {
   await chat.sendStateTyping();
   await delay(2000);
+  
   axios.get('https://ceecegril.antoniooliveira.shop/menus_bot.php?action=cardapio')
     .then(response => client.sendMessage(msg.from, response.data))
     .catch(error => {
@@ -239,12 +247,16 @@ if (msg.body.trim() === '4') {
 
   client.sendMessage(msg.from, "Digite o *ID do seu pedido*, o *ID do produto* e a *quantidade* para adicionar (ex: '123 1 2').\nOu digite *voltar* ou *menu* para retornar ao menu principal.");
 
-  // Função para tratar a resposta do usuário
-  const handleUserMessage = async (newMsg) => {
+  // Criamos um coletor de mensagens para capturar apenas as próximas respostas do usuário
+  const filtro = (newMsg) => newMsg.from === msg.from; 
+  const coletor = client.createMessageCollector({ filtro, time: 60000 }); // Coletor expira em 60 segundos
+
+  coletor.on('collect', async (newMsg) => {
     const mensagem = newMsg.body.trim().toLowerCase();
 
     if (mensagem === 'voltar' || mensagem === 'menu') {
       client.sendMessage(msg.from, "🔙 Retornando ao menu principal...");
+      coletor.stop();
       return;
     }
 
@@ -283,10 +295,17 @@ if (msg.body.trim() === '4') {
     } else {
       client.sendMessage(msg.from, "⚠️ Formato inválido. Por favor, digite no formato correto (ex: '123 1 2').");
     }
-  };
+  });
 
-  client.on('message', handleUserMessage);
+  // Encerra automaticamente após o tempo limite
+  coletor.on('end', (collected, reason) => {
+    if (reason === 'time') {
+      client.sendMessage(msg.from, "⏳ Tempo limite atingido. Retornando ao menu principal.");
+    }
+  });
 }
+
+          // Caso haja erro, remove o item do mapa para permitir uma 
 // Menu 5 - Ver Pedido
 if (msg.body.trim() === '5') {
   await chat.sendStateTyping();
