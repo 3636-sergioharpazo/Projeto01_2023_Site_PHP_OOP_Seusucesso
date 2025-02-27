@@ -456,7 +456,7 @@ client.on('message', async (newMsg) => {
   } else if (pedidosPendentes[newMsg.from]?.aguardandoPedido || pedidosPendentes[newMsg.from]?.aguardandoConfirmacao) {
     client.sendMessage(newMsg.from, "❌ Entrada inválida. Digite o número do prato seguido da quantidade. Exemplo: '1 2' para 2 unidades do prato 1.");
   }
-});
+
 
 // client on ready ----------------------final
 setInterval(async () => {
