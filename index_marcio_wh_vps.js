@@ -596,11 +596,14 @@ if (msg.body === '6' && msg.from.endsWith('@c.us')) {
         listaServicos += "\n";
     }
 
-    await client.sendMessage(
+    
+     await client.sendMessage(
         msg.from,
-        `${listaServicos}\n` +
-        `Digite o *Código do Serviço* desejado.\n\n` +
-        `Digite *Menu* para retornar ao menu principal.`
+        `🌟 *Agendamento de Horário* 🌟\n\n` +
+        `Digite *Nome Completo:*\n\n` +
+        `Escolha *Código do Serviço:* da lista abaixo:\n\n${listaServicos}\n\n` +
+        `Digite a *Data:*  (Formato: 📅 DD/MM/AAAA)\n\n` +
+         `Digite *Menu* para retornar ao menu principal.`
     );
 
     cliente_nome = await solicitarCampo(
