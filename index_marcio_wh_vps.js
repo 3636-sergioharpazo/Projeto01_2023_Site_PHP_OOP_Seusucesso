@@ -236,17 +236,18 @@ client.on('message', async msg => {
             return;
         }
        
-        const listaServicos = Object.entries(servicosDisponiveis)
-            .map(([codigo, { nome, preco }]) => ` ${nome} - R$ ${preco}`)
-            .join('\n');
-       
-        await client.sendMessage(
-            msg.from,
-            `💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n` +
-            `📝\n${listaServicos}\n` +
-            `Digite *2* para agendar seu horário! `
-        );
-    }
+      const listaServicos = Object.entries(servicosDisponiveis)
+    .map(([codigo, { nome, preco }]) => 
+        ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}`)
+    .join('\n');
+
+await client.sendMessage(
+    msg.from,
+    `💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n` +
+    `📝\n${listaServicos}\n\n` +
+    `Digite *2* para agendar seu horário!`
+);
+}
 
    
 
