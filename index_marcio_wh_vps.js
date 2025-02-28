@@ -224,7 +224,6 @@ client.on('message', async msg => {
         await delay(2000);
         await chat.sendStateTyping();
         await delay(2000);
-
 try {
     // Usando axios para buscar os serviços do backend
     const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
@@ -239,8 +238,11 @@ try {
             servicosPorCategoria[funcao] = [];
         }
         servicos.forEach(({ nome, preco, id }) => {
-            // Convertendo preco de string com vírgula para número
-            servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), id });
+            // Verificar se os dados essenciais (nome, preco, id) estão presentes
+            if (nome && preco && id) {
+                // Convertendo preco de string com vírgula para número
+                servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), id });
+            }
         });
     });
 
