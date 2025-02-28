@@ -240,7 +240,7 @@ try {
         }
         servicos.forEach(({ nome, preco, id }) => {
             // Convertendo preco de string com vírgula para número
-            servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), codigo });
+            servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), id });
         });
     });
 
