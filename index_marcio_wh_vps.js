@@ -538,10 +538,9 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             }
     
             if (regex && !regex.test(campo)) {
-                // Se a resposta não atender ao padrão regex, continue pedindo
                 await client.sendMessage(msg.from, mensagemValidacao);
             } else {
-                campoValido = true; // Quando o campo for válido
+                campoValido = true;
             }
         }
     
@@ -586,12 +585,9 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     try {
         // Usando axios para buscar os serviços do backend
         const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        servicosDisponiveis = response.data.servicos; // Agora está acessível fora do bloco try
+        servicosDisponiveis = response.data.servicos;
 
-        // Agrupar serviços por categoria (função)
         const servicosPorCategoria = {};
-
-        // Funções padrão com emojis
         const emojis = {
             'Cabeleireiro': '💇‍♀️',
             'Manicure': '💅',
@@ -601,44 +597,33 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             'Outros': '🛠️'
         };
 
-        // Agrupar os serviços por função, pegando as funções dinamicamente
         Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
             if (!servicosPorCategoria[funcao]) {
                 servicosPorCategoria[funcao] = [];
             }
             servicos.forEach(({ nome, preco, id }) => {
-                // Verificar se os dados essenciais (nome, preco, id) estão presentes
                 if (nome && preco && id) {
-                    // Convertendo preco de string com vírgula para número
                     servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), id });
                 }
             });
         });
 
-        // Gerar a lista de serviços e preços por categoria (função)
         listaServicos = '💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n';
 
-        // Iterar sobre todas as categorias (funções) disponíveis
         for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
             if (servicos.length > 0) {
-                // Se a função não possui um emoji associado, use um emoji genérico
                 const emoji = emojis[funcao] || '🛠️';
-
-                // Adicionar a função com o emoji
                 listaServicos += `*${emoji} ${funcao}*\n`; 
 
-                // Ordenar os serviços por ID
                 servicos.sort((a, b) => a.id - b.id)
                     .forEach(({ nome, preco, id }) => {
-                        // Destacar o ID em negrito e formatar o preço
                         listaServicos += `*${id}* - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
                     });
 
-                listaServicos += '\n'; // Adiciona espaçamento entre categorias
+                listaServicos += '\n';
             }
         }
 
-        // Envia a mensagem formatada com os serviços e preços
         await client.sendMessage(
             msg.from,
             `🌟 *Agendamento de Horário* 🌟\n\n` +
@@ -652,16 +637,14 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
     }
 
-    // Solicita o nome e valida para não conter números
     cliente_nome = await solicitarCampo(
         null, 
         '❌ Nome inválido. Por favor, envie seu nome completo sem números.', 
-        /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/,  // Aceita apenas letras e espaços
+        /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/,  
         'Nome recebido'
     );
     if (!cliente_nome) return;
 
-    // Solicita o serviço após o nome ser validado
     servico_id = await solicitarCampo(
         null, 
         `❌ Código inválido. Escolha um código válido:\n${listaServicos}`, 
@@ -670,7 +653,6 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     );
     if (!servico_id) return;
 
-    // Solicita a data após o serviço ser validado
     data_agendamento = await solicitarCampo(
         null, 
         '❌ Data inválida! Envie no formato DD/MM/AAAA.', 
@@ -700,15 +682,11 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         msg.from,
         `📝 *Confirme as informações:*\n\n` +
         `👤 *Nome:* ${cliente_nome}\n` +
-        `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-        `💰 *Preço:* R$ ${servicosDisponiveis[servico_id].preco}\n` +
+        `💼 *Serviço:* ${servicosDisponiveis.find(s => s.id == servico_id)?.nome || 'Serviço não encontrado'}\n` +
+        `💰 *Preço:* R$ ${servicosDisponiveis.find(s => s.id == servico_id)?.preco || 'Preço não encontrado'}\n` +
         `📅 *Data:* ${data_agendamento}\n` +
-        `⏰ *Horário:* ${horario_agendamento}\n\n` +
-        `Digite *Sim* ✅ para confirmar\n` +
-        `Digite *Cancelar* ❌ para cancelar e voltar ao menu principal\n` +
-        `Digite *Menu* para retornar ao menu principal.`
+        `⏰ *Horário:* ${horario_agendamento}`
     );
-
 
     const resposta = await esperarMensagem(msg.from);
     if (resposta.toLowerCase() === 'sim') {
@@ -735,8 +713,8 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
                 `✅ *Agendamento Confirmado!*\n` +
                 `📜 *Protocolo:* ${protocolo}\n` +
                 `👤 *Nome:* ${cliente_nome}\n` +
-                `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-                `💰 *Preço:* R$ ${servicosDisponiveis[servico_id].preco}\n` +
+                `💼 *Serviço:* ${servicosDisponiveis.find(s => s.id == servico_id)?.nome || 'Serviço não encontrado'}\n` +
+                `💰 *Preço:* R$ ${servicosDisponiveis.find(s => s.id == servico_id)?.preco || 'Preço não encontrado'}\n` +
                 `📅 *Data:* ${data_agendamento}\n` +
                 `⏰ *Horário:* ${horario_agendamento}`
             );
@@ -747,7 +725,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
     }
 
-
+}
 //final do menu 2
 
 
