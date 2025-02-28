@@ -577,14 +577,50 @@ Object.entries(servicosDisponiveis).forEach(([id, { nome, preco, funcao }]) => {
     }
     servicosPorFuncao[funcao].push({ codigo, nome, preco });
 });
+let servicosDisponiveis = {};
+
+try {
+    const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
+    servicosDisponiveis = response.data.servicos;
+} catch (error) {
+    await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+    return;
+}
+
+// Agrupar serviços por função (dará suporte para qualquer nova função adicionada)
+const servicosPorFuncao = {};
+
+// Emojis dinâmicos mapeados para funções
+const emojis = {
+    'Cabeleireiro': '💇‍♀️',
+    'Manicure': '💅',
+    'Estética': '💆‍♀️',
+    'Massoterapia': '💆‍♂️',
+    'Barbeiro': '🧔',
+    'Outros': '🛠️'  // Emoji padrão para funções não mapeadas
+};
+
+// Agrupar os serviços por função dinâmica
+Object.entries(servicosDisponiveis).forEach(([id, { nome, preco, funcao }]) => {
+    if (!servicosPorFuncao[funcao]) {
+        servicosPorFuncao[funcao] = [];
+    }
+    servicosPorFuncao[funcao].push({ id, nome, preco });
+});
 
 // Ordenar e gerar a lista de serviços por função
-let listaServicos = '';
+let listaServicos = '💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n';
 
 // Iterar sobre todas as funções disponíveis
 for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
     if (servicos.length > 0) {
-        listaServicos += `\n*${funcao}*\n\n`; // Adiciona a função dinamicamente
+        // Buscar o emoji para a função ou usar um genérico
+        const emoji = emojis[funcao] || '🛠️';
+        
+        // Adiciona a função com o emoji dinamicamente
+        listaServicos += `*${emoji} ${funcao}*\n\n`; 
+
+        // Ordenar os serviços por nome
         servicos.sort((a, b) => {
             // Verificar se 'nome' não é undefined antes de aplicar localeCompare
             if (a.nome && b.nome) {
@@ -593,9 +629,13 @@ for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
             return 0; // Caso algum 'nome' esteja undefined, manter a ordem atual
         })
         .forEach(({ id, nome, preco }) => {
-            listaServicos += `${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+            listaServicos += `**${id}**️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
     }
+}
+
+// Enviar a lista de serviços formatada
+await client.sendMessage(msg.from, listaServicos + `\nDigite *2* para agendar seu horário!`);
 }
 
 
