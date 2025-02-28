@@ -303,70 +303,50 @@ try {
     await chat.sendStateTyping();
     await delay(2000);
 
+try {
+    // Usando axios para buscar os serviços do backend
+    const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot_P.php');
+    const servicosDisponiveis = response.data.servicos;
 
- // Consultar os serviços disponíveis
- let servicosDisponiveis = {};
- try {
-     const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot_p.php');
-     servicosDisponiveis = response.data.servicos;
- } catch (error) {
-     console.error('Erro ao carregar serviços:', error);
-     await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-     return;
- }
+    // Agrupar serviços por categoria (função)
+    const servicosPorCategoria = {};
 
- const servicosPorFuncao = {};
-
-// Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
-Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
-    if (!servicosPorFuncao[funcao]) {
-        servicosPorFuncao[funcao] = [];
-    }
-    servicosPorFuncao[funcao].push({ nome, preco });
-});
-
-// Ordenar e gerar a lista de serviços por função
-let listaServicos = '';
-
-// Verificar se há serviços de Manicure e adicionar à lista
-if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
-    listaServicos += `\n*Manicure*\n\n`;
-    servicosPorFuncao['Manicure'].sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
-        .forEach(({ nome, preco }) => {
-            listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+    // Agrupar os serviços por função, pegando as funções dinamicamente
+    Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
+        if (!servicosPorCategoria[funcao]) {
+            servicosPorCategoria[funcao] = [];
+        }
+        servicos.forEach(({ nome, preco, codigo }) => {
+            // Convertendo preco de string com vírgula para número
+            servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), codigo });
         });
-}
+    });
 
-// Adicionar os serviços de Cabeleireiro e outras funções
-if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].length > 0) {
-    listaServicos += `\n*Cabeleireiro*\n\n`;
-    servicosPorFuncao['Cabeleireiro'].sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
-        .forEach(({ nome, preco }) => {
-            listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-        });
-}
+    // Gerar a lista de serviços e preços por categoria (função)
+    let listaServicos = '💇‍♀️ *Serviços e Preços - PROMOÇÃO DA SEMANA* 💇‍♂️\n\n';
 
-// Adicionar outras funções
-for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
-    // Ignorar Manicure e Cabeleireiro que já foram exibidos
-    if (funcao !== 'Manicure' && funcao !== 'Cabeleireiro') {
-        listaServicos += `\n*${funcao}*\n\n`;
-        servicos.sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
-            .forEach(({ nome, preco }) => {
-                listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-            });
+    // Iterar sobre todas as categorias (funções) disponíveis
+    for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
+        if (servicos.length > 0) {
+            listaServicos += `*${funcao}*\n`; // Adiciona a função dinamicamente
+            servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
+                .forEach(({ nome, preco, codigo }) => {
+                    listaServicos += ` ${codigo} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+                });
+            listaServicos += '\n'; // Adiciona espaçamento entre categorias
+        }
     }
+
+    // Envia a mensagem formatada com os serviços e preços
+    await client.sendMessage(
+        msg.from,
+        listaServicos + `\nDigite *2* para agendar seu horário!`
+    );
+} catch (error) {
+    console.error('Erro ao carregar serviços:', error);
+    await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
 }
 
-await client.sendMessage(
-    msg.from,
-    `🎉 *Promoções da Semana* 🎉\n\n` +
-    `📝${listaServicos}\n` +
-    `Aproveite essas ofertas incríveis! Válidas até sábado. 💅\n\n` +
-    `Digite *2* para agendar seu horário!\n`
-);
-
-    
 }
 
 // Verifica se o cliente digitou '6' para iniciar a consulta
