@@ -236,7 +236,7 @@ client.on('message', async msg => {
             return;
         }
        
-     const servicosPorFuncao = {};
+   const servicosPorFuncao = {};
 
 // Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
 Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
@@ -254,6 +254,8 @@ if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
     listaServicos += `\n*Manicure*\n\n`;
     servicosPorFuncao['Manicure'].sort((a, b) => a.codigo - b.codigo) // Ordenar por código
         .forEach(({ codigo, nome, preco }) => {
+            // Garantir que nome seja uma string válida
+            nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
             listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
 }
@@ -263,6 +265,8 @@ if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].lengt
     listaServicos += `\n*Cabeleireiro*\n\n`;
     servicosPorFuncao['Cabeleireiro'].sort((a, b) => a.codigo - b.codigo) // Ordenar por código
         .forEach(({ codigo, nome, preco }) => {
+            // Garantir que nome seja uma string válida
+            nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
             listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
 }
@@ -274,6 +278,8 @@ for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
         listaServicos += `\n*${funcao}*\n\n`;
         servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
             .forEach(({ codigo, nome, preco }) => {
+                // Garantir que nome seja uma string válida
+                nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
                 listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
             });
     }
