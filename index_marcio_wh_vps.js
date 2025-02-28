@@ -744,7 +744,7 @@ const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agen
 
 }
 
-
+    })
 
 
 
