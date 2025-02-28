@@ -581,6 +581,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         }
     }
     let listaServicos = ''; 
+  let servicosDisponiveis = []; 
      try {
     // Usando axios para buscar os serviços do backend
     const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
