@@ -591,7 +591,7 @@ if (msg.body === '6' && msg.from.endsWith('@c.us')) {
     for (const [funcao, servicos] of Object.entries(servicosDisponiveis)) {
         listaServicos += `🛠️ *${funcao}:*\n`;
         servicos.forEach(({ id, nome, preco }) => {
-            listaServicos += `   ${id}️⃣ ${nome} - R$ ${preco}\n`;
+            listaServicos += `   *${id}* - ${nome} - R$ ${preco}\n`;
         });
         listaServicos += "\n";
     }
