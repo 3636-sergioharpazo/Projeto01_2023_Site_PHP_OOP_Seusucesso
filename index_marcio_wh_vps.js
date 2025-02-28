@@ -674,13 +674,13 @@ const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agen
 
 
 
-
-
-
-
-
-
+}
+}
 })
+
+
+
+
 const agendamentosNotificados = new Set();
 
 async function enviarLembretes() {
