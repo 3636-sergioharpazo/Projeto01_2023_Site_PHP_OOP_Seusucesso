@@ -585,7 +585,16 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     try {
         // Usando axios para buscar os serviços do backend
         const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        servicosDisponiveis = response.data.servicos || [];
+        
+        // Verificação do formato da resposta
+        console.log('Resposta de serviços:', response.data);
+        if (Array.isArray(response.data.servicos)) {
+            servicosDisponiveis = response.data.servicos;
+        } else {
+            console.error('Formato de dados inesperado:', response.data);
+            await client.sendMessage(msg.from, '❌ Erro ao processar os serviços. Dados do servidor estão inconsistentes.');
+            return;
+        }
 
         // Agrupar serviços por categoria (função)
         const servicosPorCategoria = {};
@@ -739,15 +748,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         console.error('Erro ao gerar protocolo:', error);
         await client.sendMessage(msg.from, '❌ Erro ao gerar o protocolo. Tente novamente.');
     }
-  
-//final do menu 2
-
-
-
-
-
-
-
+//final menu 2
 }
 
 
