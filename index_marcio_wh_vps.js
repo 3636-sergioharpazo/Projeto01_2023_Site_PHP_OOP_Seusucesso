@@ -581,10 +581,11 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     }
 
     let listaServicos = ''; 
+    let servicosDisponiveis = [];
     try {
         // Usando axios para buscar os serviços do backend
         const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        const servicosDisponiveis = response.data.servicos;
+        servicosDisponiveis = response.data.servicos;
 
         // Agrupar serviços por categoria (função)
         const servicosPorCategoria = {};
@@ -746,7 +747,6 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         console.error('Erro ao gerar protocolo:', error);
         await client.sendMessage(msg.from, '❌ Ocorreu um erro ao salvar o agendamento. Tente novamente mais tarde.');
     }
-
 
 //final do menu 2
 
