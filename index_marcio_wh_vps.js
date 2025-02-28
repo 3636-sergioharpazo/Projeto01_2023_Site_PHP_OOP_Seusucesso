@@ -582,10 +582,11 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     }
     
    // Função para buscar os serviços do backend
+// Função para buscar os serviços do backend
 async function buscarServicos() {
     try {
         const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        return response.data.servicos;
+        return response.data.servicos || {}; // Garante que retorna um objeto vazio caso falhe
     } catch (error) {
         console.error('Erro ao buscar serviços:', error);
         throw new Error('❌ Erro ao consultar serviços. Tente novamente mais tarde.');
@@ -596,16 +597,21 @@ async function buscarServicos() {
 function agruparServicosPorCategoria(servicosDisponiveis) {
     const servicosPorCategoria = {};
 
+    if (!servicosDisponiveis || typeof servicosDisponiveis !== 'object') {
+        console.error('Formato inválido para serviços disponíveis.');
+        return servicosPorCategoria;
+    }
+
     Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
         if (!servicosPorCategoria[funcao]) {
             servicosPorCategoria[funcao] = [];
         }
         servicos.forEach(({ nome, preco, id }) => {
             if (nome && preco && id) {
-                servicosPorCategoria[funcao].push({ 
-                    nome, 
-                    preco: parseFloat(preco.replace(',', '.')), 
-                    id 
+                servicosPorCategoria[funcao].push({
+                    nome,
+                    preco: parseFloat(preco.replace(',', '.')),
+                    id
                 });
             }
         });
@@ -616,6 +622,10 @@ function agruparServicosPorCategoria(servicosDisponiveis) {
 
 // Função para formatar a lista de serviços agrupados por categoria
 function formatarListaServicos(servicosPorCategoria) {
+    if (!servicosPorCategoria || Object.keys(servicosPorCategoria).length === 0) {
+        return 'Nenhum serviço disponível no momento.';
+    }
+
     const emojis = {
         'Cabeleireiro': '💇‍♀️',
         'Manicure': '💅',
