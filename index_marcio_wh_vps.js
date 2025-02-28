@@ -238,7 +238,7 @@ try {
         if (!servicosPorCategoria[funcao]) {
             servicosPorCategoria[funcao] = [];
         }
-        servicos.forEach(({ nome, preco, codigo }) => {
+        servicos.forEach(({ nome, preco, id }) => {
             // Convertendo preco de string com vírgula para número
             servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), codigo });
         });
@@ -251,8 +251,8 @@ try {
     for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
         if (servicos.length > 0) {
             listaServicos += `*${funcao}*\n`; // Adiciona a função dinamicamente
-            servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
-                .forEach(({ nome, preco, codigo }) => {
+            servicos.sort((a, b) => a.id - b.id) // Ordenar por código
+                .forEach(({ nome, preco, id }) => {
                     listaServicos += `${codigo} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
                 });
             listaServicos += '\n'; // Adiciona espaçamento entre categorias
@@ -552,7 +552,7 @@ try {
 const servicosPorFuncao = {};
 
 // Agrupar os serviços por função dinâmica
-Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
+Object.entries(servicosDisponiveis).forEach(([id, { nome, preco, funcao }]) => {
     if (!servicosPorFuncao[funcao]) {
         servicosPorFuncao[funcao] = [];
     }
@@ -573,7 +573,7 @@ for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
             }
             return 0; // Caso algum 'nome' esteja undefined, manter a ordem atual
         })
-        .forEach(({ codigo, nome, preco }) => {
+        .forEach(({ id, nome, preco }) => {
             listaServicos += `${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
     }
