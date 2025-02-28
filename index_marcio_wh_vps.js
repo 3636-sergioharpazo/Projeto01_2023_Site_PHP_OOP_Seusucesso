@@ -566,12 +566,19 @@ let listaServicos = '';
 for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
     if (servicos.length > 0) {
         listaServicos += `\n*${funcao}*\n\n`; // Adiciona a função dinamicamente
-        servicos.sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
-            .forEach(({ codigo, nome, preco }) => {
-                listaServicos += `${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-            });
+        servicos.sort((a, b) => {
+            // Verificar se 'nome' não é undefined antes de aplicar localeCompare
+            if (a.nome && b.nome) {
+                return a.nome.localeCompare(b.nome); // Ordenar por nome
+            }
+            return 0; // Caso algum 'nome' esteja undefined, manter a ordem atual
+        })
+        .forEach(({ codigo, nome, preco }) => {
+            listaServicos += `${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        });
     }
 }
+
 
 
 // Enviar mensagem com a lista de serviços organizada
