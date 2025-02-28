@@ -236,17 +236,56 @@ client.on('message', async msg => {
             return;
         }
        
-      const listaServicos = Object.entries(servicosDisponiveis)
-    .map(([codigo, { nome, preco }]) => 
-        ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}`)
-    .join('\n');
+     const servicosPorFuncao = {};
+
+// Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
+Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
+    if (!servicosPorFuncao[funcao]) {
+        servicosPorFuncao[funcao] = [];
+    }
+    servicosPorFuncao[funcao].push({ codigo, nome, preco });
+});
+
+// Ordenar e gerar a lista de serviços por função
+let listaServicos = '';
+
+// Verificar se há serviços de Manicure e adicionar à lista
+if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
+    listaServicos += `\n*Manicure*\n\n`;
+    servicosPorFuncao['Manicure'].sort((a, b) => a.codigo - b.codigo) // Ordenar por código
+        .forEach(({ codigo, nome, preco }) => {
+            listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        });
+}
+
+// Adicionar os serviços de Cabeleireiro e outras funções
+if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].length > 0) {
+    listaServicos += `\n*Cabeleireiro*\n\n`;
+    servicosPorFuncao['Cabeleireiro'].sort((a, b) => a.codigo - b.codigo) // Ordenar por código
+        .forEach(({ codigo, nome, preco }) => {
+            listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        });
+}
+
+// Adicionar outras funções
+for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
+    // Ignorar Manicure e Cabeleireiro que já foram exibidos
+    if (funcao !== 'Manicure' && funcao !== 'Cabeleireiro') {
+        listaServicos += `\n*${funcao}*\n\n`;
+        servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
+            .forEach(({ codigo, nome, preco }) => {
+                listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+            });
+    }
+}
 
 await client.sendMessage(
     msg.from,
     `💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n` +
-    `📝\n${listaServicos}\n\n` +
+    `📝${listaServicos}\n\n` +
     `Digite *2* para agendar seu horário!`
 );
+
 }
 
    
@@ -294,18 +333,57 @@ await client.sendMessage(
      return;
  }
 
- const listaServicos = Object.entries(servicosDisponiveis)
-     .map(([codigo, { nome, preco }]) => ` ${nome} - R$ ${preco}`)
-     .join('\n');
+ const servicosPorFuncao = {};
 
+// Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
+Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
+    if (!servicosPorFuncao[funcao]) {
+        servicosPorFuncao[funcao] = [];
+    }
+    servicosPorFuncao[funcao].push({ nome, preco });
+});
 
-     await client.sendMessage(
-        msg.from,
-        `🎉 *Promoções da Semana* 🎉\n\n` +
-        `📝\n${listaServicos}\n` +
-        `Aproveite essas ofertas incríveis! Válidas até sábado. 💅\n\n` +  // Adicionei o '+' aqui
-        `Digite *2* para agendar seu horário!\n`
-    );
+// Ordenar e gerar a lista de serviços por função
+let listaServicos = '';
+
+// Verificar se há serviços de Manicure e adicionar à lista
+if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
+    listaServicos += `\n*Manicure*\n\n`;
+    servicosPorFuncao['Manicure'].sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
+        .forEach(({ nome, preco }) => {
+            listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        });
+}
+
+// Adicionar os serviços de Cabeleireiro e outras funções
+if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].length > 0) {
+    listaServicos += `\n*Cabeleireiro*\n\n`;
+    servicosPorFuncao['Cabeleireiro'].sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
+        .forEach(({ nome, preco }) => {
+            listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        });
+}
+
+// Adicionar outras funções
+for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
+    // Ignorar Manicure e Cabeleireiro que já foram exibidos
+    if (funcao !== 'Manicure' && funcao !== 'Cabeleireiro') {
+        listaServicos += `\n*${funcao}*\n\n`;
+        servicos.sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
+            .forEach(({ nome, preco }) => {
+                listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+            });
+    }
+}
+
+await client.sendMessage(
+    msg.from,
+    `🎉 *Promoções da Semana* 🎉\n\n` +
+    `📝${listaServicos}\n` +
+    `Aproveite essas ofertas incríveis! Válidas até sábado. 💅\n\n` +
+    `Digite *2* para agendar seu horário!\n`
+);
+
     
 }
 
@@ -509,19 +587,60 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     }
     
     
-    const listaServicos = Object.entries(servicosDisponiveis)
-    .map(([codigo, { nome, preco }]) => 
-        `   ${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}`)
-    .join('\n');
-    await client.sendMessage(
-        msg.from,
-        `🌟 *Agendamento de Horário* 🌟\n\n` +
-        `Digite *Nome Completo:*\n\n` +
-        `Escolha *Código do Serviço:* da lista abaixo:\n\n${listaServicos}\n\n` +
-        `Digite a *Data:*  (Formato: 📅 DD/MM/AAAA)\n\n` +
-         `Digite *Menu* para retornar ao menu principal.`
-    );
-    // Solicita o nome e valida para não conter números
+   // Agrupar serviços por função
+const servicosPorFuncao = {};
+
+// Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
+Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
+    if (!servicosPorFuncao[funcao]) {
+        servicosPorFuncao[funcao] = [];
+    }
+    servicosPorFuncao[funcao].push({ codigo, nome, preco });
+});
+
+// Ordenar e gerar a lista de serviços por função
+let listaServicos = '';
+
+// Verificar se há serviços de Manicure e adicionar à lista
+if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
+    listaServicos += `\n*Manicure*\n\n`;
+    servicosPorFuncao['Manicure'].sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
+        .forEach(({ codigo, nome, preco }) => {
+            listaServicos += ` ${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        });
+}
+
+// Adicionar os serviços de Cabeleireiro e outras funções
+if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].length > 0) {
+    listaServicos += `\n*Cabeleireiro*\n\n`;
+    servicosPorFuncao['Cabeleireiro'].sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
+        .forEach(({ codigo, nome, preco }) => {
+            listaServicos += ` ${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        });
+}
+
+// Adicionar outras funções
+for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
+    // Ignorar Manicure e Cabeleireiro que já foram exibidos
+    if (funcao !== 'Manicure' && funcao !== 'Cabeleireiro') {
+        listaServicos += `\n*${funcao}*\n\n`;
+        servicos.sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
+            .forEach(({ codigo, nome, preco }) => {
+                listaServicos += ` ${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+            });
+    }
+}
+
+// Enviar mensagem com a lista de serviços organizada
+await client.sendMessage(
+    msg.from,
+    `🌟 *Agendamento de Horário* 🌟\n\n` +
+    `Digite *Nome Completo:*\n\n` +
+    `Escolha *Código do Serviço:* da lista abaixo:\n\n${listaServicos}\n\n` +
+    `Digite a *Data:*  (Formato: 📅 DD/MM/AAAA)\n\n` +
+    `Digite *Menu* para retornar ao menu principal.`
+);
+ // Solicita o nome e valida para não conter números
 cliente_nome = await solicitarCampo(
     null, 
     '❌ Nome inválido. Por favor, envie seu nome completo sem números.', 
