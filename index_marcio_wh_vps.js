@@ -579,7 +579,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         }
     }
 
-    let servicosDisponiveis = [];  // Mover a definição da variável para fora do try
+    let servicosDisponiveis = {};  // Mudando para um objeto em vez de array
     let listaServicos = ''; 
 
     try {
@@ -682,8 +682,8 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         msg.from,
         `📝 *Confirme as informações:*\n\n` +
         `👤 *Nome:* ${cliente_nome}\n` +
-        `💼 *Serviço:* ${servicosDisponiveis.find(s => s.id == servico_id)?.nome || 'Serviço não encontrado'}\n` +
-        `💰 *Preço:* R$ ${servicosDisponiveis.find(s => s.id == servico_id)?.preco || 'Preço não encontrado'}\n` +
+        `💼 *Serviço:* ${servicosDisponiveis[servico_id]?.nome || 'Serviço não encontrado'}\n` +
+        `💰 *Preço:* R$ ${servicosDisponiveis[servico_id]?.preco || 'Preço não encontrado'}\n` +
         `📅 *Data:* ${data_agendamento}\n` +
         `⏰ *Horário:* ${horario_agendamento}`
     );
@@ -713,8 +713,8 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
                 `✅ *Agendamento Confirmado!*\n` +
                 `📜 *Protocolo:* ${protocolo}\n` +
                 `👤 *Nome:* ${cliente_nome}\n` +
-                `💼 *Serviço:* ${servicosDisponiveis.find(s => s.id == servico_id)?.nome || 'Serviço não encontrado'}\n` +
-                `💰 *Preço:* R$ ${servicosDisponiveis.find(s => s.id == servico_id)?.preco || 'Preço não encontrado'}\n` +
+                `💼 *Serviço:* ${servicosDisponiveis[servico_id]?.nome || 'Serviço não encontrado'}\n` +
+                `💰 *Preço:* R$ ${servicosDisponiveis[servico_id]?.preco || 'Preço não encontrado'}\n` +
                 `📅 *Data:* ${data_agendamento}\n` +
                 `⏰ *Horário:* ${horario_agendamento}`
             );
