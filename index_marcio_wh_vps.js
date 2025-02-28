@@ -692,16 +692,19 @@ const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agen
     horario_agendamento = await solicitarCampo(horario_agendamento, '❌ Horário inválido! Envie no formato HH:mm.', /^([01]\d|2[0-3]):([0-5]\d)$/, 'Horário recebido');
     if (!horario_agendamento) return;
     
-    await client.sendMessage(
-        msg.from,
-        `📝 Confirme as informações:\n\n` +
-        `Nome: ${cliente_nome}\n` +
-        `Serviço: ${servicosDisponiveis[servico_id].nome}\n` +
-        `Preço: R$ ${servicosDisponiveis[servico_id].preco}\n` +
-        `Data: ${data_agendamento}\n` +
-        `Horário: ${horario_agendamento}\n\n` +
-        `Digite *Sim* ✅ para confirmar\nDigite *Cancelar* ❌ para cancelar e voltar ao menu principal\nDigite *Menu* para retornar ao menu principal.`
-    );
+  await client.sendMessage(
+    msg.from,
+    `📝 *Confirme as informações:*\n\n` +
+    `👤 *Nome:* ${cliente_nome}\n` +
+    `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+    `💰 *Preço:* R$ ${servicosDisponiveis[servico_id].preco}\n` +
+    `📅 *Data:* ${data_agendamento}\n` +
+    `⏰ *Horário:* ${horario_agendamento}\n\n` +
+    `Digite *Sim* ✅ para confirmar\n` +
+    `Digite *Cancelar* ❌ para cancelar e voltar ao menu principal\n` +
+    `Digite *Menu* para retornar ao menu principal.`
+);
+
 
     const resposta = await esperarMensagem(msg.from);
     if (resposta.toLowerCase() === 'sim') {
@@ -722,17 +725,19 @@ const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agen
 
         protocolo = protocoloResponse.data.protocolo;
 
-        if (protocolo) {
-            await client.sendMessage(
-                msg.from,
-                `✅ *Agendamento Confirmado!*\n` +
-                `📜 *Protocolo:* ${protocolo}\n` +
-                `👤 *Nome:* ${cliente_nome}\n` +
-                `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-                `💰 *Preço:* R$ ${servicosDisponiveis[servico_id].preco}\n` +
-                `📅 *Data:* ${data_agendamento}\n` +
-                `⏰ *Horário:* ${horario_agendamento}`
-            );
+       if (protocolo) {
+    await client.sendMessage(
+        msg.from,
+        `✅ *Agendamento Confirmado!*\n` +
+        `📜 *Protocolo:* ${protocolo}\n` +
+        `👤 *Nome:* ${cliente_nome}\n` +
+        `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+        `💰 *Preço:* R$ ${servicosDisponiveis[servico_id].preco}\n` +
+        `📅 *Data:* ${data_agendamento}\n` +
+        `⏰ *Horário:* ${horario_agendamento}`
+    );
+
+
             
         } else {
             await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
