@@ -506,6 +506,7 @@ if (msg.body === '6' && msg.from.endsWith('@c.us')) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 //menu 2
+// Menu 2
 if (msg.body === '2' && msg.from.endsWith('@c.us')) {
 
     const chat = await msg.getChat();
@@ -538,9 +539,10 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             }
     
             if (regex && !regex.test(campo)) {
+                // Se a resposta não atender ao padrão regex, continue pedindo
                 await client.sendMessage(msg.from, mensagemValidacao);
             } else {
-                campoValido = true;
+                campoValido = true; // Quando o campo for válido
             }
         }
     
@@ -561,7 +563,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             client.on('message', listener);
         });
     }
-    
+
     async function verificarDisponibilidade(servico_id, data_agendamento) {
         const [dia, mes, ano] = data_agendamento.split('/');
         const dataFormatada = `${ano}-${mes}-${dia}`;
@@ -579,15 +581,16 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         }
     }
 
-    let servicosDisponiveis = {};  // Mudando para um objeto em vez de array
     let listaServicos = ''; 
-
     try {
         // Usando axios para buscar os serviços do backend
         const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        servicosDisponiveis = response.data.servicos;
+        const servicosDisponiveis = response.data.servicos;
 
+        // Agrupar serviços por categoria (função)
         const servicosPorCategoria = {};
+
+        // Funções padrão com emojis
         const emojis = {
             'Cabeleireiro': '💇‍♀️',
             'Manicure': '💅',
@@ -597,33 +600,44 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             'Outros': '🛠️'
         };
 
+        // Agrupar os serviços por função, pegando as funções dinamicamente
         Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
             if (!servicosPorCategoria[funcao]) {
                 servicosPorCategoria[funcao] = [];
             }
             servicos.forEach(({ nome, preco, id }) => {
+                // Verificar se os dados essenciais (nome, preco, id) estão presentes
                 if (nome && preco && id) {
+                    // Convertendo preco de string com vírgula para número
                     servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), id });
                 }
             });
         });
 
+        // Gerar a lista de serviços e preços por categoria (função)
         listaServicos = '💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n';
 
+        // Iterar sobre todas as categorias (funções) disponíveis
         for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
             if (servicos.length > 0) {
+                // Se a função não possui um emoji associado, use um emoji genérico
                 const emoji = emojis[funcao] || '🛠️';
+
+                // Adicionar a função com o emoji
                 listaServicos += `*${emoji} ${funcao}*\n`; 
 
+                // Ordenar os serviços por ID
                 servicos.sort((a, b) => a.id - b.id)
                     .forEach(({ nome, preco, id }) => {
+                        // Destacar o ID em negrito e formatar o preço
                         listaServicos += `*${id}* - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
                     });
 
-                listaServicos += '\n';
+                listaServicos += '\n'; // Adiciona espaçamento entre categorias
             }
         }
 
+        // Envia a mensagem formatada com os serviços e preços
         await client.sendMessage(
             msg.from,
             `🌟 *Agendamento de Horário* 🌟\n\n` +
@@ -635,16 +649,19 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     } catch (error) {
         console.error('Erro ao carregar serviços:', error);
         await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+        return;
     }
 
+    // Solicita o nome e valida para não conter números
     cliente_nome = await solicitarCampo(
         null, 
         '❌ Nome inválido. Por favor, envie seu nome completo sem números.', 
-        /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/,  
+        /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/,  // Aceita apenas letras e espaços
         'Nome recebido'
     );
     if (!cliente_nome) return;
 
+    // Solicita o serviço após o nome ser validado
     servico_id = await solicitarCampo(
         null, 
         `❌ Código inválido. Escolha um código válido:\n${listaServicos}`, 
@@ -653,6 +670,19 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     );
     if (!servico_id) return;
 
+    // Verifique se o servico_id existe em servicosDisponiveis antes de tentar acessá-lo
+    let servicoEscolhido = null;
+    for (const categoria in servicosDisponiveis) {
+        servicoEscolhido = servicosDisponiveis[categoria].find(servico => servico.id === parseInt(servico_id));
+        if (servicoEscolhido) break;  // Encontrou o serviço, então sai do loop
+    }
+
+    if (!servicoEscolhido) {
+        await client.sendMessage(msg.from, '❌ Serviço não encontrado. Por favor, escolha um código válido.');
+        return;
+    }
+
+    // Solicita a data após o serviço ser validado
     data_agendamento = await solicitarCampo(
         null, 
         '❌ Data inválida! Envie no formato DD/MM/AAAA.', 
@@ -662,7 +692,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     if (!data_agendamento) return;
 
     const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agendamento);
-    
+
     if (horariosDisponiveis.length > 0) {
         let mensagem = `✅ *Horários disponíveis para ${data_agendamento}:*\n\n`;
         horariosDisponiveis.forEach(horario => {
@@ -674,16 +704,16 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         await client.sendMessage(msg.from, `❌ *Nenhum horário disponível para ${data_agendamento}.*`);
         return;
     }
-    
+
     horario_agendamento = await solicitarCampo(horario_agendamento, '❌ Horário inválido! Envie no formato HH:mm.', /^([01]\d|2[0-3]):([0-5]\d)$/, 'Horário recebido');
     if (!horario_agendamento) return;
-    
+
     await client.sendMessage(
         msg.from,
         `📝 *Confirme as informações:*\n\n` +
         `👤 *Nome:* ${cliente_nome}\n` +
-        `💼 *Serviço:* ${servicosDisponiveis[servico_id]?.nome || 'Serviço não encontrado'}\n` +
-        `💰 *Preço:* R$ ${servicosDisponiveis[servico_id]?.preco || 'Preço não encontrado'}\n` +
+        `💼 *Serviço:* ${servicoEscolhido.nome}\n` +
+        `💰 *Preço:* R$ ${servicoEscolhido.preco.toFixed(2).replace('.', ',')}\n` +
         `📅 *Data:* ${data_agendamento}\n` +
         `⏰ *Horário:* ${horario_agendamento}`
     );
@@ -699,32 +729,47 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     try {
         const protocoloResponse = await axios.post('https://antoniooliveira.shop/gerar_protocolo.php', {
             cliente_nome,
-            cliente_telefone,
             servico_id,
             data_agendamento,
-            horario_agendamento: `${horario_agendamento}:00`
+            horario_agendamento
         });
-
         protocolo = protocoloResponse.data.protocolo;
-
-        if (protocolo) {
-            await client.sendMessage(
-                msg.from,
-                `✅ *Agendamento Confirmado!*\n` +
-                `📜 *Protocolo:* ${protocolo}\n` +
-                `👤 *Nome:* ${cliente_nome}\n` +
-                `💼 *Serviço:* ${servicosDisponiveis[servico_id]?.nome || 'Serviço não encontrado'}\n` +
-                `💰 *Preço:* R$ ${servicosDisponiveis[servico_id]?.preco || 'Preço não encontrado'}\n` +
-                `📅 *Data:* ${data_agendamento}\n` +
-                `⏰ *Horário:* ${horario_agendamento}`
-            );
-        } else {
-            await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
-        }
     } catch (error) {
-        await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
+        console.error('Erro ao gerar protocolo:', error);
+        await client.sendMessage(msg.from, '❌ Erro ao gerar protocolo. Tente novamente.');
+        return;
     }
 
+    if (confirmacao) {
+        await client.sendMessage(msg.from, `✅ Agendamento confirmado!\nProtocolo: ${protocolo}`);
+    }
+
+    // Continuando a partir da confirmação do agendamento
+    if (confirmacao) {
+        try {
+            // Chamada para a API para salvar o agendamento
+            const respostaProtocolo = await axios.post('https://antoniooliveira.shop/gerar_protocolo.php', {
+                nome_cliente: cliente_nome,
+                servico_id: servico_id,
+                data_agendamento: data_agendamento,
+                horario_agendamento: horario_agendamento
+            });
+
+            // Recebe o protocolo do agendamento
+            protocolo = respostaProtocolo.data.protocolo;
+
+            // Finaliza a confirmação e envia o protocolo
+            await client.sendMessage(msg.from, `✅ Agendamento confirmado com sucesso! \n\nProtocolo: *${protocolo}*`);
+            await client.sendMessage(msg.from, '🔙 Retornando ao menu principal.');
+
+        } catch (error) {
+            console.error('Erro ao salvar o agendamento:', error);
+            await client.sendMessage(msg.from, '❌ Ocorreu um erro ao confirmar o agendamento. Tente novamente mais tarde.');
+        }
+    } else {
+        await client.sendMessage(msg.from, '❌ Agendamento cancelado. Retornando ao menu principal.');
+    }
+} 
 
 //final do menu 2
 
