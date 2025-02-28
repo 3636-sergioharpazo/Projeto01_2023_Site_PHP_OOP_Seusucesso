@@ -187,9 +187,9 @@ app.use(express.static(qrCodeDir));
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
-
 
 // Manipulação de mensagens
 client.on('message', async msg => {
@@ -200,7 +200,6 @@ client.on('message', async msg => {
         const chat = await msg.getChat();
         const contact = await msg.getContact();
         const name = contact.pushname || "Cliente";
-
        
         await delay(2000);
         await chat.sendStateTyping();
@@ -630,10 +629,6 @@ for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
             listaServicos += `**${id}**️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
     }
-}
-
-// Enviar a lista de serviços formatada
-await client.sendMessage(msg.from, listaServicos + `\nDigite *2* para agendar seu horário!`);
 }
 
 
