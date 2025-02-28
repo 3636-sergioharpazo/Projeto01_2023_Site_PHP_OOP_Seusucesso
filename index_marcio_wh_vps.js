@@ -253,7 +253,7 @@ try {
             listaServicos += `*${funcao}*\n`; // Adiciona a função dinamicamente
             servicos.sort((a, b) => a.id - b.id) // Ordenar por código
                 .forEach(({ nome, preco, id }) => {
-                    listaServicos += `${codigo} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+                    listaServicos += `${id} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
                 });
             listaServicos += '\n'; // Adiciona espaçamento entre categorias
         }
