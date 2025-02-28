@@ -589,9 +589,9 @@ if (msg.body === '6' && msg.from.endsWith('@c.us')) {
 
     let listaServicos = "🌟 *Escolha um Serviço:* 🌟\n\n";
     for (const [funcao, servicos] of Object.entries(servicosDisponiveis)) {
-        listaServicos += `🛠️ *${funcao}:*\n`;
+        listaServicos += `🛠️*${funcao}:*\n`;
         servicos.forEach(({ id, nome, preco }) => {
-            listaServicos += `   *${id}* - ${nome} - R$ ${preco}\n`;
+            listaServicos += `*${id}* - ${nome} - R$ ${preco}\n`;
         });
         listaServicos += "\n";
     }
