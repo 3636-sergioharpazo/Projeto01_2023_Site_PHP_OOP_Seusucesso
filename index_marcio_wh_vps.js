@@ -226,7 +226,7 @@ client.on('message', async msg => {
         await delay(2000);
 
 
-        let servicosDisponiveis = {};
+        
         try {
             const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
             servicosDisponiveis = response.data.servicos;
@@ -235,15 +235,16 @@ client.on('message', async msg => {
             await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
             return;
         }
-       const response = await fetch('url_do_php'); // Substitua 'url_do_php' pela URL correta do seu backend
+   const response = await fetch('url_do_php'); // Substitua 'url_do_php' pela URL correta do seu backend
 const data = await response.json();
 
 // Certifique-se de que os dados foram corretamente retornados
 const servicosDisponiveis = data.servicos;
 
-// Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
+// Agrupar serviços por função dinâmica
 const servicosPorFuncao = {};
 
+// Agrupar os serviços por função, pegando as funções dinamicamente
 Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
     if (!servicosPorFuncao[funcao]) {
         servicosPorFuncao[funcao] = [];
@@ -257,29 +258,10 @@ Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
 // Ordenar e gerar a lista de serviços por função
 let listaServicos = '';
 
-// Verificar se há serviços de Manicure e adicionar à lista
-if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
-    listaServicos += `\n*Manicure*\n\n`;
-    servicosPorFuncao['Manicure'].sort((a, b) => a.codigo - b.codigo) // Ordenar por código
-        .forEach(({ nome, preco }) => {
-            listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-        });
-}
-
-// Adicionar os serviços de Cabeleireiro e outras funções
-if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].length > 0) {
-    listaServicos += `\n*Cabeleireiro*\n\n`;
-    servicosPorFuncao['Cabeleireiro'].sort((a, b) => a.codigo - b.codigo) // Ordenar por código
-        .forEach(({ nome, preco }) => {
-            listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-        });
-}
-
-// Adicionar outras funções
+// Iterar sobre todas as funções disponíveis
 for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
-    // Ignorar Manicure e Cabeleireiro que já foram exibidos
-    if (funcao !== 'Manicure' && funcao !== 'Cabeleireiro') {
-        listaServicos += `\n*${funcao}*\n\n`;
+    if (servicos.length > 0) {
+        listaServicos += `\n*${funcao}*\n\n`; // Adiciona a função dinamicamente
         servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
             .forEach(({ nome, preco }) => {
                 listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
