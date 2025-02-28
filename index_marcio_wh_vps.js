@@ -586,7 +586,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
 async function buscarServicos() {
     try {
         const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        return response.data.servicos || {}; // Garante que retorna um objeto vazio caso falhe
+        return response.data.servicos || {}; // Garante que retorna um objeto vazio caso não haja serviços
     } catch (error) {
         console.error('Erro ao buscar serviços:', error);
         throw new Error('❌ Erro ao consultar serviços. Tente novamente mais tarde.');
@@ -623,7 +623,7 @@ function agruparServicosPorCategoria(servicosDisponiveis) {
 // Função para formatar a lista de serviços agrupados por categoria
 function formatarListaServicos(servicosPorCategoria) {
     if (!servicosPorCategoria || Object.keys(servicosPorCategoria).length === 0) {
-        return 'Nenhum serviço disponível no momento.';
+        return '⚠️ Nenhum serviço disponível no momento.';
     }
 
     const emojis = {
@@ -650,7 +650,7 @@ function formatarListaServicos(servicosPorCategoria) {
         }
     }
 
-    return listaServicos;
+    return listaServicos.trim(); // Remove espaços extras no final
 }
 
 // Função para enviar a mensagem de agendamento
@@ -660,6 +660,13 @@ async function enviarMensagemAgendamento(client, msg) {
         const servicosPorCategoria = agruparServicosPorCategoria(servicosDisponiveis);
         const listaServicos = formatarListaServicos(servicosPorCategoria);
 
+        console.log("Lista de serviços gerada:", listaServicos); // Verificar saída no console
+
+        if (!listaServicos || listaServicos.trim() === '') {
+            await client.sendMessage(msg.from, '⚠️ Nenhum serviço disponível no momento.');
+            return;
+        }
+
         const mensagem = `🌟 *Agendamento de Horário* 🌟\n\n` +
             `Digite *Nome Completo:*\n\n` +
             `Escolha *Código do Serviço:* da lista abaixo:\n\n${listaServicos}\n\n` +
@@ -668,6 +675,7 @@ async function enviarMensagemAgendamento(client, msg) {
 
         await client.sendMessage(msg.from, mensagem);
     } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
         await client.sendMessage(msg.from, error.message);
     }
 }
