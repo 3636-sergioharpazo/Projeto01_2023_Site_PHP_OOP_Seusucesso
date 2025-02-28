@@ -557,7 +557,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         }
     }
     
-    let servicosDisponiveis = {};
+   
 
 try {
     const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
