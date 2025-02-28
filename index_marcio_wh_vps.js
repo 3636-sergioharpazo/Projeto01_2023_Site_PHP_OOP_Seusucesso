@@ -725,7 +725,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
     }
 
-}
+
 //final do menu 2
 
 
