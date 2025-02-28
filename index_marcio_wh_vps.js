@@ -8,7 +8,7 @@ const axios = require('axios');
 const { exec } = require('child_process');
 
 const app = express();
-const PORT = 3004;
+const PORT = 3004; //8445 do servidor vps
 const qrCodeDir = '/var/www/html/bot3';  // Diretório onde o QR será salvo MARCIO WH 
 
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
