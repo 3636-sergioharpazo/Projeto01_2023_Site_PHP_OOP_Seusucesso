@@ -235,15 +235,23 @@ client.on('message', async msg => {
             await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
             return;
         }
-       
-  const servicosPorFuncao = {};
+       const response = await fetch('url_do_php'); // Substitua 'url_do_php' pela URL correta do seu backend
+const data = await response.json();
+
+// Certifique-se de que os dados foram corretamente retornados
+const servicosDisponiveis = data.servicos;
 
 // Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
-Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
+const servicosPorFuncao = {};
+
+Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
     if (!servicosPorFuncao[funcao]) {
         servicosPorFuncao[funcao] = [];
     }
-    servicosPorFuncao[funcao].push({ codigo, nome, preco });
+    servicos.forEach(({ nome, preco }) => {
+        // Convertendo preco de string com vírgula para número
+        servicosPorFuncao[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')) });
+    });
 });
 
 // Ordenar e gerar a lista de serviços por função
@@ -253,12 +261,8 @@ let listaServicos = '';
 if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
     listaServicos += `\n*Manicure*\n\n`;
     servicosPorFuncao['Manicure'].sort((a, b) => a.codigo - b.codigo) // Ordenar por código
-        .forEach(({ codigo, nome, preco }) => {
-            // Garantir que nome seja uma string válida
-            nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
-            // Garantir que preco seja um número válido
-            preco = typeof preco === 'number' && !isNaN(preco) ? preco : 0; // Se preco não for um número, atribui 0
-            listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        .forEach(({ nome, preco }) => {
+            listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
 }
 
@@ -266,12 +270,8 @@ if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
 if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].length > 0) {
     listaServicos += `\n*Cabeleireiro*\n\n`;
     servicosPorFuncao['Cabeleireiro'].sort((a, b) => a.codigo - b.codigo) // Ordenar por código
-        .forEach(({ codigo, nome, preco }) => {
-            // Garantir que nome seja uma string válida
-            nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
-            // Garantir que preco seja um número válido
-            preco = typeof preco === 'number' && !isNaN(preco) ? preco : 0; // Se preco não for um número, atribui 0
-            listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+        .forEach(({ nome, preco }) => {
+            listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
 }
 
@@ -281,12 +281,8 @@ for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
     if (funcao !== 'Manicure' && funcao !== 'Cabeleireiro') {
         listaServicos += `\n*${funcao}*\n\n`;
         servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
-            .forEach(({ codigo, nome, preco }) => {
-                // Garantir que nome seja uma string válida
-                nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
-                // Garantir que preco seja um número válido
-                preco = typeof preco === 'number' && !isNaN(preco) ? preco : 0; // Se preco não for um número, atribui 0
-                listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+            .forEach(({ nome, preco }) => {
+                listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
             });
     }
 }
