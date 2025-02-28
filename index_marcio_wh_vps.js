@@ -230,39 +230,39 @@ try {
     const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
     const servicosDisponiveis = response.data.servicos;
 
-    // Agrupar serviços por função dinâmica
-    const servicosPorFuncao = {};
+    // Agrupar serviços por categoria (função)
+    const servicosPorCategoria = {};
 
     // Agrupar os serviços por função, pegando as funções dinamicamente
     Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
-        if (!servicosPorFuncao[funcao]) {
-            servicosPorFuncao[funcao] = [];
+        if (!servicosPorCategoria[funcao]) {
+            servicosPorCategoria[funcao] = [];
         }
-        servicos.forEach(({ nome, preco }) => {
+        servicos.forEach(({ nome, preco, codigo }) => {
             // Convertendo preco de string com vírgula para número
-            servicosPorFuncao[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')) });
+            servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), codigo });
         });
     });
 
-    // Ordenar e gerar a lista de serviços por função
-    let listaServicos = '';
+    // Gerar a lista de serviços e preços por categoria (função)
+    let listaServicos = '💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n';
 
-    // Iterar sobre todas as funções disponíveis
-    for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
+    // Iterar sobre todas as categorias (funções) disponíveis
+    for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
         if (servicos.length > 0) {
-            listaServicos += `\n*${funcao}*\n\n`; // Adiciona a função dinamicamente
+            listaServicos += `*${funcao}*\n`; // Adiciona a função dinamicamente
             servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
-                .forEach(({ nome, preco }) => {
-                    listaServicos += ` ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+                .forEach(({ nome, preco, codigo }) => {
+                    listaServicos += `${codigo} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
                 });
+            listaServicos += '\n'; // Adiciona espaçamento entre categorias
         }
     }
 
+    // Envia a mensagem formatada com os serviços e preços
     await client.sendMessage(
         msg.from,
-        `💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n` +
-        `📝${listaServicos}\n\n` +
-        `Digite *2* para agendar seu horário!`
+        listaServicos + `\nDigite *2* para agendar seu horário!`
     );
 } catch (error) {
     console.error('Erro ao carregar serviços:', error);
@@ -305,7 +305,7 @@ try {
 
 try {
     // Usando axios para buscar os serviços do backend
-    const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot_P.php');
+    const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
     const servicosDisponiveis = response.data.servicos;
 
     // Agrupar serviços por categoria (função)
@@ -331,7 +331,7 @@ try {
             listaServicos += `*${funcao}*\n`; // Adiciona a função dinamicamente
             servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
                 .forEach(({ nome, preco, codigo }) => {
-                    listaServicos += ` ${codigo} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+                    listaServicos += `${codigo} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
                 });
             listaServicos += '\n'; // Adiciona espaçamento entre categorias
         }
@@ -346,7 +346,6 @@ try {
     console.error('Erro ao carregar serviços:', error);
     await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
 }
-
 }
 
 // Verifica se o cliente digitou '6' para iniciar a consulta
@@ -540,19 +539,19 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     }
     
     let servicosDisponiveis = {};
-    try {
-        const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        servicosDisponiveis = response.data.servicos;
-    } catch (error) {
-        await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-        return;
-    }
-    
-    
-   // Agrupar serviços por função
+
+try {
+    const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
+    servicosDisponiveis = response.data.servicos;
+} catch (error) {
+    await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+    return;
+}
+
+// Agrupar serviços por função (dará suporte para qualquer nova função adicionada)
 const servicosPorFuncao = {};
 
-// Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
+// Agrupar os serviços por função dinâmica
 Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
     if (!servicosPorFuncao[funcao]) {
         servicosPorFuncao[funcao] = [];
@@ -563,35 +562,17 @@ Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) 
 // Ordenar e gerar a lista de serviços por função
 let listaServicos = '';
 
-// Verificar se há serviços de Manicure e adicionar à lista
-if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
-    listaServicos += `\n*Manicure*\n\n`;
-    servicosPorFuncao['Manicure'].sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
-        .forEach(({ codigo, nome, preco }) => {
-            listaServicos += ` ${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-        });
-}
-
-// Adicionar os serviços de Cabeleireiro e outras funções
-if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].length > 0) {
-    listaServicos += `\n*Cabeleireiro*\n\n`;
-    servicosPorFuncao['Cabeleireiro'].sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
-        .forEach(({ codigo, nome, preco }) => {
-            listaServicos += ` ${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-        });
-}
-
-// Adicionar outras funções
+// Iterar sobre todas as funções disponíveis
 for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
-    // Ignorar Manicure e Cabeleireiro que já foram exibidos
-    if (funcao !== 'Manicure' && funcao !== 'Cabeleireiro') {
-        listaServicos += `\n*${funcao}*\n\n`;
+    if (servicos.length > 0) {
+        listaServicos += `\n*${funcao}*\n\n`; // Adiciona a função dinamicamente
         servicos.sort((a, b) => a.nome.localeCompare(b.nome)) // Ordenar por nome
             .forEach(({ codigo, nome, preco }) => {
-                listaServicos += ` ${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+                listaServicos += `${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
             });
     }
 }
+
 
 // Enviar mensagem com a lista de serviços organizada
 await client.sendMessage(
