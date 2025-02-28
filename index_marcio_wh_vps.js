@@ -506,7 +506,6 @@ if (msg.body === '6' && msg.from.endsWith('@c.us')) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 //menu 2
-// Menu 2
 if (msg.body === '2' && msg.from.endsWith('@c.us')) {
 
     const chat = await msg.getChat();
@@ -563,7 +562,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             client.on('message', listener);
         });
     }
-
+    
     async function verificarDisponibilidade(servico_id, data_agendamento) {
         const [dia, mes, ano] = data_agendamento.split('/');
         const dataFormatada = `${ano}-${mes}-${dia}`;
@@ -649,7 +648,6 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     } catch (error) {
         console.error('Erro ao carregar serviços:', error);
         await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-        return;
     }
 
     // Solicita o nome e valida para não conter números
@@ -669,18 +667,6 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         'Serviço escolhido'
     );
     if (!servico_id) return;
-
-    // Verifique se o servico_id existe em servicosDisponiveis antes de tentar acessá-lo
-    let servicoEscolhido = null;
-    for (const categoria in servicosDisponiveis) {
-        servicoEscolhido = servicosDisponiveis[categoria].find(servico => servico.id === parseInt(servico_id));
-        if (servicoEscolhido) break;  // Encontrou o serviço, então sai do loop
-    }
-
-    if (!servicoEscolhido) {
-        await client.sendMessage(msg.from, '❌ Serviço não encontrado. Por favor, escolha um código válido.');
-        return;
-    }
 
     // Solicita a data após o serviço ser validado
     data_agendamento = await solicitarCampo(
@@ -708,14 +694,18 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     horario_agendamento = await solicitarCampo(horario_agendamento, '❌ Horário inválido! Envie no formato HH:mm.', /^([01]\d|2[0-3]):([0-5]\d)$/, 'Horário recebido');
     if (!horario_agendamento) return;
 
+    // Confirmação do agendamento
     await client.sendMessage(
         msg.from,
         `📝 *Confirme as informações:*\n\n` +
         `👤 *Nome:* ${cliente_nome}\n` +
-        `💼 *Serviço:* ${servicoEscolhido.nome}\n` +
-        `💰 *Preço:* R$ ${servicoEscolhido.preco.toFixed(2).replace('.', ',')}\n` +
+        `💼 *Serviço:* ${servicosDisponiveis.find(service => service.id == servico_id)?.nome || 'Serviço não encontrado'}\n` +
+        `💰 *Preço:* R$ ${servicosDisponiveis.find(service => service.id == servico_id)?.preco || 'Preço não encontrado'}\n` +
         `📅 *Data:* ${data_agendamento}\n` +
-        `⏰ *Horário:* ${horario_agendamento}`
+        `⏰ *Horário:* ${horario_agendamento}\n\n` +
+        `Digite *Sim* ✅ para confirmar\n` +
+        `Digite *Cancelar* ❌ para cancelar e voltar ao menu principal\n` +
+        `Digite *Menu* para retornar ao menu principal.`
     );
 
     const resposta = await esperarMensagem(msg.from);
@@ -729,47 +719,34 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     try {
         const protocoloResponse = await axios.post('https://antoniooliveira.shop/gerar_protocolo.php', {
             cliente_nome,
+            cliente_telefone,
             servico_id,
             data_agendamento,
-            horario_agendamento
+            horario_agendamento: `${horario_agendamento}:00`
         });
+
         protocolo = protocoloResponse.data.protocolo;
+
+        if (protocolo) {
+            await client.sendMessage(
+                msg.from,
+                `✅ *Agendamento Confirmado!*\n` +
+                `📜 *Protocolo:* ${protocolo}\n` +
+                `👤 *Nome:* ${cliente_nome}\n` +
+                `💼 *Serviço:* ${servicosDisponiveis.find(service => service.id == servico_id)?.nome || 'Serviço não encontrado'}\n` +
+                `💰 *Preço:* R$ ${servicosDisponiveis.find(service => service.id == servico_id)?.preco || 'Preço não encontrado'}\n` +
+                `📅 *Data:* ${data_agendamento}\n` +
+                `⏰ *Horário:* ${horario_agendamento}\n\n` +
+                `🔙 Retornando ao menu principal.`
+            );
+        } else {
+            await client.sendMessage(msg.from, '❌ Ocorreu um erro ao gerar o protocolo. Tente novamente mais tarde.');
+        }
     } catch (error) {
         console.error('Erro ao gerar protocolo:', error);
-        await client.sendMessage(msg.from, '❌ Erro ao gerar protocolo. Tente novamente.');
-        return;
+        await client.sendMessage(msg.from, '❌ Ocorreu um erro ao salvar o agendamento. Tente novamente mais tarde.');
     }
 
-    if (confirmacao) {
-        await client.sendMessage(msg.from, `✅ Agendamento confirmado!\nProtocolo: ${protocolo}`);
-    }
-
-    // Continuando a partir da confirmação do agendamento
-    if (confirmacao) {
-        try {
-            // Chamada para a API para salvar o agendamento
-            const respostaProtocolo = await axios.post('https://antoniooliveira.shop/gerar_protocolo.php', {
-                nome_cliente: cliente_nome,
-                servico_id: servico_id,
-                data_agendamento: data_agendamento,
-                horario_agendamento: horario_agendamento
-            });
-
-            // Recebe o protocolo do agendamento
-            protocolo = respostaProtocolo.data.protocolo;
-
-            // Finaliza a confirmação e envia o protocolo
-            await client.sendMessage(msg.from, `✅ Agendamento confirmado com sucesso! \n\nProtocolo: *${protocolo}*`);
-            await client.sendMessage(msg.from, '🔙 Retornando ao menu principal.');
-
-        } catch (error) {
-            console.error('Erro ao salvar o agendamento:', error);
-            await client.sendMessage(msg.from, '❌ Ocorreu um erro ao confirmar o agendamento. Tente novamente mais tarde.');
-        }
-    } else {
-        await client.sendMessage(msg.from, '❌ Agendamento cancelado. Retornando ao menu principal.');
-    }
-} 
 
 //final do menu 2
 
