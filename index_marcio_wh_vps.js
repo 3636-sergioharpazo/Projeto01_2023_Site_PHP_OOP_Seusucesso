@@ -508,10 +508,11 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         return;
     }
     
-    const listaServicos = Object.entries(servicosDisponiveis)
-        .map(([codigo, { nome, preco }]) => `   ${codigo}️⃣ ${nome} - R$ ${preco}`)
-        .join('\n');
     
+    const listaServicos = Object.entries(servicosDisponiveis)
+    .map(([codigo, { nome, preco }]) => 
+        `   ${codigo}️⃣ ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}`)
+    .join('\n');
     await client.sendMessage(
         msg.from,
         `🌟 *Agendamento de Horário* 🌟\n\n` +
