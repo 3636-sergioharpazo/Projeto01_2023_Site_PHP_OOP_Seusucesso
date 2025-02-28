@@ -505,8 +505,8 @@ if (msg.body === '6' && msg.from.endsWith('@c.us')) {
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
-//menu 2
-if (msg.body === '2' && msg.from.endsWith('@c.us')) {
+//inicio menu 2
+  if (msg.body === '2' && msg.from.endsWith('@c.us')) {
 
     const chat = await msg.getChat();
     await delay(2000);
@@ -514,13 +514,11 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     await delay(2000);
 
     let cliente_nome = '';
-    //let cliente_telefone = '';
     let servico_id = '';
     let data_agendamento = '';
     let horario_agendamento = '';
     let protocolo = '';
     let confirmacao = false;
-
     let cliente_telefone = msg.from.split('@')[0];
 
     async function solicitarCampo(campo, mensagemValidacao, regex = null, mensagemConfirmacao = '') {
@@ -537,21 +535,20 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
                 }
                 campo = resposta;
             }
-    
+
             if (regex && !regex.test(campo)) {
-                // Se a resposta não atender ao padrão regex, continue pedindo
                 await client.sendMessage(msg.from, mensagemValidacao);
             } else {
-                campoValido = true; // Quando o campo for válido
+                campoValido = true;
             }
         }
-    
+
         if (mensagemConfirmacao) {
             await client.sendMessage(msg.from, `✅ ${mensagemConfirmacao}: ${campo}`);
         }
         return campo;
     }
-    
+
     async function esperarMensagem(user) {
         return new Promise((resolve) => {
             const listener = (response) => {
@@ -563,7 +560,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             client.on('message', listener);
         });
     }
-    
+
     async function verificarDisponibilidade(servico_id, data_agendamento) {
         const [dia, mes, ano] = data_agendamento.split('/');
         const dataFormatada = `${ano}-${mes}-${dia}`;
@@ -580,133 +577,58 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             return [];
         }
     }
-    
-   // Função para buscar os serviços do backend
-// Função para buscar os serviços do backend
-async function buscarServicos() {
+
+    let servicosDisponiveis = {};
     try {
         const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        return response.data.servicos || {}; // Garante que retorna um objeto vazio caso não haja serviços
+        servicosDisponiveis = response.data.servicos;
     } catch (error) {
-        console.error('Erro ao buscar serviços:', error);
-        throw new Error('❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-    }
-}
-
-// Função para agrupar serviços por categoria
-function agruparServicosPorCategoria(servicosDisponiveis) {
-    const servicosPorCategoria = {};
-
-    if (!servicosDisponiveis || typeof servicosDisponiveis !== 'object') {
-        console.error('Formato inválido para serviços disponíveis.');
-        return servicosPorCategoria;
+        await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+        return;
     }
 
-    Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
-        if (!servicosPorCategoria[funcao]) {
-            servicosPorCategoria[funcao] = [];
-        }
-        servicos.forEach(({ nome, preco, id }) => {
-            if (nome && preco && id) {
-                servicosPorCategoria[funcao].push({
-                    nome,
-                    preco: parseFloat(preco.replace(',', '.')),
-                    id
-                });
-            }
+    let listaServicos = "🌟 *Escolha um Serviço:* 🌟\n\n";
+    for (const [funcao, servicos] of Object.entries(servicosDisponiveis)) {
+        listaServicos += `🛠️ *${funcao}:*\n`;
+        servicos.forEach(({ id, nome, preco }) => {
+            listaServicos += `   ${id}️⃣ ${nome} - R$ ${preco}\n`;
         });
-    });
-
-    return servicosPorCategoria;
-}
-
-// Função para formatar a lista de serviços agrupados por categoria
-function formatarListaServicos(servicosPorCategoria) {
-    if (!servicosPorCategoria || Object.keys(servicosPorCategoria).length === 0) {
-        return '⚠️ Nenhum serviço disponível no momento.';
+        listaServicos += "\n";
     }
 
-    const emojis = {
-        'Cabeleireiro': '💇‍♀️',
-        'Manicure': '💅',
-        'Estética': '💆‍♀️',
-        'Massoterapia': '💆‍♂️',
-        'Barbeiro': '🧔',
-        'Outros': '🛠️'
-    };
+    await client.sendMessage(
+        msg.from,
+        `${listaServicos}\n` +
+        `Digite o *Código do Serviço* desejado.\n\n` +
+        `Digite *Menu* para retornar ao menu principal.`
+    );
 
-    let listaServicos = '💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n';
+    cliente_nome = await solicitarCampo(
+        null,
+        '❌ Nome inválido. Por favor, envie seu nome completo sem números.',
+        /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/,
+        'Nome recebido'
+    );
+    if (!cliente_nome) return;
 
-    for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
-        if (servicos.length > 0) {
-            const emoji = emojis[funcao] || '🛠️';
-            listaServicos += `*${emoji} ${funcao}*\n`;
+    servico_id = await solicitarCampo(
+        null,
+        `❌ Código inválido. Escolha um código válido:\n${listaServicos}`,
+        /^[0-9]+$/,
+        'Serviço escolhido'
+    );
+    if (!servico_id) return;
 
-            servicos.sort((a, b) => a.id - b.id).forEach(({ nome, preco, id }) => {
-                listaServicos += `*${id}* - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-            });
+    data_agendamento = await solicitarCampo(
+        null,
+        '❌ Data inválida! Envie no formato DD/MM/AAAA.',
+        /^\d{2}\/\d{2}\/\d{4}$/,
+        'Data recebida'
+    );
+    if (!data_agendamento) return;
 
-            listaServicos += '\n';
-        }
-    }
+    const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agendamento);
 
-    return listaServicos.trim(); // Remove espaços extras no final
-}
-
-// Função para enviar a mensagem de agendamento
-async function enviarMensagemAgendamento(client, msg) {
-    try {
-        const servicosDisponiveis = await buscarServicos();
-        const servicosPorCategoria = agruparServicosPorCategoria(servicosDisponiveis);
-        const listaServicos = formatarListaServicos(servicosPorCategoria);
-
-        console.log("Lista de serviços gerada:", listaServicos); // Verificar saída no console
-
-        if (!listaServicos || listaServicos.trim() === '') {
-            await client.sendMessage(msg.from, '⚠️ Nenhum serviço disponível no momento.');
-            return;
-        }
-
-        const mensagem = `🌟 *Agendamento de Horário* 🌟\n\n` +
-            `Digite *Nome Completo:*\n\n` +
-            `Escolha *Código do Serviço:* da lista abaixo:\n\n${listaServicos}\n\n` +
-            `Digite a *Data:*  (Formato: 📅 DD/MM/AAAA)\n\n` +
-            `Digite *Menu* para retornar ao menu principal.`;
-
-        await client.sendMessage(msg.from, mensagem);
-    } catch (error) {
-        console.error('Erro ao enviar mensagem:', error);
-        await client.sendMessage(msg.from, error.message);
-    }
-}
- // Solicita o nome e valida para não conter números
-cliente_nome = await solicitarCampo(
-    null, 
-    '❌ Nome inválido. Por favor, envie seu nome completo sem números.', 
-    /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/,  // Aceita apenas letras e espaços
-    'Nome recebido'
-);
-if (!cliente_nome) return;
-
-// Solicita o serviço após o nome ser validado
-servico_id = await solicitarCampo(
-    null, 
-    `❌ Código inválido. Escolha um código válido:\n${listaServicos}`, 
-    /^[0-9]+$/, 
-    'Serviço escolhido'
-);
-if (!servico_id) return;
-
-// Solicita a data após o serviço ser validado
-data_agendamento = await solicitarCampo(
-    null, 
-    '❌ Data inválida! Envie no formato DD/MM/AAAA.', 
-    /^\d{2}\/\d{2}\/\d{4}$/, 
-    'Data recebida'
-);
-if (!data_agendamento) return;
-const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agendamento);
-    
     if (horariosDisponiveis.length > 0) {
         let mensagem = `✅ *Horários disponíveis para ${data_agendamento}:*\n\n`;
         horariosDisponiveis.forEach(horario => {
@@ -718,18 +640,23 @@ const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agen
         await client.sendMessage(msg.from, `❌ *Nenhum horário disponível para ${data_agendamento}.*`);
         return;
     }
-    
-    horario_agendamento = await solicitarCampo(horario_agendamento, '❌ Horário inválido! Envie no formato HH:mm.', /^([01]\d|2[0-3]):([0-5]\d)$/, 'Horário recebido');
+
+    horario_agendamento = await solicitarCampo(
+        null,
+        '❌ Horário inválido! Envie no formato HH:mm.',
+        /^([01]\d|2[0-3]):([0-5]\d)$/,
+        'Horário recebido'
+    );
     if (!horario_agendamento) return;
-    
+
     await client.sendMessage(
         msg.from,
         `📝 Confirme as informações:\n\n` +
-        `Nome: ${cliente_nome}\n` +
-        `Serviço: ${servicosDisponiveis[servico_id].nome}\n` +
-        `Preço: R$ ${servicosDisponiveis[servico_id].preco}\n` +
-        `Data: ${data_agendamento}\n` +
-        `Horário: ${horario_agendamento}\n\n` +
+        `👤 Nome: ${cliente_nome}\n` +
+        `💼 Serviço: ${servicosDisponiveis[Object.keys(servicosDisponiveis).find(funcao => servicosDisponiveis[funcao].some(servico => servico.id == servico_id))].find(servico => servico.id == servico_id).nome}\n` +
+        `💰 Preço: R$ ${servicosDisponiveis[Object.keys(servicosDisponiveis).find(funcao => servicosDisponiveis[funcao].some(servico => servico.id == servico_id))].find(servico => servico.id == servico_id).preco}\n` +
+        `📅 Data: ${data_agendamento}\n` +
+        `⏰ Horário: ${horario_agendamento}\n\n` +
         `Digite *Sim* ✅ para confirmar\nDigite *Cancelar* ❌ para cancelar e voltar ao menu principal\nDigite *Menu* para retornar ao menu principal.`
     );
 
@@ -758,25 +685,20 @@ const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agen
                 `✅ *Agendamento Confirmado!*\n` +
                 `📜 *Protocolo:* ${protocolo}\n` +
                 `👤 *Nome:* ${cliente_nome}\n` +
-                `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-                `💰 *Preço:* R$ ${servicosDisponiveis[servico_id].preco}\n` +
+                `💼 *Serviço:* ${servicosDisponiveis[Object.keys(servicosDisponiveis).find(funcao => servicosDisponiveis[funcao].some(servico => servico.id == servico_id))].find(servico => servico.id == servico_id).nome}\n` +
+                `💰 *Preço:* R$ ${servicosDisponiveis[Object.keys(servicosDisponiveis).find(funcao => servicosDisponiveis[funcao].some(servico => servico.id == servico_id))].find(servico => servico.id == servico_id).preco}\n` +
                 `📅 *Data:* ${data_agendamento}\n` +
                 `⏰ *Horário:* ${horario_agendamento}`
             );
-            
-        } else {
-            await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
         }
     } catch (error) {
         await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
     }
 
+
 //final do menu 2
 
-
 }
-
-
 
 
 })
