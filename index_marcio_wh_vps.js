@@ -236,7 +236,7 @@ client.on('message', async msg => {
             return;
         }
        
-   const servicosPorFuncao = {};
+  const servicosPorFuncao = {};
 
 // Agrupar serviços por função (Cabeleireiro, Manicure, etc.)
 Object.entries(servicosDisponiveis).forEach(([codigo, { nome, preco, funcao }]) => {
@@ -256,6 +256,8 @@ if (servicosPorFuncao['Manicure'] && servicosPorFuncao['Manicure'].length > 0) {
         .forEach(({ codigo, nome, preco }) => {
             // Garantir que nome seja uma string válida
             nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
+            // Garantir que preco seja um número válido
+            preco = typeof preco === 'number' && !isNaN(preco) ? preco : 0; // Se preco não for um número, atribui 0
             listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
 }
@@ -267,6 +269,8 @@ if (servicosPorFuncao['Cabeleireiro'] && servicosPorFuncao['Cabeleireiro'].lengt
         .forEach(({ codigo, nome, preco }) => {
             // Garantir que nome seja uma string válida
             nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
+            // Garantir que preco seja um número válido
+            preco = typeof preco === 'number' && !isNaN(preco) ? preco : 0; // Se preco não for um número, atribui 0
             listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
         });
 }
@@ -280,6 +284,8 @@ for (const [funcao, servicos] of Object.entries(servicosPorFuncao)) {
             .forEach(({ codigo, nome, preco }) => {
                 // Garantir que nome seja uma string válida
                 nome = nome || ''; // Se nome for undefined ou null, substitui por string vazia
+                // Garantir que preco seja um número válido
+                preco = typeof preco === 'number' && !isNaN(preco) ? preco : 0; // Se preco não for um número, atribui 0
                 listaServicos += ` ${codigo}️⃣  ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
             });
     }
