@@ -587,8 +587,6 @@ try {
     return;
 }
 
-// Agrupar serviços por função (dará suporte para qualquer nova função adicionada)
-const servicosPorFuncao = {};
 
 // Emojis dinâmicos mapeados para funções
 const emojis = {
