@@ -232,6 +232,16 @@ try {
     // Agrupar serviços por categoria (função)
     const servicosPorCategoria = {};
 
+    // Funções padrão com emojis
+    const emojis = {
+        'Cabeleireiro': '💇‍♀️',
+        'Manicure': '💅',
+        'Estética': '💆‍♀️',
+        'Massoterapia': '💆‍♂️',
+        'Barbeiro': '🧔',
+        'Outros': '🛠️'
+    };
+
     // Agrupar os serviços por função, pegando as funções dinamicamente
     Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
         if (!servicosPorCategoria[funcao]) {
@@ -252,11 +262,19 @@ try {
     // Iterar sobre todas as categorias (funções) disponíveis
     for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
         if (servicos.length > 0) {
-            listaServicos += `*${funcao}*\n`; // Adiciona a função dinamicamente
-            servicos.sort((a, b) => a.id - b.id) // Ordenar por código
+            // Se a função não possui um emoji associado, use um emoji genérico
+            const emoji = emojis[funcao] || '🛠️';
+
+            // Adicionar a função com o emoji
+            listaServicos += `*${emoji} ${funcao}*\n`; 
+
+            // Ordenar os serviços por ID
+            servicos.sort((a, b) => a.id - b.id)
                 .forEach(({ nome, preco, id }) => {
-                    listaServicos += `${id} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+                    // Destacar o ID em negrito e formatar o preço
+                    listaServicos += `*${id}* - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
                 });
+
             listaServicos += '\n'; // Adiciona espaçamento entre categorias
         }
     }
@@ -269,7 +287,6 @@ try {
 } catch (error) {
     console.error('Erro ao carregar serviços:', error);
     await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-}
 }
 
    
