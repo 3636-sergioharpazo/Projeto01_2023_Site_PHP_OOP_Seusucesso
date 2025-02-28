@@ -216,7 +216,7 @@ client.on('message', async msg => {
             `6️⃣ - Consultar agendamento`
         );
     }
-const delay = ms => new Promise(res => setTimeout(res, ms));
+
 
     // Resposta para a opção "Serviços e Preços"
     if (msg.body === '1' && msg.from.endsWith('@c.us')) {
