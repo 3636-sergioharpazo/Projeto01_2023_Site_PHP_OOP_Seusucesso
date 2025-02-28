@@ -325,30 +325,70 @@ client.on('message', async msg => {
     await delay(2000);
 
 
- // Consultar os serviços disponíveis
- let servicosDisponiveis = {};
  try {
-     const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot_p.php');
-     servicosDisponiveis = response.data.servicos;
- } catch (error) {
-     console.error('Erro ao carregar serviços:', error);
-     await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-     return;
- }
+    // Usando axios para buscar os serviços do backend
+    const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot_p.php');
+    const servicosDisponiveis = response.data.servicos;
 
- const listaServicos = Object.entries(servicosDisponiveis)
-     .map(([codigo, { nome, preco }]) => ` ${nome} - R$ ${preco}`)
-     .join('\n');
+    // Agrupar serviços por categoria (função)
+    const servicosPorCategoria = {};
 
+    // Funções padrão com emojis
+    const emojis = {
+        'Cabeleireiro': '💇‍♀️',
+        'Manicure': '💅',
+        'Estética': '💆‍♀️',
+        'Massoterapia': '💆‍♂️',
+        'Barbeiro': '🧔',
+        'Outros': '🛠️'
+    };
 
-     await client.sendMessage(
+    // Agrupar os serviços por função, pegando as funções dinamicamente
+    Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
+        if (!servicosPorCategoria[funcao]) {
+            servicosPorCategoria[funcao] = [];
+        }
+        servicos.forEach(({ nome, preco, id }) => {
+            // Verificar se os dados essenciais (nome, preco, id) estão presentes
+            if (nome && preco && id) {
+                // Convertendo preco de string com vírgula para número
+                servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), id });
+            }
+        });
+    });
+
+    // Gerar a lista de serviços e preços por categoria (função)
+    let listaServicos = '💇‍♀️ *Serviços e Preços - PROMOÇÕES DA SEMANA* 💇‍♂️\n\n';
+
+    // Iterar sobre todas as categorias (funções) disponíveis
+    for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
+        if (servicos.length > 0) {
+            // Se a função não possui um emoji associado, use um emoji genérico
+            const emoji = emojis[funcao] || '🛠️';
+
+            // Adicionar a função com o emoji
+            listaServicos += `*${emoji} ${funcao}*\n`; 
+
+            // Ordenar os serviços por ID
+            servicos.sort((a, b) => a.id - b.id)
+                .forEach(({ nome, preco, id }) => {
+                    // Destacar o ID em negrito e formatar o preço
+                    listaServicos += `*${id}* - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+                });
+
+            listaServicos += '\n'; // Adiciona espaçamento entre categorias
+        }
+    }
+
+    // Envia a mensagem formatada com os serviços e preços
+    await client.sendMessage(
         msg.from,
-        `🎉 *Promoções da Semana* 🎉\n\n` +
-        `📝\n${listaServicos}\n` +
-        `Aproveite essas ofertas incríveis! Válidas até sábado. 💅\n\n` +  // Adicionei o '+' aqui
-        `Digite *2* para agendar seu horário!\n`
+        listaServicos + `\nDigite *2* para agendar seu horário!`
     );
-    
+} catch (error) {
+    console.error('Erro ao carregar serviços:', error);
+    await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+}
 }
 
 // Verifica se o cliente digitou '6' para iniciar a consulta
@@ -541,20 +581,63 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         }
     }
     
-    let servicosDisponiveis = {};
-    try {
-        const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-        servicosDisponiveis = response.data.servicos;
-    } catch (error) {
-        await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-        return;
+     try {
+    // Usando axios para buscar os serviços do backend
+    const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
+    const servicosDisponiveis = response.data.servicos;
+
+    // Agrupar serviços por categoria (função)
+    const servicosPorCategoria = {};
+
+    // Funções padrão com emojis
+    const emojis = {
+        'Cabeleireiro': '💇‍♀️',
+        'Manicure': '💅',
+        'Estética': '💆‍♀️',
+        'Massoterapia': '💆‍♂️',
+        'Barbeiro': '🧔',
+        'Outros': '🛠️'
+    };
+
+    // Agrupar os serviços por função, pegando as funções dinamicamente
+    Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
+        if (!servicosPorCategoria[funcao]) {
+            servicosPorCategoria[funcao] = [];
+        }
+        servicos.forEach(({ nome, preco, id }) => {
+            // Verificar se os dados essenciais (nome, preco, id) estão presentes
+            if (nome && preco && id) {
+                // Convertendo preco de string com vírgula para número
+                servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), id });
+            }
+        });
+    });
+
+    // Gerar a lista de serviços e preços por categoria (função)
+    let listaServicos = '💇‍♀️ *Serviços e Preços* 💇‍♂️\n\n';
+
+    // Iterar sobre todas as categorias (funções) disponíveis
+    for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
+        if (servicos.length > 0) {
+            // Se a função não possui um emoji associado, use um emoji genérico
+            const emoji = emojis[funcao] || '🛠️';
+
+            // Adicionar a função com o emoji
+            listaServicos += `*${emoji} ${funcao}*\n`; 
+
+            // Ordenar os serviços por ID
+            servicos.sort((a, b) => a.id - b.id)
+                .forEach(({ nome, preco, id }) => {
+                    // Destacar o ID em negrito e formatar o preço
+                    listaServicos += `*${id}* - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
+                });
+
+            listaServicos += '\n'; // Adiciona espaçamento entre categorias
+        }
     }
-    
-    const listaServicos = Object.entries(servicosDisponiveis)
-        .map(([codigo, { nome, preco }]) => `   ${codigo}️⃣ ${nome} - R$ ${preco}`)
-        .join('\n');
-    
-    await client.sendMessage(
+
+    // Envia a mensagem formatada com os serviços e preços
+   await client.sendMessage(
         msg.from,
         `🌟 *Agendamento de Horário* 🌟\n\n` +
         `Digite *Nome Completo:*\n\n` +
@@ -562,6 +645,10 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         `Digite a *Data:*  (Formato: 📅 DD/MM/AAAA)\n\n` +
          `Digite *Menu* para retornar ao menu principal.`
     );
+} catch (error) {
+    console.error('Erro ao carregar serviços:', error);
+    await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+}
     // Solicita o nome e valida para não conter números
 cliente_nome = await solicitarCampo(
     null, 
