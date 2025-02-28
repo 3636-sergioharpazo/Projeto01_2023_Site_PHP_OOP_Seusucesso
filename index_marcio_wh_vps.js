@@ -188,8 +188,6 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
 
-// Função para criar delay
-const delay = ms => new Promise(res => setTimeout(res, ms));
 
 // Manipulação de mensagens
 client.on('message', async msg => {
@@ -200,6 +198,7 @@ client.on('message', async msg => {
         const chat = await msg.getChat();
         const contact = await msg.getContact();
         const name = contact.pushname || "Cliente";
+
        
         await delay(2000);
         await chat.sendStateTyping();
@@ -217,14 +216,15 @@ client.on('message', async msg => {
         );
     }
 
-
     // Resposta para a opção "Serviços e Preços"
     if (msg.body === '1' && msg.from.endsWith('@c.us')) {
         const chat = await msg.getChat();
         await delay(2000);
         await chat.sendStateTyping();
         await delay(2000);
-try {
+
+
+        try {
     // Usando axios para buscar os serviços do backend
     const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
     const servicosDisponiveis = response.data.servicos;
@@ -289,6 +289,8 @@ try {
     await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
 }
 
+    }
+
    
 
     // Resposta para "Localização"
@@ -322,49 +324,31 @@ try {
     await chat.sendStateTyping();
     await delay(2000);
 
-try {
-    // Usando axios para buscar os serviços do backend
-    const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot.php');
-    const servicosDisponiveis = response.data.servicos;
 
-    // Agrupar serviços por categoria (função)
-    const servicosPorCategoria = {};
+ // Consultar os serviços disponíveis
+ let servicosDisponiveis = {};
+ try {
+     const response = await axios.get('https://antoniooliveira.shop/consultar-servicos_bot_p.php');
+     servicosDisponiveis = response.data.servicos;
+ } catch (error) {
+     console.error('Erro ao carregar serviços:', error);
+     await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+     return;
+ }
 
-    // Agrupar os serviços por função, pegando as funções dinamicamente
-    Object.entries(servicosDisponiveis).forEach(([funcao, servicos]) => {
-        if (!servicosPorCategoria[funcao]) {
-            servicosPorCategoria[funcao] = [];
-        }
-        servicos.forEach(({ nome, preco, codigo }) => {
-            // Convertendo preco de string com vírgula para número
-            servicosPorCategoria[funcao].push({ nome, preco: parseFloat(preco.replace(',', '.')), codigo });
-        });
-    });
+ const listaServicos = Object.entries(servicosDisponiveis)
+     .map(([codigo, { nome, preco }]) => ` ${nome} - R$ ${preco}`)
+     .join('\n');
 
-    // Gerar a lista de serviços e preços por categoria (função)
-    let listaServicos = '💇‍♀️ *Serviços e Preços - PROMOÇÃO DA SEMANA* 💇‍♂️\n\n';
 
-    // Iterar sobre todas as categorias (funções) disponíveis
-    for (const [funcao, servicos] of Object.entries(servicosPorCategoria)) {
-        if (servicos.length > 0) {
-            listaServicos += `*${funcao}*\n`; // Adiciona a função dinamicamente
-            servicos.sort((a, b) => a.codigo - b.codigo) // Ordenar por código
-                .forEach(({ nome, preco, codigo }) => {
-                    listaServicos += `${codigo} - ${nome.padEnd(30)} - R$ ${preco.toFixed(2).replace('.', ',')}\n`;
-                });
-            listaServicos += '\n'; // Adiciona espaçamento entre categorias
-        }
-    }
-
-    // Envia a mensagem formatada com os serviços e preços
-    await client.sendMessage(
+     await client.sendMessage(
         msg.from,
-        listaServicos + `\nDigite *2* para agendar seu horário!`
+        `🎉 *Promoções da Semana* 🎉\n\n` +
+        `📝\n${listaServicos}\n` +
+        `Aproveite essas ofertas incríveis! Válidas até sábado. 💅\n\n` +  // Adicionei o '+' aqui
+        `Digite *2* para agendar seu horário!\n`
     );
-} catch (error) {
-    console.error('Erro ao carregar serviços:', error);
-    await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-}
+    
 }
 
 // Verifica se o cliente digitou '6' para iniciar a consulta
@@ -675,12 +659,15 @@ const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agen
 
 
 
+
+
+
 }
-}
+
+
+
+
 })
-
-
-
 
 const agendamentosNotificados = new Set();
 
