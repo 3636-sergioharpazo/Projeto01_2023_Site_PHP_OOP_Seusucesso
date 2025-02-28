@@ -1,16 +1,18 @@
 #####passo 1 #########
-# cd /var/www/html
+# cd /var/www/html ### ceecegril
 # mkdir bot1 bot2 bot3
 #sudo chmod -R 755 /var/www/html/bot1
 #sudo chmod -R 755 /var/www/html/bot2
 #sudo chmod -R 755 /var/www/html/bot3
 #####passo 2 #########
-#cd /var/www/html/bot2
+#cd /var/www/html/bot2 # lojas teral
 #npm init -y
-#npm install whatsapp-web.js qrcode path fs rimraf express axios
-#cd /var/www/html/bot3
+#npm install whatsapp-web.js qrcode path fs rimraf express axios npm puppeteer@latest
+
+#cd /var/www/html/bot3 #### marcios wh
 #npm init -y
-#npm install whatsapp-web.js qrcode path fs rimraf express axios
+#npm install whatsapp-web.js qrcode path fs rimraf express axios npm puppeteer@latest
+
 # npm install -g pm2
 #####passo 3 #########
 #cd /var/www/html/bot1
