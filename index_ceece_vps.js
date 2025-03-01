@@ -1,6 +1,8 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
+const axios = require('axios');
+
 const fs = require('fs');
 const rimraf = require('rimraf');
 const express = require('express');
