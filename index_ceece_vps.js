@@ -18,14 +18,14 @@ let isClientReady = false;
 
 require('events').EventEmitter.defaultMaxListeners = 100;
 
-// 🔹 Função para verificar a conexão com a internet
+// Função para verificar a conexão com a internet
 function checkInternetConnection(callback) {
   exec('ping -c 1 google.com', (error) => {
     callback(!error);
   });
 }
 
-// 🔹 Função para gerar QR Code e salvar no diretório
+// Função para gerar QR Code e salvar no diretório
 async function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
 
@@ -41,7 +41,7 @@ async function generateQRCode(qr) {
   }
 }
 
-// 🔹 Função para reiniciar o cliente e remover sessão
+// Função para reiniciar o cliente e remover sessão
 function restartClient() {
   console.log('🔄 Reiniciando o cliente...');
 
@@ -56,7 +56,7 @@ function restartClient() {
   initializeClient();
 }
 
-// 🔹 Função para tentar reconectar
+// Função para tentar reconectar
 function attemptReconnect() {
   if (reconnectAttempts < 10) {
     console.log(`🔄 Tentativa de reconexão ${reconnectAttempts + 1}/10...`);
@@ -68,7 +68,7 @@ function attemptReconnect() {
   }
 }
 
-// 🔹 Configuração do cliente
+// Configuração do cliente
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'default' }),
   puppeteer: {
@@ -78,7 +78,7 @@ const client = new Client({
   }
 });
 
-// 🔹 Eventos do WhatsApp Web
+// Eventos do WhatsApp Web
 client.on('qr', generateQRCode);
 
 client.on('authenticated', () => {
@@ -96,7 +96,7 @@ client.on('disconnected', (reason) => {
   attemptReconnect();
 });
 
-// 🔹 Verificação periódica (5 minutos sem conexão = tentativa de reconectar)
+// Verificação periódica (5 minutos sem conexão = tentativa de reconectar)
 setInterval(() => {
   if (!isClientReady && qrCodeGeneratedAt && (Date.now() - qrCodeGeneratedAt >= 300000)) {
     console.log('⏱️ 5 minutos sem conexão. Tentando reconectar...');
@@ -104,7 +104,7 @@ setInterval(() => {
   }
 }, 10000);
 
-// 🔹 Inicializa o cliente se houver internet
+// Inicializa o cliente se houver internet
 function initializeClient() {
   checkInternetConnection((isConnected) => {
     if (isConnected) {
@@ -116,7 +116,7 @@ function initializeClient() {
   });
 }
 
-// 🔹 Rotas da API
+// Rotas da API
 app.get('/status', (req, res) => {
   res.json({
     connectionStatus: isClientReady ? 'Conectado' : 'Desconectado',
@@ -140,15 +140,15 @@ app.get('/disconnect', (req, res) => {
   }
 });
 
-// 🔹 Servir arquivos estáticos (QR Code)
+// Servir arquivos estáticos (QR Code)
 app.use(express.static(qrCodeDir));
 
-// 🔹 Inicia o servidor
+// Inicia o servidor
 app.listen(PORT, () => {
   console.log(`✅ Servidor rodando na porta ${PORT}`);
 });
 
-// 🔹 Inicializar Cliente
+// Inicializar Cliente
 initializeClient();
 
 // Função para criar delay
