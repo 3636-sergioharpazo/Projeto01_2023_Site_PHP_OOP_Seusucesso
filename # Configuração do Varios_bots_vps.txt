@@ -8,6 +8,10 @@
 #cd /var/www/html/bot2 # lojas teral
 #npm init -y
 #npm install whatsapp-web.js qrcode path fs rimraf express axios npm puppeteer@latest
+#sudo apt-get update
+#sudo apt-get install libatk-bridge2.0-0
+#sudo apt-get install -y libxss1 libappindicator3-1 libindicator7
+#sudo apt-get install libatk-bridge2.0-0
 
 #cd /var/www/html/bot3 #### marcios wh
 #npm init -y
