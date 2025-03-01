@@ -52,10 +52,10 @@ function restartClient() {
   qrCodeGeneratedAt = null;
   isClientReady = false;
 
-  client.removeAllListeners();
-  if (fs.existsSync(sessionDir)) rimraf.sync(sessionDir);
-  
-  initializeClient();
+  client.destroy().then(() => {
+    if (fs.existsSync(sessionDir)) rimraf.sync(sessionDir);
+    initializeClient();
+  }).catch(err => console.error('Erro ao destruir cliente:', err));
 }
 
 // Função para tentar reconectar
@@ -92,10 +92,10 @@ client.on('ready', () => {
   console.log('🚀 Cliente pronto!');
 });
 
-client.on('disconnected', (reason) => {
+client.on('disconnected', async (reason) => {
   console.log(`❌ Cliente desconectado: ${reason}`);
-  fs.unlinkSync(path.join(qrCodeDir, 'qrcode.png'), () => {});
-  attemptReconnect();
+  fs.unlink(path.join(qrCodeDir, 'qrcode.png'), () => {});
+  restartClient();
 });
 
 // Verificação periódica (5 minutos sem conexão = tentativa de reconectar)
@@ -127,18 +127,15 @@ app.get('/status', (req, res) => {
   });
 });
 
-app.get('/disconnect', (req, res) => {
-  if (client) {
-    client.destroy().then(() => {
-      console.log('Cliente desconectado.');
-      restartClient();
-      res.json({ message: 'Cliente desconectado e reiniciado.' });
-    }).catch(err => {
-      console.error('Erro ao desconectar cliente:', err);
-      res.status(500).json({ error: 'Erro ao desconectar cliente' });
-    });
-  } else {
-    res.status(400).json({ error: 'Cliente não está ativo.' });
+app.get('/disconnect', async (req, res) => {
+  try {
+    await client.destroy();
+    console.log('Cliente desconectado.');
+    restartClient();
+    res.json({ message: 'Cliente desconectado e reiniciado.' });
+  } catch (err) {
+    console.error('Erro ao desconectar cliente:', err);
+    res.status(500).json({ error: 'Erro ao desconectar cliente' });
   }
 });
 
