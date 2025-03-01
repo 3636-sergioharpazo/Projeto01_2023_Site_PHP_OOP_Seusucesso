@@ -11,6 +11,7 @@ const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
 
+
 let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
 let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
 let sessionData = null; // Armazena a sessão do cliente
