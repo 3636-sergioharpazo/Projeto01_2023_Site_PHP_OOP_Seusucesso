@@ -74,7 +74,7 @@ const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'default' }),
   puppeteer: {
     headless: true,
-    executablePath: '/usr/bin/chromium',  // Caminho correto no servidor
+   executablePath: '/usr/bin/chromium-browser', // Caminho correto
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   }
 });
