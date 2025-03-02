@@ -74,8 +74,7 @@ function attemptReconnect() {
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'default' }),
   puppeteer: {
-    headless: false,  // Abre o navegador visível
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     timeout: 30000,
     ignoreHTTPSErrors: true
   }
