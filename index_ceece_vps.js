@@ -10,7 +10,7 @@ const { exec } = require('child_process');
 
 const app = express();
 const PORT = 3002;
-const qrCodeDir = '/var/www/html';
+const qrCodeDir = path.join(__dirname, 'public'); // Pasta local para QR Code
 const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
 
 let isQRCodeGenerated = false;
@@ -19,6 +19,11 @@ let reconnectAttempts = 0;
 let isClientReady = false;
 
 require('events').EventEmitter.defaultMaxListeners = 100;
+
+// Garante que o diretório público existe
+if (!fs.existsSync(qrCodeDir)) {
+  fs.mkdirSync(qrCodeDir, { recursive: true });
+}
 
 // Função para verificar a conexão com a internet
 function checkInternetConnection(callback) {
@@ -74,12 +79,9 @@ const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'default' }),
   puppeteer: {
     headless: true,
-   executablePath: '/usr/bin/chromium-browser', // Caminho correto
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   }
 });
-
-
 
 // Eventos do WhatsApp Web
 client.on('qr', generateQRCode);
@@ -150,7 +152,6 @@ app.listen(PORT, () => {
 
 // Inicializar Cliente
 initializeClient();
-
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
