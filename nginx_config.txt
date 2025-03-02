@@ -99,4 +99,30 @@ http {
             proxy_cache_bypass $http_upgrade;
         }
     }
+
+
+  # Configuração para o bot Loja Marciowh
+    server {
+        listen 8445 ssl;
+        listen [::]:8445 ssl;
+
+        server_name chatmarciowh.antoniooliveira.shop;
+
+        ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+        ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+
+        root /var/www/html/bot3;
+        index index.html index.htm;
+
+        location / {
+            proxy_pass http://127.0.0.1:3004;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+        }
+
+}
+
 }
