@@ -73,16 +73,9 @@ function attemptReconnect() {
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'default' }),
   puppeteer: {
-    headless: true,  // Mantém o navegador oculto
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--disable-gpu'
-    ],
-    timeout: 30000,
-    ignoreHTTPSErrors: true
+    headless: true,
+    executablePath: '/usr/bin/chromium',  // Caminho correto no servidor
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
   }
 });
 
