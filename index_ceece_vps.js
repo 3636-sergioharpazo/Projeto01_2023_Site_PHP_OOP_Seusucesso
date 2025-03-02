@@ -70,15 +70,22 @@ function attemptReconnect() {
   }
 }
 
-// Configuração do cliente
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'default' }),
   puppeteer: {
-       args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    headless: true,  // Mantém o navegador oculto
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu'
+    ],
     timeout: 30000,
     ignoreHTTPSErrors: true
   }
 });
+
 
 
 // Eventos do WhatsApp Web
