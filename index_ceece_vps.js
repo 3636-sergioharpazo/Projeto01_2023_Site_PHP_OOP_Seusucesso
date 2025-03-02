@@ -9,7 +9,7 @@ const { exec } = require('child_process');
 
 const app = express();
 const PORT = 3002;
-const qrCodeDir = '/var/www/html/'; // Pasta local para QR Code
+const qrCodeDir = '/var/www/html'; // Pasta local para QR Code
 const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
 
 let isQRCodeGenerated = false;
