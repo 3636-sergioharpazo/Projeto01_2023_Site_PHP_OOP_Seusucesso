@@ -2,7 +2,6 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const axios = require('axios');
-
 const fs = require('fs');
 const rimraf = require('rimraf');
 const express = require('express');
@@ -10,7 +9,7 @@ const { exec } = require('child_process');
 
 const app = express();
 const PORT = 3002;
-const qrCodeDir = path.join(__dirname, 'public'); // Pasta local para QR Code
+const qrCodeDir = '/var/www/html/'; // Pasta local para QR Code
 const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
 
 let isQRCodeGenerated = false;
@@ -152,6 +151,7 @@ app.listen(PORT, () => {
 
 // Inicializar Cliente
 initializeClient();
+
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
