@@ -83,13 +83,15 @@ function checkInternetConnection(callback) {
 }
 
 // Configuração do cliente com LocalAuth
+const { Client, LocalAuth } = require('whatsapp-web.js');
+
 const client = new Client({
   authStrategy: new LocalAuth({
-    clientId: 'default',
-    sessionData: sessionData,
+    clientId: 'default'
   }),
 
   puppeteer: {
+    headless: "new", // Usa a nova implementação headless do Chrome
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -97,12 +99,17 @@ const client = new Client({
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
       '--no-zygote',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--single-process', // Reduz o número de processos
+      '--disable-software-rasterizer', // Evita o uso da GPU
+      '--disable-features=site-per-process' // Reduz consumo de RAM
     ],
+    executablePath: require('puppeteer').executablePath(), // Usa a versão correta do Chromium
     timeout: 30000, // Timeout de 30 segundos
     ignoreHTTPSErrors: true
   }
 });
+
 
 // Eventos do cliente
 client.on('qr', (qr) => {
