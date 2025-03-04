@@ -83,7 +83,6 @@ function checkInternetConnection(callback) {
 }
 
 // Configuração do cliente com LocalAuth
-const { Client, LocalAuth } = require('whatsapp-web.js');
 
 const client = new Client({
   authStrategy: new LocalAuth({
