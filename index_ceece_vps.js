@@ -90,24 +90,24 @@ const client = new Client({
   }),
 
   puppeteer: {
-  headless: "new", // Usa a nova implementação headless do Chrome
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-accelerated-2d-canvas',
-    '--no-first-run',
-    '--no-zygote',
-    '--disable-gpu',
-    '--single-process', // Reduz o número de processos
-    '--disable-software-rasterizer', // Evita o uso da GPU
-    '--disable-features=site-per-process' // Reduz consumo de RAM
-  ],
-  executablePath: '/usr/bin/chromium-browser', // Altere para o caminho correto
-  timeout: 30000, // Timeout de 30 segundos
-  ignoreHTTPSErrors: true
-}
-
+    headless: true, // Usa a implementação headless
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu',
+      '--single-process',
+      '--disable-software-rasterizer',
+      '--disable-features=site-per-process'
+    ],
+    executablePath: '/usr/bin/chromium-browser', // Ajuste conforme o seu caminho
+    timeout: 30000,
+    ignoreHTTPSErrors: true
+  }
+});
 
 // Eventos do cliente
 client.on('qr', (qr) => {
