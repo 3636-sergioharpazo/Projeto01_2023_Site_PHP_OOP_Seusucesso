@@ -7,7 +7,7 @@ const fs = require('fs');
 const rimraf = require('rimraf');
 const express = require('express');
 const { exec } = require('child_process');
-
+const puppeteer = require('puppeteer-core');
 const app = express();
 const PORT = 3004;
 const qrCodeDir = '/var/www/html/bot3';
