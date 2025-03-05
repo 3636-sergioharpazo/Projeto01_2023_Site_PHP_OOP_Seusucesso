@@ -6,7 +6,7 @@ const rimraf = require('rimraf'); // Para remover diretórios não vazios
 const express = require('express');
 const axios = require('axios');
 const { exec } = require('child_process');
-
+const puppeteer = require('puppeteer-core');
 const app = express();
 const PORT = 3002;
 
@@ -90,24 +90,23 @@ const client = new Client({
   }),
 
   puppeteer: {
-    headless: "new", // Usa a nova implementação headless do Chrome
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu',
-      '--single-process', // Reduz o número de processos
-      '--disable-software-rasterizer', // Evita o uso da GPU
-      '--disable-features=site-per-process' // Reduz consumo de RAM
-    ],
-    executablePath: require('puppeteer').executablePath(), // Usa a versão correta do Chromium
-    timeout: 30000, // Timeout de 30 segundos
-    ignoreHTTPSErrors: true
-  }
-});
+  headless: "new", // Usa a nova implementação headless do Chrome
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--no-first-run',
+    '--no-zygote',
+    '--disable-gpu',
+    '--single-process', // Reduz o número de processos
+    '--disable-software-rasterizer', // Evita o uso da GPU
+    '--disable-features=site-per-process' // Reduz consumo de RAM
+  ],
+  executablePath: '/usr/bin/chromium-browser', // Altere para o caminho correto
+  timeout: 30000, // Timeout de 30 segundos
+  ignoreHTTPSErrors: true
+}
 
 
 // Eventos do cliente
