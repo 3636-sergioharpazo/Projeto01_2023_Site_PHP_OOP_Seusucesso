@@ -84,31 +84,18 @@ function checkInternetConnection(callback) {
 
 // Configuração do cliente com LocalAuth
 
-const client = new Client({
-  authStrategy: new LocalAuth({
-    clientId: 'default'
-  }),
 
+
+
+// Configuração do cliente
+const client = new Client({
+  authStrategy: new LocalAuth({ clientId: 'defaul' }),
   puppeteer: {
-    headless: true, // Usa a implementação headless
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu',
-      '--single-process',
-      '--disable-software-rasterizer',
-      '--disable-features=site-per-process'
-    ],
-    executablePath: '/usr/bin/chromium-browser', // Ajuste conforme o seu caminho
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
     timeout: 30000,
     ignoreHTTPSErrors: true
   }
 });
-
 // Eventos do cliente
 client.on('qr', (qr) => {
   console.log('QR RECEBIDO');
