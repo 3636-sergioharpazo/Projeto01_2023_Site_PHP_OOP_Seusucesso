@@ -96,22 +96,26 @@ function startQRRefresh() {
     }, 60000); // A cada 1 minuto
 }
 
-// API para fornecer o status da conexão
+// API para fornecer o status da conexão e o QR Code
 app.get('/status', (req, res) => {
     let status = 'Desconectado';
+    let qrCodeUrl = '';
     if (client && client.info) {
         status = 'Conectado';
     } else {
-        deleteQRCode(); // Se desconectado, apaga o QR Code
+        qrCodeUrl = `/qrcode.png`; // The URL of the generated QR Code image
+        deleteQRCode(); // Apaga o QR Code se desconectado
     }
     res.json({
         connectionStatus: status,
         lastQrGenerated: qrCodeGeneratedAt,
-        disconnectReason: lastDisconnectReason
+        disconnectReason: lastDisconnectReason,
+        qrCodeUrl: qrCodeUrl // Send the QR code URL dynamically
     });
 });
 
-app.use(express.static(qrCodeDir));
+app.use(express.static(qrCodeDir)); // Serve the static QR code file
+
 initializeClient();
 app.listen(PORT, () => console.log(`🔥 Servidor rodando na porta ${PORT}`));
 // Função para criar delay
