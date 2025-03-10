@@ -2,170 +2,82 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
-const rimraf = require('rimraf'); // Para remover diretórios não vazios
+const rimraf = require('rimraf');
 const express = require('express');
-const axios = require('axios');
 const { exec } = require('child_process');
-const puppeteer = require('puppeteer-core');
 const app = express();
 const PORT = 3002;
 
-const qrCodeDir = '/var/www/html';  // Diretório onde o QR será salvo
+const qrCodeDir = '/var/www/html';
+let qrCodeGeneratedAt = null;
+let client;
+let qrInterval;
 
-let isQRCodeGenerated = false; // Controle para evitar a repetição do QR Code
-let qrCodeGeneratedAt = null;  // Timestamp da geração do QR Code
-let sessionData = null; // Armazena a sessão do cliente
-let reconnectAttempts = 0;  // Conta tentativas de reconexão
-require('events').EventEmitter.defaultMaxListeners = 100; // Ou um número maior, se necessário
-
-// Função para gerar o QR Code e salvar
 function generateQRCode(qr) {
-  const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-  fs.unlink(qrCodePath, (unlinkErr) => {
-    qrcode.toFile(qrCodePath, qr, {
-      width: 400, // Definir o tamanho do QR Code
-      margin: 1   // Definir a margem
-    }, (err) => {
-      if (err) {
-        console.error('Erro ao gerar o QR Code:', err);
-        return;
-      }
-      console.log(`QR Code gerado e salvo com sucesso em: ${qrCodePath}`);
-      isQRCodeGenerated = true;
-      qrCodeGeneratedAt = Date.now();
+    const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
+    fs.unlink(qrCodePath, (unlinkErr) => {
+        qrcode.toFile(qrCodePath, qr, { width: 400, margin: 1 }, (err) => {
+            if (err) {
+                console.error('Erro ao gerar QR Code:', err);
+                return;
+            }
+            console.log(`QR Code gerado e salvo em: ${qrCodePath}`);
+            qrCodeGeneratedAt = Date.now();
+        });
     });
-  });
 }
 
-// Função para reiniciar o cliente e gerar um novo QR Code
 function restartClient() {
-  console.log('Reiniciando o cliente para gerar um novo QR Code...');
-  reconnectAttempts = 0; // Reseta as tentativas de reconexão
-  client.removeAllListeners();
-  isQRCodeGenerated = false;
-  qrCodeGeneratedAt = null;
-
-  // Remover a pasta inteira de sessão
-  const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
-  rimraf(sessionDir, (err) => {
-    if (err) {
-      console.error('Erro ao remover a sessão:', err);
-    } else {
-      console.log('Sessão removida com sucesso.');
-    }
-    client.initialize(); // Reinicializa o cliente após a limpeza
-  });
-}
-
-// Função para tentar restabelecer a conexão automaticamente
-function attemptReconnect() {
-  console.log('Tentando restabelecer a conexão...');
-  reconnectAttempts++;
-  if (reconnectAttempts <= 10) {
-    client.initialize(); // Tenta reconectar
-  } else {
-    console.log('🛑 Tentativas de reconexão excedidas. Reiniciando o cliente com um novo QR Code...');
-    restartClient(); // Reinicia o cliente após 10 tentativas
-  }
-}
-
-// Função para verificar conexão com a internet (ping ao Google)
-function checkInternetConnection(callback) {
-  exec('ping -c 1 google.com', (error, stdout, stderr) => {
-    if (error) {
-      console.log('🌐 Sem conexão com a internet.');
-      callback(false);
-    } else {
-      console.log('🌐 Conexão de internet verificada.');
-      callback(true);
-    }
-  });
-}
-
-// Configuração do cliente com LocalAuth
-
-
-
-
-// Configuração do cliente
-const client = new Client({
-  authStrategy: new LocalAuth({ clientId: 'defaul' }),
-  puppeteer: {
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    timeout: 30000,
-    ignoreHTTPSErrors: true
-  }
-});
-// Eventos do cliente
-client.on('qr', (qr) => {
-  console.log('QR RECEBIDO');
-  generateQRCode(qr);
-});
-
-client.on('authenticated', (session) => {
-  console.log('✅ Autenticado com sucesso!');
-  sessionData = session;
-});
-
-let isClientReady = false;
-client.on('ready', () => {
-  isClientReady = true;
-  console.log('🚀 WhatsApp Web está pronto!');
-  console.log('Cliente conectado com sucesso!');
-});
-
-// Endpoint para fornecer o status e QR Code para o frontend
-app.get('/status', (req, res) => {
-  if (isClientReady) {
-    res.json({ connectionStatus: 'Conectado' });
-  } else {
-    res.json({
-      connectionStatus: 'Desconectado!',
-      qrCodeImage: '/qrcode.png',
-      qrCodeGeneratedAt: qrCodeGeneratedAt ? new Date(qrCodeGeneratedAt).toLocaleString() : null
+    console.log('Reiniciando o cliente e gerando novo QR Code...');
+    clearInterval(qrInterval);
+    rimraf(path.join(qrCodeDir, '.wwebjs_auth/session-default'), (err) => {
+        if (err) console.error('Erro ao remover a sessão:', err);
+        initializeClient();
     });
-  }
-});
+}
 
-client.on('disconnected', (reason) => {
-  console.log(`❌ Cliente desconectado: ${reason}`);
-  // Apaga o QR code e gera um novo quando desconectar
-  fs.unlink(path.join(qrCodeDir, 'qrcode.png'), (err) => {
-    if (err) {
-      console.error('Erro ao apagar o QR Code:', err);
-    }
-    generateQRCode(reason); // Gera um novo QR Code após a desconexão
-  });
-  attemptReconnect();
-});
+function initializeClient() {
+    client = new Client({
+        authStrategy: new LocalAuth({ clientId: 'default' }),
+        puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'], timeout: 30000 }
+    });
+    
+    client.on('qr', (qr) => {
+        console.log('QR Code recebido.');
+        generateQRCode(qr);
+    });
 
-// Verifica a cada 10 segundos se passaram 5 minutos sem conexão e tenta reconectar
-setInterval(() => {
-  if (!client.isReady && qrCodeGeneratedAt) {
-    const elapsed = Date.now() - qrCodeGeneratedAt;
-    if (elapsed >= 300000) { // 5 minutos
-      console.log('⏱️ 5 minutos sem conexão. Tentando restabelecer a conexão...');
-      attemptReconnect();
-    }
-  }
-}, 10000);
+    client.on('authenticated', () => {
+        console.log('✅ Autenticado!');
+        clearInterval(qrInterval);
+    });
 
-// Inicializa o cliente somente se houver conexão com a internet
-checkInternetConnection((isConnected) => {
-  if (isConnected) {
+    client.on('ready', () => {
+        console.log('🚀 Cliente pronto!');
+        clearInterval(qrInterval);
+    });
+
+    client.on('disconnected', () => {
+        console.log('❌ Cliente desconectado. Gerando novo QR Code...');
+        restartClient();
+    });
+
     client.initialize();
-  } else {
-    console.log('Aguardando conexão com a internet...');
-  }
-});
+    startQRRefresh();
+}
 
-// Servir arquivos estáticos da pasta onde o QR Code foi salvo
+function startQRRefresh() {
+    qrInterval = setInterval(() => {
+        if (!client.info || !client.info.wid) {
+            console.log('🔄 Gerando novo QR Code por inatividade...');
+            restartClient();
+        }
+    }, 120000); // A cada 2 minutos
+}
+
+initializeClient();
 app.use(express.static(qrCodeDir));
-
-// Inicia o servidor Express
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
