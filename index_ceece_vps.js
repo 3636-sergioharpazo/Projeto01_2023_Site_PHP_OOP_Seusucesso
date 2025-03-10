@@ -4,81 +4,87 @@ const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const express = require('express');
-const { exec } = require('child_process');
+
 const app = express();
 const PORT = 3002;
-
 const qrCodeDir = '/var/www/html';
-let qrCodeGeneratedAt = null;
+const SESSION_PATH = path.join(qrCodeDir, '.wwebjs_auth/session-default');
+
 let client;
-let qrInterval;
+let qrCodeGeneratedAt = null;
+let lastDisconnectReason = 'Nenhum';
 
 function generateQRCode(qr) {
     const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
-    fs.unlink(qrCodePath, (unlinkErr) => {
+    fs.unlink(qrCodePath, () => {
         qrcode.toFile(qrCodePath, qr, { width: 400, margin: 1 }, (err) => {
             if (err) {
                 console.error('Erro ao gerar QR Code:', err);
                 return;
             }
-            console.log(`QR Code gerado e salvo em: ${qrCodePath}`);
+            console.log(`📸 Novo QR Code gerado e salvo em ${qrCodePath}`);
             qrCodeGeneratedAt = Date.now();
         });
     });
 }
 
 function restartClient() {
-    console.log('Reiniciando o cliente e gerando novo QR Code...');
-    clearInterval(qrInterval);
-    rimraf(path.join(qrCodeDir, '.wwebjs_auth/session-default'), (err) => {
+    console.log('🔄 Reiniciando o cliente e limpando a sessão...');
+    rimraf(SESSION_PATH, (err) => {
         if (err) console.error('Erro ao remover a sessão:', err);
         initializeClient();
     });
 }
 
 function initializeClient() {
+    console.log('🚀 Inicializando o WhatsApp Web Client...');
     client = new Client({
         authStrategy: new LocalAuth({ clientId: 'default' }),
         puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'], timeout: 30000 }
     });
-    
+
     client.on('qr', (qr) => {
-        console.log('QR Code recebido.');
+        console.log('📡 QR Code recebido!');
         generateQRCode(qr);
     });
 
     client.on('authenticated', () => {
-        console.log('✅ Autenticado!');
-        clearInterval(qrInterval);
+        console.log('✅ Cliente autenticado!');
+        qrCodeGeneratedAt = null;
+        lastDisconnectReason = 'Nenhum';
     });
 
     client.on('ready', () => {
-        console.log('🚀 Cliente pronto!');
-        clearInterval(qrInterval);
+        console.log('💡 Cliente pronto para uso.');
+        qrCodeGeneratedAt = null;
+        lastDisconnectReason = 'Nenhum';
     });
 
-    client.on('disconnected', () => {
-        console.log('❌ Cliente desconectado. Gerando novo QR Code...');
+    client.on('disconnected', (reason) => {
+        console.log(`❌ Cliente desconectado. Motivo: ${reason}`);
+        lastDisconnectReason = reason || 'Desconhecido';
         restartClient();
     });
 
     client.initialize();
-    startQRRefresh();
 }
 
-function startQRRefresh() {
-    qrInterval = setInterval(() => {
-        if (!client.info || !client.info.wid) {
-            console.log('🔄 Gerando novo QR Code por inatividade...');
-            restartClient();
-        }
-    }, 120000); // A cada 2 minutos
-}
+// API para fornecer o status da conexão
+app.get('/status', (req, res) => {
+    let status = 'Desconectado';
+    if (client && client.info) {
+        status = 'Conectado';
+    }
+    res.json({
+        connectionStatus: status,
+        lastQrGenerated: qrCodeGeneratedAt,
+        disconnectReason: lastDisconnectReason
+    });
+});
 
-initializeClient();
 app.use(express.static(qrCodeDir));
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
-
+initializeClient();
+app.listen(PORT, () => console.log(`🔥 Servidor rodando na porta ${PORT}`));
 // Função para criar delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 // Manipulação de Mensagens
