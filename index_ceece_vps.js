@@ -8,28 +8,41 @@ const express = require('express');
 const app = express();
 const PORT = 3002;
 const qrCodeDir = '/var/www/html';
+const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
 const SESSION_PATH = path.join(qrCodeDir, '.wwebjs_auth/session-default');
 
 let client;
 let qrCodeGeneratedAt = null;
 let lastDisconnectReason = 'Nenhum';
+let qrInterval;
 
 function generateQRCode(qr) {
-    const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
+    // Apaga o QR Code antigo antes de gerar um novo
     fs.unlink(qrCodePath, () => {
         qrcode.toFile(qrCodePath, qr, { width: 400, margin: 1 }, (err) => {
             if (err) {
                 console.error('Erro ao gerar QR Code:', err);
                 return;
             }
-            console.log(`📸 Novo QR Code gerado e salvo em ${qrCodePath}`);
+            console.log(`📸 Novo QR Code gerado em ${new Date().toLocaleTimeString()}`);
             qrCodeGeneratedAt = Date.now();
         });
     });
 }
 
+function deleteQRCode() {
+    fs.unlink(qrCodePath, (err) => {
+        if (err && err.code !== 'ENOENT') {
+            console.error('Erro ao deletar QR Code:', err);
+        } else {
+            console.log('🗑️ QR Code removido.');
+        }
+    });
+}
+
 function restartClient() {
     console.log('🔄 Reiniciando o cliente e limpando a sessão...');
+    deleteQRCode();
     rimraf(SESSION_PATH, (err) => {
         if (err) console.error('Erro ao remover a sessão:', err);
         initializeClient();
@@ -52,12 +65,14 @@ function initializeClient() {
         console.log('✅ Cliente autenticado!');
         qrCodeGeneratedAt = null;
         lastDisconnectReason = 'Nenhum';
+        deleteQRCode(); // Remove o QR Code ao conectar
     });
 
     client.on('ready', () => {
         console.log('💡 Cliente pronto para uso.');
         qrCodeGeneratedAt = null;
         lastDisconnectReason = 'Nenhum';
+        deleteQRCode(); // Remove QR Code se conectado
     });
 
     client.on('disconnected', (reason) => {
@@ -67,6 +82,18 @@ function initializeClient() {
     });
 
     client.initialize();
+    startQRRefresh();
+}
+
+// Gera um novo QR Code a cada 1 minuto se não houver conexão
+function startQRRefresh() {
+    clearInterval(qrInterval);
+    qrInterval = setInterval(() => {
+        if (!client.info || !client.info.wid) {
+            console.log('🔄 Gerando novo QR Code por inatividade...');
+            restartClient();
+        }
+    }, 60000); // A cada 1 minuto
 }
 
 // API para fornecer o status da conexão
@@ -74,6 +101,8 @@ app.get('/status', (req, res) => {
     let status = 'Desconectado';
     if (client && client.info) {
         status = 'Conectado';
+    } else {
+        deleteQRCode(); // Se desconectado, apaga o QR Code
     }
     res.json({
         connectionStatus: status,
