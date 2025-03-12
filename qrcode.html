@@ -21,33 +21,20 @@
       font-weight: bold;
       color: #dc3545;
     }
-    /* Ajuste no estilo da mensagem e centralização do QR Code */
-    #qrCodeContainer {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%; /* Garantir que o container ocupe o espaço necessário */
-    }
-    img {
-      max-width: 100%; /* Garante que a imagem se ajuste ao tamanho da tela */
-      height: auto;
-    }
-    .status-message-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
+    #details {
+      font-size: 1rem;
+      color: #6c757d;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body class="d-flex flex-column align-items-center justify-content-center vh-100 text-center">
   <div class="container">
-    <div class="status-message-container">
-      <h1 class="text-success" id="statusMessage">Carregando status...</h1>
-    </div>
+    <h1 class="text-success" id="statusMessage">Carregando status...</h1>
     <div id="qrCodeContainer" class="my-4"></div>
     <div id="status" class="status text-danger">Desconectado</div>
-    <div class="mt-3" id="timerContainer">
+    <p id="details"></p>
+    <div class="mt-3">
       <p>Próximo QR Code em: <span id="timer">60</span> segundos</p>
     </div>
   </div>
@@ -61,46 +48,53 @@
         countdown--;
       } else {
         countdown = 60; // Reinicia o contador quando chega a 0
+        document.getElementById('statusMessage').textContent = "QR Code atualizado!";
       }
+
+      // Muda a cor do tempo quando faltar menos de 10 segundos
+      timerElement.style.color = countdown <= 10 ? "#ff0000" : "#dc3545";
+
       timerElement.textContent = countdown;
     }
 
     async function fetchStatus() {
       try {
-        const response = await fetch('/status?' + new Date().getTime()); // Request the status data
+        const response = await fetch('/status?' + new Date().getTime());
         const data = await response.json();
 
         const statusElement = document.getElementById('status');
         const statusMessage = document.getElementById('statusMessage');
         const qrCodeContainer = document.getElementById('qrCodeContainer');
-        const timerContainer = document.getElementById('timerContainer'); // Referência ao contêiner do cronômetro
+        const detailsElement = document.getElementById('details');
 
         if (data.connectionStatus === 'Conectado') {
           statusElement.textContent = 'Conectado';
           statusElement.classList.remove('text-danger');
           statusElement.classList.add('text-success');
           statusMessage.textContent = 'Você está conectado ao WhatsApp!';
-          qrCodeContainer.innerHTML = ''; // Remove o QR Code quando conectado
-          timerContainer.style.display = 'none'; // Esconde o cronômetro quando conectado
+          qrCodeContainer.innerHTML = ''; // Remove o QR Code ao conectar
+          detailsElement.textContent = `Última atualização: ${new Date().toLocaleTimeString()}`;
         } else {
           statusElement.textContent = 'Desconectado';
           statusElement.classList.remove('text-success');
           statusElement.classList.add('text-danger');
           statusMessage.textContent = 'Escaneie o QR Code para conectar';
-          
-          // Carrega o QR Code do arquivo local qrcode.png
-          const qrCodeUrl = 'qrcode.png'; // Caminho para a imagem do QR Code
-          qrCodeContainer.innerHTML = `<img src="${qrCodeUrl}" class="img-fluid my-3" alt="QR Code" />`;
-
-          timerContainer.style.display = 'block'; // Exibe o cronômetro quando desconectado
+          qrCodeContainer.innerHTML = `<img src="qrcode.png" class="img-fluid my-3" alt="QR Code" />`;
+          detailsElement.textContent = `Tentativa de conexão às ${new Date().toLocaleTimeString()}`;
         }
+
+        // Verifica se houve um desconto (exemplo: saldo mudou)
+        if (data.saldoAnterior && data.saldoAtual && data.saldoAnterior > data.saldoAtual) {
+          detailsElement.textContent += ` - Saldo descontado: ${data.saldoAnterior - data.saldoAtual}`;
+        }
+
       } catch (error) {
         console.error('Erro ao buscar o status:', error);
       }
     }
 
     fetchStatus();
-    setInterval(fetchStatus, 5000); // Atualiza o status a cada 5 segundos
+    setInterval(fetchStatus, 5000); // Atualiza status a cada 5 segundos
     setInterval(updateTimer, 1000); // Atualiza o cronômetro a cada segundo
   </script>
 </body>
