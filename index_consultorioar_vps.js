@@ -90,6 +90,7 @@ client.on('authenticated', () => {
 client.on('ready', () => {
   isClientReady = true;
   enviarLembretes(client)
+  enviarFelizAniversario(client)
   console.log('🚀 Cliente pronto!');
 });
 
@@ -669,7 +670,7 @@ async function enviarLembretes(client) {
             if (!agendamentosNotificados.has(chaveConfirmacaoManha) && horaAtualEmMinutos < horarioLimiteConfirmacao) {
                 console.log(`📢 Enviando mensagem de confirmação da manhã para ${cliente_telefone}`);
 
-                const mensagemConfirmacao = `👋 Olá, ${cliente_nome}!\n\nSeu agendamento está marcado para hoje às ${horaFormatada}.\n📅 Data: ${dataFormatada}\n💇 Serviço: ${servico}\n\nVocê pode confirmar sua presença? ✅\n\nAguardamos seu retorno! 😊`;
+                const mensagemConfirmacao = `👋 Olá, *${cliente_nome}*!\nSeu agendamento está marcado para hoje às ${horaFormatada}.\n📅 Data: ${dataFormatada}\n💇 Serviço: ${servico}\n\nVocê pode confirmar sua presença? ✅\n\nAguardamos seu retorno! 😊`;
 
                 try {
                     const numeroWhatsApp = `${cliente_telefone}@c.us`;
@@ -687,7 +688,7 @@ async function enviarLembretes(client) {
             if (!agendamentosNotificados.has(chaveConfirmacaoAntes) && horaAtualEmMinutos >= horarioEnvioConfirmacao && horaAtualEmMinutos < minutoAgendamento) {
                 console.log(`📢 Enviando segunda confirmação para ${cliente_telefone}`);
 
-                const mensagemConfirmacaoAntes = `🔔 Olá, ${cliente_nome}!\n\nLembrete do seu agendamento:\n📅 Data: ${dataFormatada}\n🕒 Horário: ${horaFormatada}\n💇 Serviço: ${servico}\n\nPodemos confirmar sua presença? 😊`;
+                const mensagemConfirmacaoAntes = `🔔 Olá, *${cliente_nome}*!\nLembrete do seu agendamento:\n\n📅 Data: ${dataFormatada}\n🕒 Horário: ${horaFormatada}\n💇 Serviço: ${servico}\n\nPodemos confirmar sua presença? 😊`;
 
                 try {
                     const numeroWhatsApp = `${cliente_telefone}@c.us`;
@@ -711,3 +712,91 @@ setInterval(() => {
 
 // Executa uma vez ao iniciar
 enviarLembretes(client);
+
+const agendamentosNotificadosAniversario = new Set();
+
+async function enviarFelizAniversario(client) {
+    try {
+        // Faz a requisição para pegar os aniversariantes
+        const response = await axios.get('https://consultorioar.antoniooliveira.shop/consultar-data_nascimento_bot.php');
+
+        // Verifica se há aniversariantes
+        if (!response || !response.data || !Array.isArray(response.data.usuarios) || response.data.usuarios.length === 0) {
+            console.log('⚠️ Nenhum aniversário encontrado hoje.');
+            return;
+        }
+
+        const usuarios = response.data.usuarios;
+
+        // Envia mensagem para cada usuário e também para o WhatsApp da Cheve
+        for (const usuario of usuarios) {
+            // Extrair apenas o nome e o telefone do cliente
+            const cliente_nome = usuario.cliente_nome ? usuario.cliente_nome.trim() : "Anônimo"; // Tratar espaços extras no nome
+            const cliente_telefone = usuario.cliente_telefone;
+
+            // Debug: verificar valores de cliente_nome e cliente_telefone
+            console.log(`🎉 Enviando mensagem para ${cliente_nome}, Telefone: ${cliente_telefone}`);
+
+            // Cria a mensagem de aniversário para o usuário
+            const mensagensAniversario = [
+                `🎉 Feliz aniversário, *${cliente_nome}*! 🥳 Que seu dia seja iluminado com muito amor, paz e felicidade! Desejamos um ano incrível para você! 🎂🎈✨`,
+                `🎊 Parabéns, *${cliente_nome}*! 🎁 Hoje é o seu dia especial, e queremos celebrar com você! Que esta nova fase da sua vida traga ainda mais alegrias, saúde e sucesso! 🎂💖`,
+                `🎂 Feliz aniversário, *${cliente_nome}*! 🎈 Esperamos que seu dia seja repleto de momentos inesquecíveis e que o novo ciclo que se inicia traga tudo de melhor! Conte sempre com a gente! 🎊🥳`,
+                `🥳 Hoje é dia de festa, *${cliente_nome}*! 🎂 Parabéns por mais um ano de vida! Que essa data marque o início de muitas conquistas e realizações. Desejamos tudo de melhor para você! 🎁🎈`,
+                `🎈 Parabéns, *${cliente_nome}*! 🎉 Que seu dia seja especial, cheio de alegria e boas energias! Desejamos muita felicidade e sucesso nesta nova etapa! 🎂💖`,
+                `🎁 Parabéns pelo seu dia, *${cliente_nome}*! 🥂 Que este novo ano de vida seja repleto de conquistas, momentos felizes e muita saúde. Aproveite o seu dia ao máximo! 🎉✨`,
+                `🎊 Feliz aniversário, *${cliente_nome}*! 🎂 Hoje é um dia especial, e queremos celebrar com você. Que sua jornada seja sempre abençoada com felicidade, amor e sucesso! 💖🎈`,
+                `🎉 Viva, *${cliente_nome}*! Hoje é o seu dia! 🎂 Que essa nova idade venha acompanhada de muitas realizações e sonhos concretizados. Aproveite muito o seu dia! 🥳🎁`,
+                `🎂 Parabéns, *${cliente_nome}*! 🎉 Que essa data traga muita alegria, amor e esperança para sua vida. Desejamos a você um ano cheio de momentos especiais! 🎊💖`,
+                `🥳 Feliz aniversário, *${cliente_nome}*! 🎈 Desejamos que você tenha um dia repleto de amor e felicidade, cercado por quem te faz bem! Que sua nova idade traga ainda mais sucesso! 🎂🎁`,
+                `🎉 Hoje é um dia especial! Parabéns, *${cliente_nome}*! 🎂 Que você continue conquistando seus sonhos e espalhando alegria por onde passa. Celebramos com você! 🎈💖`,
+                `🎊 Parabéns, *${cliente_nome}*! 🎉 Que seu novo ano de vida seja repleto de momentos inesquecíveis, muitas alegrias e muito sucesso. Estamos felizes por comemorar com você! 🎂🎁`
+            ];
+            
+
+            // Para escolher uma mensagem aleatória
+            const mensagemAniversario = mensagensAniversario[Math.floor(Math.random() * mensagensAniversario.length)];
+
+            // Formata o número de telefone no formato do WhatsApp
+            const numeroWhatsApp = `${cliente_telefone.replace(/\D/g, '')}@c.us`;
+
+            // Verifica se a função client.sendMessage está disponível
+            if (!client || !client.sendMessage) {
+                console.error('❌ Erro: client.sendMessage não está definido. Verifique a conexão do bot.');
+                return;
+            }
+
+            try {
+                // Envia a mensagem de aniversário para o usuário
+                await client.sendMessage(numeroWhatsApp, mensagemAniversario);
+                console.log(`🎉 Mensagem de aniversário enviada para ${cliente_nome} no número ${cliente_telefone}`);
+            } catch (error) {
+                console.error(`❌ Erro ao enviar mensagem para ${cliente_nome}: ${error.message || error}`);
+            }
+
+            // Envia a mensagem para o WhatsApp da Cheve, com o nome e telefone do cliente
+            const mensagemCheve = `🎉 Olá! Hoje temos um cliente fazendo aniversário! 🎈\n\n👤 Nome: ${cliente_nome}\n📞 Telefone: ${cliente_telefone}\n\nVamos celebrar! 🎉🎁`;
+
+            // Número de telefone da Cheve
+            const numeroCheve = '5511962689478@c.us';  // Número da Cheve
+
+            try {
+                // Envia a mensagem para o WhatsApp da Cheve
+                await client.sendMessage(numeroCheve, mensagemCheve);
+                console.log(`📩 Mensagem enviada para o WhatsApp da Cheve sobre o aniversário de ${cliente_nome}`);
+            } catch (error) {
+                console.error(`❌ Erro ao enviar mensagem para a Cheve: ${error.message || error}`);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erro ao buscar aniversariantes:', error.message || error);
+    }
+}
+
+// Executa imediatamente e depois a cada 10 minutos
+//setInterval(enviarFelizAniversario(client), 10 * 60 * 1000);
+// Executa imediatamente e depois a cada 10 minutos
+
+// Executa depois a cada 24 horas
+setInterval(enviarFelizAniversario, 10 * 60 * 60 * 1000);
+enviarFelizAniversario();
