@@ -720,7 +720,6 @@ setInterval(() => {
 // Executa uma vez ao iniciar
 enviarLembretes(client);
 
-const agendamentosNotificadosAniversario = new Set();
 
 async function enviarFelizAniversario(client) {
     try {
