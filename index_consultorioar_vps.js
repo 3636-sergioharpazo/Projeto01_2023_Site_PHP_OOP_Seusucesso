@@ -18,6 +18,8 @@ let qrCodeGeneratedAt = null;
 let reconnectAttempts = 0;
 let isClientReady = false;
 
+const BASE_URL = 'https://consultorioar.antoniooliveira.shop';
+const NOME_CLIENTE='Consultório AR';
 require('events').EventEmitter.defaultMaxListeners = 100;
 
 // Função para verificar a conexão com a internet
@@ -187,7 +189,7 @@ client.on('message', async msg => {
 
         await client.sendMessage(
             msg.from,
-            `Olá, *${name.split(" ")[0]}*! 👋 Eu sou o assistente virtual do *Consultório A.R*. Como posso ajudá-lo(a) hoje? Escolha uma das opções abaixo:\n\n` +
+            `Olá, *${name.split(" ")[0]}*! 👋 Eu sou o assistente virtual do *${NOME_CLIENTE}*. Como posso ajudá-lo(a) hoje? Escolha uma das opções abaixo:\n\n` +
             `1️⃣ - Serviços \n` +
             `2️⃣ - Agendar horário\n` +
             `3️⃣ - Promoções da semana\n` +
@@ -207,7 +209,7 @@ client.on('message', async msg => {
 
         let servicosDisponiveis = {};
         try {
-            const response = await axios.get('https://consultorioar.antoniooliveira.shop/consultar-servicos_bot.php');
+            const response = await axios.get(`${BASE_URL}/consultar-servicos_bot.php`);
             servicosDisponiveis = response.data.servicos;
         } catch (error) {
             console.error('Erro ao carregar serviços:', error);
@@ -240,7 +242,7 @@ client.on('message', async msg => {
 
         await client.sendMessage(
             msg.from,
-            `📍 *Localização do Consultório A.R* 📍\n\n` +
+            `📍 *Localização do ${NOME_CLIENTE}* 📍\n\n` +
             `Endereço: R.Altino M da Vitório,530, Grajaú, CEP:04830-208 Centro\n` +
             `Cidade: São Paulo - SP\n\n` +
             `Estamos ansiosos para sua visita! 😊`
@@ -264,7 +266,7 @@ client.on('message', async msg => {
  // Consultar os serviços disponíveis
  let servicosDisponiveis = {};
  try {
-     const response = await axios.get('https://consultorioar.antoniooliveira.shop/consultar-servicos_bot_p.php');
+     const response = await axios.get(`${BASE_URL}/consultar-servicos_bot_p.php`);
      servicosDisponiveis = response.data.servicos;
  } catch (error) {
      console.error('Erro ao carregar serviços:', error);
@@ -297,7 +299,7 @@ async function handleAgendamento(msg) {
 
     try {
         // Envia a requisição POST para consultar o código do agendamento
-        const response = await axios.post('https://consultorioar.antoniooliveira.shop/consulta_bot_codigo.php', {
+        const response = await axios.post(`${BASE_URL}/consulta_bot_codigo.php`, {
             protocolo: codigoAgendamento
         });
         const chat = await msg.getChat();
@@ -471,7 +473,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         const [dia, mes, ano] = data_agendamento.split('/');
         const dataFormatada = `${ano}-${mes}-${dia}`;
         try {
-            const response = await axios.post('https://consultorioar.antoniooliveira.shop/verificar-horario.php', {
+            const response = await axios.post(`${BASE_URL}/verificar-horario.php`, {
                 servico_id: servico_id,
                 data_agendamento: dataFormatada
             }, {
@@ -486,7 +488,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
 
     let servicosDisponiveis = {};
     try {
-        const response = await axios.get('https://consultorioar.antoniooliveira.shop/consultar-servicos_bot.php');
+        const response = await axios.get(`${BASE_URL}/consultar-servicos_bot.php`);
         servicosDisponiveis = response.data.servicos;
     } catch (error) {
         await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
@@ -590,7 +592,7 @@ if (resposta.toLowerCase().trim() === 'sim') {
 }
 
     try {
-        const protocoloResponse = await axios.post('https://consultorioar.antoniooliveira.shop/gerar_protocolo.php', {
+        const protocoloResponse = await axios.post(`${BASE_URL}/gerar_protocolo.php`, {
             cliente_nome,
             cliente_telefone,
             servico_id,
@@ -635,7 +637,7 @@ const INTERVALO_EXECUCAO = 10 * 60 * 1000; // 10 minutos em milissegundos
 async function enviarLembretes(client) {
     try {
         console.log('🔄 Verificando agendamentos...');
-        const response = await axios.get('https://consultorioar.antoniooliveira.shop/consultar-agendamentos.php');
+        const response = await axios.get(`${BASE_URL}/consultar-agendamentos.php`);
         console.log('🔍 Resposta da API:', response.data);
 
         if (!response.data || !response.data.agendamentos || response.data.agendamentos.length === 0) {
@@ -657,33 +659,38 @@ async function enviarLembretes(client) {
             }
 
             const dataObj = new Date(`${data_agendamento}T${horario_agendamento}`);
-            const dataFormatada = dataObj.toLocaleDateString('pt-BR');
-            const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            const minutoAgendamento = dataObj.getHours() * 60 + dataObj.getMinutes();
-            const chaveConfirmacaoManha = `${cliente_telefone}-${dataFormatada}-confirmacao-manha`;
-            const chaveConfirmacaoAntes = `${cliente_telefone}-${dataFormatada}-confirmacao-antes`;
+const dataFormatada = dataObj.toLocaleDateString('pt-BR');
+const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const minutoAgendamento = dataObj.getHours() * 60 + dataObj.getMinutes();
+const chaveConfirmacaoManha = `${cliente_telefone}-${dataFormatada}-confirmacao-manha`;
 
-            console.log(`📅 Agendamento: ${cliente_nome} às ${horaFormatada} (${minutoAgendamento} min)`);
+console.log(`📅 Agendamento: ${cliente_nome} às ${horaFormatada} (${minutoAgendamento} min)`);
 
-            // 🔹 Primeiro lembrete de confirmação: Antes das 10h
-            const horarioLimiteConfirmacao = 10 * 60; // 10:00 em minutos
-            if (!agendamentosNotificados.has(chaveConfirmacaoManha) && horaAtualEmMinutos < horarioLimiteConfirmacao) {
-                console.log(`📢 Enviando mensagem de confirmação da manhã para ${cliente_telefone}`);
+// 🔹 Lembrete de confirmação entre 9:30 e 10:00
+const horarioInicioConfirmacao = 9 * 60 + 30; // 9:30 em minutos (570)
+const horarioLimiteConfirmacao = 10 * 60; // 10:00 em minutos (600)
 
-                const mensagemConfirmacao = `👋 Olá, *${cliente_nome}*!\nSeu agendamento está marcado para hoje às ${horaFormatada}.\n📅 Data: ${dataFormatada}\n💇 Serviço: ${servico}\n\nVocê pode confirmar sua presença? ✅\n\nAguardamos seu retorno! 😊`;
+if (
+    !agendamentosNotificados.has(chaveConfirmacaoManha) &&
+    horaAtualEmMinutos >= horarioInicioConfirmacao &&
+    horaAtualEmMinutos < horarioLimiteConfirmacao
+) {
+    console.log(`📢 Enviando mensagem de confirmação da manhã para ${cliente_telefone}`);
 
-                try {
-                    const numeroWhatsApp = `${cliente_telefone}@c.us`;
-                    await client.sendMessage(numeroWhatsApp, mensagemConfirmacao);
-                    console.log(`✅ Confirmação da manhã enviada para ${cliente_telefone}`);
-                    agendamentosNotificados.add(chaveConfirmacaoManha);
-                } catch (error) {
-                    console.error(`❌ Erro ao enviar confirmação para ${cliente_telefone}:`, error);
-                }
-            }
+    const mensagemConfirmacao = `👋 Olá, *${cliente_nome}*!\nSeu agendamento está marcado para hoje às ${horaFormatada}.\n📅 Data: ${dataFormatada}\n💇 Serviço: ${servico}\n\nVocê pode confirmar sua presença? ✅\n\nAguardamos seu retorno! 😊`;
 
-            // 🔹 Segundo lembrete de confirmação: 40 minutos antes do horário agendado
-            const minutosAntes = 40;
+    try {
+        const numeroWhatsApp = `${cliente_telefone}@c.us`;
+        await client.sendMessage(numeroWhatsApp, mensagemConfirmacao);
+        console.log(`✅ Confirmação da manhã enviada para ${cliente_telefone}`);
+        agendamentosNotificados.add(chaveConfirmacaoManha);
+    } catch (error) {
+        console.error(`❌ Erro ao enviar confirmação para ${cliente_telefone}:`, error);
+    }
+}
+
+            // 🔹 Segundo lembrete de confirmação: Entre 30 e 40 minutos antes do horário agendado
+            const minutosAntes = Math.floor(Math.random() * (40 - 30 + 1)) + 30; // Valor aleatório entre 30 e 40 minutos
             const horarioEnvioConfirmacao = minutoAgendamento - minutosAntes;
             if (!agendamentosNotificados.has(chaveConfirmacaoAntes) && horaAtualEmMinutos >= horarioEnvioConfirmacao && horaAtualEmMinutos < minutoAgendamento) {
                 console.log(`📢 Enviando segunda confirmação para ${cliente_telefone}`);
@@ -718,7 +725,7 @@ const agendamentosNotificadosAniversario = new Set();
 async function enviarFelizAniversario(client) {
     try {
         // Faz a requisição para pegar os aniversariantes
-        const response = await axios.get('https://consultorioar.antoniooliveira.shop/consultar-data_nascimento_bot.php');
+        const response = await axios.get(`${BASE_URL}/consultar-data_nascimento_bot.php`);
 
         // Verifica se há aniversariantes
         if (!response || !response.data || !Array.isArray(response.data.usuarios) || response.data.usuarios.length === 0) {
