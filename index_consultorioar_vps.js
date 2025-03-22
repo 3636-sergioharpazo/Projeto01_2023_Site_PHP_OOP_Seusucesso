@@ -631,8 +631,9 @@ if (resposta.toLowerCase().trim() === 'sim') {
 
 
 })
-const agendamentosNotificados = new Set();
+
 const INTERVALO_EXECUCAO = 10 * 60 * 1000; // 10 minutos em milissegundos
+const agendamentosNotificados = new Set();  // Defina o Set para armazenar notificações enviadas
 
 async function enviarLembretes(client) {
     try {
@@ -659,39 +660,41 @@ async function enviarLembretes(client) {
             }
 
             const dataObj = new Date(`${data_agendamento}T${horario_agendamento}`);
-const dataFormatada = dataObj.toLocaleDateString('pt-BR');
-const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-const minutoAgendamento = dataObj.getHours() * 60 + dataObj.getMinutes();
-const chaveConfirmacaoManha = `${cliente_telefone}-${dataFormatada}-confirmacao-manha`;
+            const dataFormatada = dataObj.toLocaleDateString('pt-BR');
+            const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const minutoAgendamento = dataObj.getHours() * 60 + dataObj.getMinutes();
+            const chaveConfirmacaoManha = `${cliente_telefone}-${dataFormatada}-confirmacao-manha`;
+            const chaveConfirmacaoAntes = `${cliente_telefone}-${dataFormatada}-confirmacao-antes`; // Correção aqui
 
-console.log(`📅 Agendamento: ${cliente_nome} às ${horaFormatada} (${minutoAgendamento} min)`);
+            console.log(`📅 Agendamento: ${cliente_nome} às ${horaFormatada} (${minutoAgendamento} min)`);
 
-// 🔹 Lembrete de confirmação entre 9:30 e 10:00
-const horarioInicioConfirmacao = 9 * 60 + 30; // 9:30 em minutos (570)
-const horarioLimiteConfirmacao = 10 * 60; // 10:00 em minutos (600)
+            // 🔹 Lembrete de confirmação entre 9:30 e 10:00
+            const horarioInicioConfirmacao = 9 * 60 + 30; // 9:30 em minutos (570)
+            const horarioLimiteConfirmacao = 10 * 60; // 10:00 em minutos (600)
 
-if (
-    !agendamentosNotificados.has(chaveConfirmacaoManha) &&
-    horaAtualEmMinutos >= horarioInicioConfirmacao &&
-    horaAtualEmMinutos < horarioLimiteConfirmacao
-) {
-    console.log(`📢 Enviando mensagem de confirmação da manhã para ${cliente_telefone}`);
+            if (
+                !agendamentosNotificados.has(chaveConfirmacaoManha) &&
+                horaAtualEmMinutos >= horarioInicioConfirmacao &&
+                horaAtualEmMinutos < horarioLimiteConfirmacao
+            ) {
+                console.log(`📢 Enviando mensagem de confirmação da manhã para ${cliente_telefone}`);
 
-    const mensagemConfirmacao = `👋 Olá, *${cliente_nome}*!\nSeu agendamento está marcado para hoje às ${horaFormatada}.\n📅 Data: ${dataFormatada}\n💇 Serviço: ${servico}\n\nVocê pode confirmar sua presença? ✅\n\nAguardamos seu retorno! 😊`;
+                const mensagemConfirmacao = `👋 Olá, *${cliente_nome}*!\nSeu agendamento está marcado para hoje às ${horaFormatada}.\n📅 Data: ${dataFormatada}\n💇 Serviço: ${servico}\n\nVocê pode confirmar sua presença? ✅\n\nAguardamos seu retorno! 😊`;
 
-    try {
-        const numeroWhatsApp = `${cliente_telefone}@c.us`;
-        await client.sendMessage(numeroWhatsApp, mensagemConfirmacao);
-        console.log(`✅ Confirmação da manhã enviada para ${cliente_telefone}`);
-        agendamentosNotificados.add(chaveConfirmacaoManha);
-    } catch (error) {
-        console.error(`❌ Erro ao enviar confirmação para ${cliente_telefone}:`, error);
-    }
-}
+                try {
+                    const numeroWhatsApp = `${cliente_telefone}@c.us`;
+                    await client.sendMessage(numeroWhatsApp, mensagemConfirmacao);
+                    console.log(`✅ Confirmação da manhã enviada para ${cliente_telefone}`);
+                    agendamentosNotificados.add(chaveConfirmacaoManha);
+                } catch (error) {
+                    console.error(`❌ Erro ao enviar confirmação para ${cliente_telefone}:`, error);
+                }
+            }
 
             // 🔹 Segundo lembrete de confirmação: Entre 30 e 40 minutos antes do horário agendado
             const minutosAntes = Math.floor(Math.random() * (40 - 30 + 1)) + 30; // Valor aleatório entre 30 e 40 minutos
             const horarioEnvioConfirmacao = minutoAgendamento - minutosAntes;
+
             if (!agendamentosNotificados.has(chaveConfirmacaoAntes) && horaAtualEmMinutos >= horarioEnvioConfirmacao && horaAtualEmMinutos < minutoAgendamento) {
                 console.log(`📢 Enviando segunda confirmação para ${cliente_telefone}`);
 
@@ -701,7 +704,7 @@ if (
                     const numeroWhatsApp = `${cliente_telefone}@c.us`;
                     await client.sendMessage(numeroWhatsApp, mensagemConfirmacaoAntes);
                     console.log(`✅ Segunda confirmação enviada para ${cliente_telefone}`);
-                    agendamentosNotificados.add(chaveConfirmacaoAntes);
+                    agendamentosNotificados.add(chaveConfirmacaoAntes); // Marcar como notificado
                 } catch (error) {
                     console.error(`❌ Erro ao enviar segunda confirmação para ${cliente_telefone}:`, error);
                 }
@@ -719,7 +722,6 @@ setInterval(() => {
 
 // Executa uma vez ao iniciar
 enviarLembretes(client);
-
 
 async function enviarFelizAniversario(client) {
     try {
