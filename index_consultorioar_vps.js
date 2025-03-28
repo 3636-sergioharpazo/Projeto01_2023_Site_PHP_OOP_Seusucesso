@@ -414,16 +414,16 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     let servico_id = '';
     let data_agendamento = '';
     let horario_agendamento = '';
-    let protocolo = '';
     let confirmacao = false;
     let cliente_telefone = msg.from.split('@')[0];
+    let id_dentista = '';
 
     async function solicitarCampo(campo, mensagemValidacao, regex = null, mensagemConfirmacao = '') {
         let tentativas = 0;
         let campoValido = false;
 
         while (!campoValido) {
-            if (tentativas >= 3) {
+            if (tentativas >= 6) {
                 await client.sendMessage(msg.from, '⚠️ Muitas tentativas inválidas. Retornando ao menu principal.');
                 return null;
             }
@@ -469,12 +469,12 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         });
     }
 
-    async function verificarDisponibilidade(servico_id, data_agendamento) {
+    async function verificarDisponibilidade(id_dentista, data_agendamento) {
         const [dia, mes, ano] = data_agendamento.split('/');
         const dataFormatada = `${ano}-${mes}-${dia}`;
         try {
             const response = await axios.post(`${BASE_URL}/verificar-horario.php`, {
-                servico_id: servico_id,
+                id_dentista: id_dentista,
                 data_agendamento: dataFormatada
             }, {
                 headers: { 'Content-Type': 'application/json' }
@@ -496,15 +496,15 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     }
 
     const listaServicos = Object.entries(servicosDisponiveis)
-        .map(([codigo, { nome }]) => `${codigo} ${nome}`)
+        .map(([codigo, { id_dentista, nome, nome_dentista}]) =>
+            `*${codigo}* ${nome} (Dr(a). ${nome_dentista}) `
+        )
         .join('\n');
 
     await client.sendMessage(
         msg.from,
         `🌟 *Agendamento de Horário* 🌟\n\n` +
-        `Digite *Nome Completo:*\n\n` +
-        `Escolha *Código do Serviço:* da lista abaixo:\n\n${listaServicos}\n\n` +
-        `Digite a *Data:*  (Formato: 📅 DD/MM/AAAA)\n\n` +
+        `Digite *Nome Completo:* (Por favor, envie seu nome completo sem números)\n\n` +
         `Digite *Menu* para retornar ao menu principal.`
     );
 
@@ -516,7 +516,9 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         'Nome recebido'
     );
     if (!cliente_nome) return;
-    await client.sendMessage(msg.from, '✅ Nome confirmado! Agora, informe o código do serviço.');
+
+    // Exibe lista de serviços após nome
+    await client.sendMessage(msg.from, `✅ Nome confirmado! Agora, escolha o serviço.\n\nEscolha um código de serviço:\n${listaServicos}`);
 
     // Solicita o serviço
     servico_id = await solicitarCampo(
@@ -526,7 +528,11 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         'Serviço escolhido'
     );
     if (!servico_id) return;
-    await client.sendMessage(msg.from, '✅ Serviço confirmado! Agora, informe a data do agendamento.*Data:*  (Formato: 📅 DD/MM/AAAA)');
+
+    // Captura o ID do dentista
+    id_dentista = servicosDisponiveis[servico_id].id_dentista;
+
+    await client.sendMessage(msg.from, '✅ Serviço confirmado! Agora, informe a data do agendamento. *Data:* (Formato: 📅 DD/MM/AAAA)');
 
     // Solicita a data
     data_agendamento = await solicitarCampo(
@@ -536,66 +542,87 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         'Data recebida'
     );
     if (!data_agendamento) return;
-    await client.sendMessage(msg.from, '✅ Data confirmada! Agora, veja os horários disponíveis.');
 
-    const horariosDisponiveis = await verificarDisponibilidade(servico_id, data_agendamento);
-    if (horariosDisponiveis.length > 0) {
-        let mensagem = `✅ *Horários disponíveis para ${data_agendamento}:*\n\n`;
-        horariosDisponiveis.forEach(horario => {
-            mensagem += `🕒 ${horario}\n\n`;
-        });
-        mensagem += `*Escolha o seu Horário:* (Formato: ⏰ HH:mm)\n\n`;
-        await client.sendMessage(msg.from, mensagem);
-    } else {
-        await client.sendMessage(msg.from, `❌ *Nenhum horário disponível para ${data_agendamento}.*`);
-        return;
+    let continuarConsultas = true;
+
+    while (continuarConsultas) {
+        await client.sendMessage(msg.from, '✅ Data confirmada! Agora, veja os horários disponíveis.');
+
+        const horariosDisponiveis = await verificarDisponibilidade(id_dentista, data_agendamento);
+        if (horariosDisponiveis.length > 0) {
+            let mensagem = `✅ *Horários disponíveis para ${data_agendamento}:*\n\n`;
+            horariosDisponiveis.forEach(horario => {
+                mensagem += `🕒 ${horario}\n\n`;
+            });
+            mensagem += `*Escolha o seu Horário:* (Formato: ⏰ HH:mm)\n\n`;
+            mensagem += `❓ Para consultar outra data escolha qualquer horário que ele deixa escolher nova data".`;
+
+            await client.sendMessage(msg.from, mensagem);
+
+
+            
+            // Solicita o horário
+            horario_agendamento = await solicitarCampo(
+                null,
+                '❌ Horário inválido! Envie no formato HH:mm.',
+                /^([01]\d|2[0-3]):([0-5]\d)?$/, // Tornando os minutos opcionais
+                'Horário recebido'
+            );
+            if (!horario_agendamento) return;
+
+            // Verifica se o horário está disponível
+            if (horariosDisponiveis.includes(horario_agendamento)) {
+                await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
+                    `👤 *Nome:* ${cliente_nome}\n` +
+                    `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+                    `📅 *Data:* ${data_agendamento}\n` +
+                    `⏰ *Horário:* ${horario_agendamento}\n\n` +
+                    `✅ *Digite "Sim"* para confirmar\n❌ *Digite "Cancelar"* para cancelar e voltar ao menu principal\n📜 *Digite "Menu"* para retornar ao menu principal.\n❓ Para consultar outra data, digite "Nova Data".`);
+
+                const resposta = await esperarMensagem(msg.from);
+
+                console.log(`Resposta recebida: "${resposta}"`);
+
+                if (resposta.toLowerCase().trim() === 'sim') {
+                    confirmacao = true;
+                    await client.sendMessage(msg.from, '✅ Agendamento confirmado! Obrigado.');
+                    continuarConsultas = false; // Sai do loop
+                } else if (resposta.toLowerCase().trim() === 'cancelar') {
+                    await client.sendMessage(msg.from, '❌ Agendamento cancelado. Retornando ao menu principal.');
+                    continuarConsultas = false; // Sai do loop
+                } else if (resposta.toLowerCase().trim() === 'menu') {
+                    await client.sendMessage(msg.from, '📜 Retornando ao menu principal...');
+                    continuarConsultas = false; // Sai do loop
+                } else if (resposta.toLowerCase().trim() === 'nova data') {
+                    await client.sendMessage(msg.from, '📅 Envie a nova data para consulta.\n*Data:* (Formato: 📅 DD/MM/AAAA)');
+                    data_agendamento = await solicitarCampo(
+                        null,
+                        '❌ Data inválida! Envie no formato DD/MM/AAAA.',
+                        /^\d{2}\/\d{2}\/\d{4}$/,
+                        'Nova data recebida'
+                    );
+                    if (!data_agendamento) return;
+                } else {
+                    await client.sendMessage(msg.from, '❌ Resposta inválida. Por favor, digite "Sim" para confirmar, "Cancelar" para cancelar ou "Menu" para retornar ao menu principal.');
+                }
+            } else {
+                await client.sendMessage(msg.from, '❌ Horário não disponível. Por favor, escolha um horário disponível.');
+            }
+        } else {
+            await client.sendMessage(msg.from, `❌ *Nenhum horário disponível para ${data_agendamento}.*`);
+            return;
+        }
     }
 
-    // Solicita o horário
-    horario_agendamento = await solicitarCampo(
-        null,
-        '❌ Horário inválido! Envie no formato HH:mm.',
-        /^([01]\d|2[0-3]):([0-5]\d)?$/, // Tornando os minutos opcionais
-        'Horário recebido'
-    );
-    if (!horario_agendamento) return;
-
-    await client.sendMessage(
-        msg.from,
-        `📝 *Confirme as informações:*\n\n` +
-        `👤 *Nome:* ${cliente_nome}\n` +
-        `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-        `📅 *Data:* ${data_agendamento}\n` +
-        `⏰ *Horário:* ${horario_agendamento}\n\n` +
-        `✅ *Digite "Sim"* para confirmar\n❌ *Digite "Cancelar"* para cancelar e voltar ao menu principal\n📜 *Digite "Menu"* para retornar ao menu principal.`
-    );
-
-    // Aguardar a resposta do usuário
-    const resposta = await esperarMensagem(msg.from);
-
-    console.log(`Resposta recebida: "${resposta}"`); // Adicionando log para depuração
-
-    // Verificar se a resposta foi "sim"
-    if (resposta.toLowerCase().trim() === 'sim') {
-        confirmacao = true;
-        console.log("Confirmação recebida!");
-    } else if (resposta.toLowerCase().trim() === 'cancelar') {
-        await client.sendMessage(msg.from, '❌ Agendamento cancelado. Retornando ao menu principal.');
-        return;
-    } else if (resposta.toLowerCase().trim() === 'menu') {
-        await client.sendMessage(msg.from, '📜 Retornando ao menu principal...');
-        return;
-    } else {
-        await client.sendMessage(msg.from, '❌ Resposta inválida. Por favor, digite "Sim" para confirmar, "Cancelar" para cancelar ou "Menu" para retornar ao menu principal.');
-        return;
-    }
 
     try {
+        
         const protocoloResponse = await axios.post(`${BASE_URL}/gerar_protocolo.php`, {
             cliente_nome,
             cliente_telefone,
             servico_id,
             data_agendamento,
+            id_dentista,
             horario_agendamento: `${horario_agendamento}:00`
         });
 
@@ -621,9 +648,6 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
     }
 }
-
-
-
 
 })
 
@@ -674,7 +698,7 @@ async function enviarLembretes(client) {
             ) {
                 console.log(`📢 Enviando mensagem de confirmação da manhã para ${cliente_telefone}`);
 
-                const mensagemConfirmacao = `👋 Olá, *${cliente_nome}*!\nSeu agendamento está marcado para hoje às ${horaFormatada}.\n📅 Data: ${dataFormatada}\n💇 Serviço: ${servico}\n\nVocê pode confirmar sua presença? ✅\n\nAguardamos seu retorno! 😊`;
+                const mensagemConfirmacao = `👋 Olá, *${cliente_nome}*!\nSeu agendamento está marcado para hoje às ${horaFormatada}.\n📅 Data: ${dataFormatada}\n 🦷 Serviço: ${servico}\n\nVocê pode confirmar sua presença? ✅\n\nAguardamos seu retorno! 😊`;
 
                 try {
                     const numeroWhatsApp = `${cliente_telefone}@c.us`;
@@ -693,7 +717,7 @@ async function enviarLembretes(client) {
             if (!agendamentosNotificados.has(chaveConfirmacaoAntes) && horaAtualEmMinutos >= horarioEnvioConfirmacao && horaAtualEmMinutos < minutoAgendamento) {
                 console.log(`📢 Enviando segunda confirmação para ${cliente_telefone}`);
 
-                const mensagemConfirmacaoAntes = `🔔 Olá, *${cliente_nome}*!\nLembrete do seu agendamento:\n\n📅 Data: ${dataFormatada}\n🕒 Horário: ${horaFormatada}\n💇 Serviço: ${servico}\n\nPodemos confirmar sua presença? 😊`;
+                const mensagemConfirmacaoAntes = `🔔 Olá, *${cliente_nome}*!\nLembrete do seu agendamento:\n\n📅 Data: ${dataFormatada}\n🕒 Horário: ${horaFormatada}\n 🦷 Serviço: ${servico}\n\nPodemos confirmar sua presença? 😊`;
 
                 try {
                     const numeroWhatsApp = `${cliente_telefone}@c.us`;
