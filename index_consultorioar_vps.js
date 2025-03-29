@@ -530,11 +530,34 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     if (!servico_id) return;
 
     // Captura o ID do dentista
-    id_dentista = servicosDisponiveis[servico_id].id_dentista;
+id_dentista = servicosDisponiveis[servico_id].id_dentista;
 
-    await client.sendMessage(msg.from, '✅ Serviço confirmado! Agora, informe a data do agendamento. *Data:* (Formato: 📅 DD/MM/AAAA)');
+// Pergunta se o usuário quer a data atual ou deseja informar outra
+await client.sendMessage(msg.from, '📅 Você deseja agendar para hoje? (Responda com "Sim" ou "Não")');
 
-    // Solicita a data
+let resposta = await solicitarCampo(
+    null,
+    '❌ Responda apenas com "Sim" ou "Não".',
+    /^(Sim|Não)$/i,
+    'Resposta recebida'
+);
+
+if (!resposta) return;
+
+
+let hoje = new Date();
+let dia = String(hoje.getDate()).padStart(2, '0');
+let mes = String(hoje.getMonth() + 1).padStart(2, '0');
+let ano = hoje.getFullYear();
+let dataAtual = `${dia}/${mes}/${ano}`;
+
+if (resposta.toLowerCase() === 'sim') {
+    data_agendamento = dataAtual;
+    await client.sendMessage(msg.from, `📆 Agendando para hoje: ${data_agendamento}`);
+} else {
+    await client.sendMessage(msg.from, '✅ Informe a data do agendamento. *Data:* (Formato: 📅 DD/MM/AAAA)');
+
+    // Solicita a data manualmente
     data_agendamento = await solicitarCampo(
         null,
         '❌ Data inválida! Envie no formato DD/MM/AAAA.',
@@ -542,6 +565,8 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         'Data recebida'
     );
     if (!data_agendamento) return;
+}
+
 
     let continuarConsultas = true;
 
