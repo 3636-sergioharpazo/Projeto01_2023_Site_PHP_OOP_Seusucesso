@@ -423,7 +423,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         let campoValido = false;
 
         while (!campoValido) {
-            if (tentativas >= 6) {
+            if (tentativas >= 3) {
                 await client.sendMessage(msg.from, '⚠️ Muitas tentativas inválidas. Retornando ao menu principal.');
                 return null;
             }
@@ -518,8 +518,10 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     if (!cliente_nome) return;
 
     // Exibe lista de serviços após nome
-    await client.sendMessage(msg.from, `✅ Nome confirmado! Agora, escolha o serviço.\n\nEscolha um código de serviço:\n${listaServicos}`);
+await client.sendMessage(msg.from, `✅ Nome confirmado! Agora, escolha o serviço.\n\nEscolha um código de serviço:\n${listaServicos}`);
 
+
+do {
     // Solicita o serviço
     servico_id = await solicitarCampo(
         null,
@@ -527,10 +529,16 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         /^[0-9]+$/,
         'Serviço escolhido'
     );
-    if (!servico_id) return;
 
-    // Captura o ID do dentista
-id_dentista = servicosDisponiveis[servico_id].id_dentista;
+    // Verifica se o serviço existe
+    if (!servicosDisponiveis[servico_id]) {
+        await client.sendMessage(msg.from, `❌ O código informado não corresponde a nenhum serviço disponível. Escolha novamente:\n${listaServicos}`);
+    }
+
+} while (!servicosDisponiveis[servico_id]); // Repete até que o serviço escolhido seja válido
+
+// Captura o ID do dentista
+ id_dentista = servicosDisponiveis[servico_id].id_dentista;
 
 // Pergunta se o usuário quer a data atual ou deseja informar outra
 await client.sendMessage(msg.from, '📅 Você deseja agendar para hoje? (Responda com "Sim" ou "Não")');
@@ -541,6 +549,7 @@ let resposta = await solicitarCampo(
     /^(Sim|Não)$/i,
     'Resposta recebida'
 );
+
 
 if (!resposta) return;
 
@@ -634,8 +643,18 @@ if (resposta.toLowerCase() === 'sim') {
                 await client.sendMessage(msg.from, '❌ Horário não disponível. Por favor, escolha um horário disponível.');
             }
         } else {
-            await client.sendMessage(msg.from, `❌ *Nenhum horário disponível para ${data_agendamento}.*`);
-            return;
+            await client.sendMessage(msg.from, `❌ *Nenhum horário disponível para ${data_agendamento}.*\n📅 Por favor, informe outra data para consulta.`);
+
+            data_agendamento = await solicitarCampo(
+                null,
+                '❌ Data inválida! Envie no formato DD/MM/AAAA.',
+                /^\d{2}\/\d{2}\/\d{4}$/,
+                'Nova data recebida'
+            );
+            if (!data_agendamento) return;
+            
+            
+            
         }
     }
 
