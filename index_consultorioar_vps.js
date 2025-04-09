@@ -520,22 +520,28 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     // Exibe lista de serviços após nome
 await client.sendMessage(msg.from, `✅ Nome confirmado! Agora, escolha o serviço.\n\nEscolha um código de serviço:\n${listaServicos}`);
 
-
 do {
     // Solicita o serviço
-    servico_id = await solicitarCampo(
+    let entrada = await solicitarCampo(
         null,
         `❌ Código inválido. Escolha um código válido:\n${listaServicos}`,
         /^[0-9]+$/,
         'Serviço escolhido'
     );
 
-    // Verifica se o serviço existe
+    // Remove zeros à esquerda e garante que é um número
+    let codigoNumerico = parseInt(entrada, 10);
+
+    // Se for um número válido com apenas um dígito, adiciona zero à esquerda
+    servico_id = codigoNumerico < 10 ? `0${codigoNumerico}` : String(codigoNumerico);
+
+    // Verifica se o serviço existe com esse código formatado
     if (!servicosDisponiveis[servico_id]) {
         await client.sendMessage(msg.from, `❌ O código informado não corresponde a nenhum serviço disponível. Escolha novamente:\n${listaServicos}`);
     }
 
-} while (!servicosDisponiveis[servico_id]); // Repete até que o serviço escolhido seja válido
+} while (!servicosDisponiveis[servico_id]);
+// Repete até que o serviço escolhido seja válido
 
 // Captura o ID do dentista
  id_dentista = servicosDisponiveis[servico_id].id_dentista;
