@@ -176,17 +176,15 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 client.on('message', async msg => {
     const cliente_telefone = msg.from.split('@')[0];
 
-    // Resposta ao menu inicial
-    if (/^(menu|Menu|dia|tarde|noite|bom dia|oi|Oi|Voltar|voltar|Olá|olá|ola|Ola)$/i.test(msg.body) && msg.from.endsWith('@c.us')) {
+    async function mostrarMenuPrincipal(msg) {
         const chat = await msg.getChat();
         const contact = await msg.getContact();
         const name = contact.pushname || "Cliente";
-
-       
+    
         await delay(2000);
         await chat.sendStateTyping();
         await delay(2000);
-
+    
         await client.sendMessage(
             msg.from,
             `Olá, *${name.split(" ")[0]}*! 👋 Eu sou o assistente virtual do *${NOME_CLIENTE}*. Como posso ajudá-lo(a) hoje? Escolha uma das opções abaixo:\n\n` +
@@ -198,6 +196,10 @@ client.on('message', async msg => {
             `6️⃣ - Consultar agendamento`
         );
     }
+    // Resposta ao menu inicial
+if (/^(menu|Menu|dia|tarde|noite|bom dia|oi|Oi|Voltar|voltar|Olá|olá|cancelar|Cancelar|ola|Ola)$/i.test(msg.body) && msg.from.endsWith('@c.us')) {
+    await mostrarMenuPrincipal(msg);
+}
 
     // Resposta para a opção "Serviços e Preços"
     if (msg.body === '1' && msg.from.endsWith('@c.us')) {
@@ -418,6 +420,8 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     let cliente_telefone = msg.from.split('@')[0];
     let id_dentista = '';
 
+    
+
     async function solicitarCampo(campo, mensagemValidacao, regex = null, mensagemConfirmacao = '') {
         let tentativas = 0;
         let campoValido = false;
@@ -552,9 +556,10 @@ await client.sendMessage(msg.from, '📅 Você deseja agendar para hoje? (Respon
 let resposta = await solicitarCampo(
     null,
     '❌ Responda apenas com "Sim" ou "Não".',
-    /^(Sim|Não)$/i,
+    /^(sim|nao|não)$/i,
     'Resposta recebida'
 );
+
 
 
 if (!resposta) return;
@@ -626,6 +631,42 @@ if (resposta.toLowerCase() === 'sim') {
                 if (resposta.toLowerCase().trim() === 'sim') {
                     confirmacao = true;
                     await client.sendMessage(msg.from, '✅ Agendamento confirmado! Obrigado.');
+
+                    try {
+                        console.log(`tel: "${cliente_telefone}"`);
+                        console.log(`NOME: "${cliente_nome}"`);
+                    
+                        const protocoloResponse = await axios.post(`${BASE_URL}/gerar_protocolo.php`, {
+                            cliente_nome,
+                            cliente_telefone,
+                            servico_id,
+                            data_agendamento,
+                            id_dentista,
+                            horario_agendamento: `${horario_agendamento}:00`
+                        });
+                
+                        protocolo = protocoloResponse.data.protocolo;
+                
+                        if (protocolo) {
+                            await client.sendMessage(
+                                msg.from,
+                                `✅ *Agendamento Confirmado!*\n` +
+                                `📜 *Protocolo:* ${protocolo}\n` +
+                                `👤 *Nome:* ${cliente_nome}\n` +
+                                `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+                                `📅 *Data:* ${data_agendamento}\n` +
+                                `⏰ *Horário:* ${horario_agendamento}\n\n` +
+                                `🚪 *Estamos te aguardando!*\n` +
+                                `👋 *Até mais!*`
+                            );
+                            await client.sendMessage(msg.from, '✅ Horário confirmado! Agendamento finalizado.');
+                        } else {
+                            await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
+                        }
+                    } catch (error) {
+                        await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
+                    }
+
                     continuarConsultas = false; // Sai do loop
                 } else if (resposta.toLowerCase().trim() === 'cancelar') {
                     await client.sendMessage(msg.from, '❌ Agendamento cancelado. Retornando ao menu principal.');
@@ -665,38 +706,7 @@ if (resposta.toLowerCase() === 'sim') {
     }
 
 
-    try {
-        
-        const protocoloResponse = await axios.post(`${BASE_URL}/gerar_protocolo.php`, {
-            cliente_nome,
-            cliente_telefone,
-            servico_id,
-            data_agendamento,
-            id_dentista,
-            horario_agendamento: `${horario_agendamento}:00`
-        });
-
-        protocolo = protocoloResponse.data.protocolo;
-
-        if (protocolo) {
-            await client.sendMessage(
-                msg.from,
-                `✅ *Agendamento Confirmado!*\n` +
-                `📜 *Protocolo:* ${protocolo}\n` +
-                `👤 *Nome:* ${cliente_nome}\n` +
-                `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-                `📅 *Data:* ${data_agendamento}\n` +
-                `⏰ *Horário:* ${horario_agendamento}\n\n` +
-                `🚪 *Estamos te aguardando!*\n` +
-                `👋 *Até mais!*`
-            );
-            await client.sendMessage(msg.from, '✅ Horário confirmado! Agendamento finalizado.');
-        } else {
-            await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
-        }
-    } catch (error) {
-        await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
-    }
+   
 }
 
 })
