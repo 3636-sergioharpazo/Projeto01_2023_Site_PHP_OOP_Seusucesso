@@ -427,7 +427,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         let campoValido = false;
 
         while (!campoValido) {
-            if (tentativas >= 3) {
+            if (tentativas >= 5) {
                 await client.sendMessage(msg.from, '⚠️ Muitas tentativas inválidas. Retornando ao menu principal.');
                 return null;
             }
@@ -474,6 +474,11 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     }
 
     async function verificarDisponibilidade(id_dentista, data_agendamento) {
+        if (!data_agendamento || typeof data_agendamento !== 'string') {
+            console.error('❌ data_agendamento inválido:', data_agendamento);
+            return [];
+        }
+    
         const [dia, mes, ano] = data_agendamento.split('/');
         const dataFormatada = `${ano}-${mes}-${dia}`;
         try {
@@ -485,10 +490,12 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             });
             return response.data.horarios_disponiveis || [];
         } catch (error) {
+            console.error('❌ Erro ao verificar horários:', error);
             await client.sendMessage(msg.from, '❌ Erro ao verificar horários disponíveis. Tente novamente.');
             return [];
         }
     }
+    
 
     let servicosDisponiveis = {};
     try {
@@ -505,25 +512,39 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         )
         .join('\n');
 
-    await client.sendMessage(
-        msg.from,
-        `🌟 *Agendamento de Horário* 🌟\n\n` +
-        `Digite *Nome Completo:* (Por favor, envie seu nome completo sem números)\n\n` +
-        `Digite *Menu* para retornar ao menu principal.`
-    );
-
-    // Solicita o nome (limita erros)
-    cliente_nome = await solicitarCampo(
-        null,
-        '❌ Nome inválido. Por favor, envie seu nome completo sem números.',
-        /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/,
-        'Nome recebido'
-    );
-    if (!cliente_nome) return;
-
-    // Exibe lista de serviços após nome
-await client.sendMessage(msg.from, `✅ Nome confirmado! Agora, escolha o serviço.\n\nEscolha um código de serviço:\n${listaServicos}`);
-
+        const contact = await msg.getContact();
+        const nomeAuto = contact.name || contact.pushname || "Cliente";
+        
+        // Envia a mensagem com a sugestão do nome detectado
+        await client.sendMessage(
+            msg.from,
+            `🌟 *Agendamento de Horário* 🌟\n\n` +
+            `Detectamos seu nome como: *${nomeAuto}*\n\n` +
+            `Se estiver correto, digite *SIM*.\n` +
+            `Ou envie seu *Nome Completo:* (Por favor, sem números)\n\n` +
+            `Digite *Menu* para retornar ao menu principal.`
+        );
+        
+        // Solicita o nome ou confirmação
+         cliente_nome = await solicitarCampo(
+            null,
+            '❌ Nome inválido. Por favor, envie seu nome completo sem números ou digite SIM para confirmar o nome sugerido.',
+            /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$|^sim$/i,
+            'Nome ou confirmação recebido'
+        );
+        if (!cliente_nome) return;
+        
+        // Se digitou "sim", usa o nome detectado
+        if (/^sim$/i.test(cliente_nome)) {
+            cliente_nome = nomeAuto;
+        }
+        
+        // Confirma o nome e avança para os serviços
+        await client.sendMessage(
+            msg.from,
+            `✅ Nome confirmado como: *${cliente_nome}*.\n\nAgora, escolha o serviço.\n\nEscolha um código de serviço:\n${listaServicos}`
+        );
+        
 do {
     // Solicita o serviço
     let entrada = await solicitarCampo(
@@ -549,8 +570,7 @@ do {
 
 // Captura o ID do dentista
  id_dentista = servicosDisponiveis[servico_id].id_dentista;
-
-// Pergunta se o usuário quer a data atual ou deseja informar outra
+// Pergunta se o usuário quer agendar para hoje ou não
 await client.sendMessage(msg.from, '📅 Você deseja agendar para hoje? (Responda com "Sim" ou "Não")');
 
 let resposta = await solicitarCampo(
@@ -560,156 +580,284 @@ let resposta = await solicitarCampo(
     'Resposta recebida'
 );
 
-
-
 if (!resposta) return;
 
-
 let hoje = new Date();
-let dia = String(hoje.getDate()).padStart(2, '0');
-let mes = String(hoje.getMonth() + 1).padStart(2, '0');
-let ano = hoje.getFullYear();
-let dataAtual = `${dia}/${mes}/${ano}`;
+let mes = String(hoje.getMonth() + 1).padStart(2, '0');  // Pega o mês atual (com 2 dígitos)
+let ano = hoje.getFullYear();  // Pega o ano atual
+let dataAtual = `${hoje.getDate()}/${mes}/${ano}`;  // Preenche com o dia atual, mês e ano
 
+// Se o cliente escolher "sim", usa a data atual
 if (resposta.toLowerCase() === 'sim') {
     data_agendamento = dataAtual;
     await client.sendMessage(msg.from, `📆 Agendando para hoje: ${data_agendamento}`);
 } else {
-    await client.sendMessage(msg.from, '✅ Informe a data do agendamento. *Data:* (Formato: 📅 DD/MM/AAAA)');
+    // Se o cliente escolher "não", perguntar se deseja digitar apenas o dia
+    await client.sendMessage(msg.from, '✅ Você deseja informar apenas o *dia* (por exemplo: 13) ou digitar a data completa no formato 04/11/2025? (Responda com "Dia" ou "Data Completa")');
 
-    // Solicita a data manualmente
-    data_agendamento = await solicitarCampo(
+    let escolhaData = await solicitarCampo(
         null,
-        '❌ Data inválida! Envie no formato DD/MM/AAAA.',
-        /^\d{2}\/\d{2}\/\d{4}$/,
-        'Data recebida'
+        '❌ Resposta inválida! Responda apenas com "Dia" ou "Data Completa".',
+        /^(dia|data completa)$/i,
+        'Escolha recebida'
     );
-    if (!data_agendamento) return;
+    
+    if (!escolhaData) return;
+
+    // Se o cliente escolher "Dia", permitir apenas digitar o dia
+    if (escolhaData.toLowerCase() === 'dia') {
+        await client.sendMessage(msg.from, '✅ Envie o *dia* (ex: 13). Usaremos o mês e o ano atuais.');
+        
+        // Solicita apenas o dia
+        let diaInformado = await solicitarCampo(
+            null,
+            '❌ Dia inválido! Envie apenas o dia (ex: 13).',
+            /^\d{1,2}$/,
+            'Dia recebido'
+        );
+        
+        // Processa o agendamento com o dia informado
+        data_agendamento = `${String(diaInformado).padStart(2, '0')}/${mes}/${ano}`;
+        await client.sendMessage(msg.from, `📆 Agendando para o dia: ${data_agendamento}`);
+    } else if (escolhaData.toLowerCase() === 'data completa') {
+        // Se o cliente escolher "Data Completa", permite digitar a data completa
+        await client.sendMessage(msg.from, '✅ Envie a data completa no formato *DD/MM/AAAA* (ex: 04/11/2025).');
+
+        let dataCompletaInformada = await solicitarCampo(
+            null,
+            '❌ Data inválida! Envie a data no formato *DD/MM/AAAA* (ex: 04/11/2025).',
+            /^\d{2}\/\d{2}\/\d{4}$/,
+            'Data recebida'
+        );
+
+        // Processa a data completa informada
+        data_agendamento = dataCompletaInformada;
+        await client.sendMessage(msg.from, `📆 Agendando para a data: ${data_agendamento}`);
+
+        
+    }
 }
+let continuarConsultas = true;
 
+while (continuarConsultas) {
+    await client.sendMessage(msg.from, '✅ Data confirmada! Agora, veja os horários disponíveis.');
 
-    let continuarConsultas = true;
+    const horariosDisponiveis = await verificarDisponibilidade(id_dentista, data_agendamento);
+    if (horariosDisponiveis.length > 0) {
+        let mensagem = `✅ *Horários disponíveis para ${data_agendamento}:*\n\n`;
+        horariosDisponiveis.forEach(horario => {
+            mensagem += `🕒 ${horario}\n\n`;
+        });
+        mensagem += `*Escolha o seu Horário:* (Formato: ⏰ 10:00)\n\n`;
+        mensagem += `❓ Para consultar outra data, digite "Nova Data".`;
 
-    while (continuarConsultas) {
-        await client.sendMessage(msg.from, '✅ Data confirmada! Agora, veja os horários disponíveis.');
+        await client.sendMessage(msg.from, mensagem);
 
-        const horariosDisponiveis = await verificarDisponibilidade(id_dentista, data_agendamento);
-        if (horariosDisponiveis.length > 0) {
-            let mensagem = `✅ *Horários disponíveis para ${data_agendamento}:*\n\n`;
-            horariosDisponiveis.forEach(horario => {
-                mensagem += `🕒 ${horario}\n\n`;
-            });
-            mensagem += `*Escolha o seu Horário:* (Formato: ⏰ HH:mm)\n\n`;
-            mensagem += `❓ Para consultar outra data escolha qualquer horário que ele deixa escolher nova data".`;
+        // Solicita o horário
+        let horario_agendamento = await solicitarCampo(
+            null,
+            '❌ Horário inválido! Envie no formato 10:00.',
+            /^([01]\d|2[0-3]):([0-5]\d)?$/, // Tornando os minutos opcionais
+            'Horário recebido'
+        );
+        if (!horario_agendamento) return;
 
-            await client.sendMessage(msg.from, mensagem);
+        // Verifica se o horário está disponível
+        if (horariosDisponiveis.includes(horario_agendamento)) {
+            await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
+                `👤 *Nome:* ${cliente_nome}\n` +
+                `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+                `📅 *Data:* ${data_agendamento}\n` +
+                `⏰ *Horário:* ${horario_agendamento}\n\n` +
+                `✅ *Digite "Sim"* para confirmar\n❌ *Digite "Cancelar"* para cancelar e voltar ao menu principal\n📜 *Digite "Menu"* para retornar ao menu principal.\n❓ Para consultar outra data, digite "Nova Data".`);
 
+            const resposta = await esperarMensagem(msg.from);
 
-            
-            // Solicita o horário
-            horario_agendamento = await solicitarCampo(
-                null,
-                '❌ Horário inválido! Envie no formato HH:mm.',
-                /^([01]\d|2[0-3]):([0-5]\d)?$/, // Tornando os minutos opcionais
-                'Horário recebido'
-            );
-            if (!horario_agendamento) return;
+            if (resposta.toLowerCase().trim() === 'sim') {
+                confirmacao = true;
+                await client.sendMessage(msg.from, '✅ Agendamento confirmado! Obrigado.');
 
-            // Verifica se o horário está disponível
-            if (horariosDisponiveis.includes(horario_agendamento)) {
-                await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
-                    `👤 *Nome:* ${cliente_nome}\n` +
-                    `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-                    `📅 *Data:* ${data_agendamento}\n` +
-                    `⏰ *Horário:* ${horario_agendamento}\n\n` +
-                    `✅ *Digite "Sim"* para confirmar\n❌ *Digite "Cancelar"* para cancelar e voltar ao menu principal\n📜 *Digite "Menu"* para retornar ao menu principal.\n❓ Para consultar outra data, digite "Nova Data".`);
+                try {
+                    const protocoloResponse = await axios.post(`${BASE_URL}/gerar_protocolo.php`, {
+                        cliente_nome,
+                        cliente_telefone,
+                        servico_id,
+                        data_agendamento,
+                        id_dentista,
+                        horario_agendamento: `${horario_agendamento}:00`
+                    });
 
-                const resposta = await esperarMensagem(msg.from);
+                    protocolo = protocoloResponse.data.protocolo;
 
-                console.log(`Resposta recebida: "${resposta}"`);
-
-                if (resposta.toLowerCase().trim() === 'sim') {
-                    confirmacao = true;
-                    await client.sendMessage(msg.from, '✅ Agendamento confirmado! Obrigado.');
-
-                    try {
-                        console.log(`tel: "${cliente_telefone}"`);
-                        console.log(`NOME: "${cliente_nome}"`);
-                    
-                        const protocoloResponse = await axios.post(`${BASE_URL}/gerar_protocolo.php`, {
-                            cliente_nome,
-                            cliente_telefone,
-                            servico_id,
-                            data_agendamento,
-                            id_dentista,
-                            horario_agendamento: `${horario_agendamento}:00`
-                        });
-                
-                        protocolo = protocoloResponse.data.protocolo;
-                
-                        if (protocolo) {
-                            await client.sendMessage(
-                                msg.from,
-                                `✅ *Agendamento Confirmado!*\n` +
-                                `📜 *Protocolo:* ${protocolo}\n` +
-                                `👤 *Nome:* ${cliente_nome}\n` +
-                                `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-                                `📅 *Data:* ${data_agendamento}\n` +
-                                `⏰ *Horário:* ${horario_agendamento}\n\n` +
-                                `🚪 *Estamos te aguardando!*\n` +
-                                `👋 *Até mais!*`
-                            );
-                            await client.sendMessage(msg.from, '✅ Horário confirmado! Agendamento finalizado.');
-                        } else {
-                            await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
-                        }
-                    } catch (error) {
+                    if (protocolo) {
+                        await client.sendMessage(
+                            msg.from,
+                            `✅ *Agendamento Confirmado!*\n` +
+                            `📜 *Protocolo:* ${protocolo}\n` +
+                            `👤 *Nome:* ${cliente_nome}\n` +
+                            `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+                            `📅 *Data:* ${data_agendamento}\n` +
+                            `⏰ *Horário:* ${horario_agendamento}\n\n` +
+                            `🚪 *Estamos te aguardando!*\n` +
+                            `👋 *Até mais!*`
+                        );
+                        await client.sendMessage(msg.from, '✅ Horário confirmado! Agendamento finalizado.');
+                    } else {
                         await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
                     }
+                } catch (error) {
+                    await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
+                }
 
-                    continuarConsultas = false; // Sai do loop
-                } else if (resposta.toLowerCase().trim() === 'cancelar') {
-                    await client.sendMessage(msg.from, '❌ Agendamento cancelado. Retornando ao menu principal.');
-                    continuarConsultas = false; // Sai do loop
-                } else if (resposta.toLowerCase().trim() === 'menu') {
-                    await client.sendMessage(msg.from, '📜 Retornando ao menu principal...');
-                    continuarConsultas = false; // Sai do loop
-                } else if (resposta.toLowerCase().trim() === 'nova data') {
-                    await client.sendMessage(msg.from, '📅 Envie a nova data para consulta.\n*Data:* (Formato: 📅 DD/MM/AAAA)');
-                    data_agendamento = await solicitarCampo(
-                        null,
-                        '❌ Data inválida! Envie no formato DD/MM/AAAA.',
-                        /^\d{2}\/\d{2}\/\d{4}$/,
-                        'Nova data recebida'
-                    );
-                    if (!data_agendamento) return;
-                } else {
-                    await client.sendMessage(msg.from, '❌ Resposta inválida. Por favor, digite "Sim" para confirmar, "Cancelar" para cancelar ou "Menu" para retornar ao menu principal.');
+                continuarConsultas = false; // Sai do loop
+            } else if (resposta.toLowerCase().trim() === 'cancelar') {
+                await client.sendMessage(msg.from, '❌ Agendamento cancelado. Retornando ao menu principal.');
+                continuarConsultas = false; // Sai do loop
+            } else if (resposta.toLowerCase().trim() === 'menu') {
+                await client.sendMessage(msg.from, '📜 Retornando ao menu principal...');
+                continuarConsultas = false; // Sai do loop
+            } else if (resposta.toLowerCase().trim() === 'nova data') {
+                // Solicita nova data
+                await client.sendMessage(msg.from, '📅 Envie a nova data para consulta.\n*Data:* (Formato: 📅 04/11/2025)');
+                data_agendamento = await solicitarCampo(
+                    null,
+                    '❌ Data inválida! Envie no formato DD/MM/AAAA Ex: 04/11/2025.',
+                    /^\d{2}\/\d{2}\/\d{4}$/,
+                    'Nova data recebida'
+                );
+
+                if (!data_agendamento) {
+                    // Caso não receba a data, encerre o loop
+                    await client.sendMessage(msg.from, '❌ Data inválida! O processo será encerrado.');
+                    continuarConsultas = false;
+                    return;
                 }
             } else {
-                await client.sendMessage(msg.from, '❌ Horário não disponível. Por favor, escolha um horário disponível.');
+                await client.sendMessage(msg.from, '❌ Resposta inválida. Por favor, digite "Sim" para confirmar, "Cancelar" para cancelar ou "Menu" para retornar ao menu principal.');
             }
         } else {
-            await client.sendMessage(msg.from, `❌ *Nenhum horário disponível para ${data_agendamento}.*\n📅 Por favor, informe outra data para consulta.`);
-
-            data_agendamento = await solicitarCampo(
-                null,
-                '❌ Data inválida! Envie no formato DD/MM/AAAA.',
-                /^\d{2}\/\d{2}\/\d{4}$/,
-                'Nova data recebida'
-            );
-            if (!data_agendamento) return;
-            
-            
-            
+            await client.sendMessage(msg.from, '❌ Horário não disponível. Por favor, escolha um horário disponível.');
         }
+    } else {
+        // Se não houver horários disponíveis
+        await client.sendMessage(msg.from, '❌ Não há horários disponíveis para a data informada. Tente novamente com outra data.');
+        continuarConsultas = false;
     }
-
-
-   
 }
 
+    } else {
+        let partes = data_agendamento.split('/');
+        let proximaData = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+        
+        // Verifica se há horários disponíveis para a data fornecida
+        if (!horariosDisponiveis || horariosDisponiveis.length === 0) {
+            // Caso não haja horários disponíveis, sugere a próxima data
+            proximaData.setDate(proximaData.getDate() + 1);
+            let sugestao = proximaData.toLocaleDateString('pt-BR');
+        
+            // Envia mensagem ao usuário com a sugestão de nova data
+            await client.sendMessage(msg.from, `❌ *Nenhum horário disponível para ${data_agendamento}.*\n✅ *Disponível para:* ${sugestao}\nDeseja agendar para esse dia? (Sim/Não)`);
+        
+            let confirmacao = await solicitarCampo(
+                null,
+                'Digite "Sim" para confirmar ou "Não" para escolher outra data.',
+                /^(sim|não|nao)$/i,
+                'Confirmação recebida'
+            );
+        
+            if (/^sim$/i.test(confirmacao)) {
+                data_agendamento = sugestao;
+        
+                let novosHorarios = await verificarDisponibilidade(id_dentista, data_agendamento);
+        
+                if (novosHorarios && novosHorarios.length > 0) {
+                    let mensagemHorarios = `✅ *Horários disponíveis para ${data_agendamento}:*\n\n`;
+                    mensagemHorarios += novosHorarios.join('\n');
+                    await client.sendMessage(msg.from, mensagemHorarios);
+        
+                    // Solicita ao usuário para digitar o horário desejado (com ou sem dois-pontos)
+                    let horarioEscolhido = await solicitarCampo(
+                        null,
+                        'Digite o horário desejado (ex: 0900 ou 09:00):',
+                        /^([01]\d|2[0-3]):?[0-5]\d$/,
+                        'Horário digitado'
+                    );
+        
+                    // Formata para HH:mm caso o usuário tenha digitado sem os dois pontos
+                    if (!horarioEscolhido.includes(':')) {
+                        horarioEscolhido = horarioEscolhido.slice(0, 2) + ':' + horarioEscolhido.slice(2);
+                    }
+        
+                    // Verifica se o horário digitado está na lista de horários disponíveis
+                    if (novosHorarios.includes(horarioEscolhido)) {
+                        horario_agendamento = horarioEscolhido;
+        
+                        await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
+                            `👤 *Nome:* ${cliente_nome}\n` +
+                            `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+                            `📅 *Data:* ${data_agendamento}\n` +
+                            `⏰ *Horário:* ${horario_agendamento}\n\n` +
+                            `✅ *Digite "Sim"* para confirmar\n❌ *Digite "Cancelar"* para cancelar e voltar ao menu principal\n📜 *Digite "Menu"* para retornar ao menu principal.\n❓ Para consultar outra data, digite "Nova Data".`);
+        
+                        const resposta = await esperarMensagem(msg.from);
+        
+                        if (resposta.toLowerCase().trim() === 'sim') {
+                            confirmacao = true;
+                            await client.sendMessage(msg.from, '✅ Agendamento confirmado! Obrigado.');
+        
+                            try {
+                                const protocoloResponse = await axios.post(`${BASE_URL}/gerar_protocolo.php`, {
+                                    cliente_nome,
+                                    cliente_telefone,
+                                    servico_id,
+                                    data_agendamento,
+                                    id_dentista,
+                                    horario_agendamento: `${horario_agendamento}:00`
+                                });
+        
+                                protocolo = protocoloResponse.data.protocolo;
+        
+                                if (protocolo) {
+                                    await client.sendMessage(
+                                        msg.from,
+                                        `✅ *Agendamento Confirmado!*\n` +
+                                        `📜 *Protocolo:* ${protocolo}\n` +
+                                        `👤 *Nome:* ${cliente_nome}\n` +
+                                        `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+                                        `📅 *Data:* ${data_agendamento}\n` +
+                                        `⏰ *Horário:* ${horario_agendamento}\n\n` +
+                                        `🚪 *Estamos te aguardando!*\n` +
+                                        `👋 *Até mais!*`
+                                    );
+                                } else {
+                                    await client.sendMessage(msg.from, '❌ Erro ao confirmar o agendamento. Tente novamente.');
+                                }
+                            } catch (error) {
+                                console.error('Erro ao gerar protocolo:', error);
+                                await client.sendMessage(msg.from, '❌ Erro no servidor ao tentar confirmar o agendamento.');
+                            }
+                        }
+                    } else {
+                        await client.sendMessage(msg.from, '❌ Horário inválido. Por favor, inicie o processo novamente.');
+                    }
+                } else {
+                    await client.sendMessage(msg.from, `❌ Ainda não há horários disponíveis para ${data_agendamento}.`);
+                }
+            } else {
+                await client.sendMessage(msg.from, `❌ Você optou por não agendar para a nova data. Por favor, tente novamente.`);
+            }
+        
+            return;
+        }
+                }
+          
+
+    
 })
+
+
+
+
 
 const INTERVALO_EXECUCAO = 10 * 60 * 1000; // 10 minutos em milissegundos
 const agendamentosNotificados = new Set();  // Defina o Set para armazenar notificações enviadas
