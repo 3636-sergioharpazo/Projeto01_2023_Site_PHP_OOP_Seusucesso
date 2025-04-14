@@ -197,7 +197,7 @@ client.on('message', async msg => {
         );
     }
     // Resposta ao menu inicial
-if (/^(menu|Menu|dia|tarde|noite|bom dia|oi|Oi|Voltar|voltar|Olá|olá|cancelar|Cancelar|ola|Ola)$/i.test(msg.body) && msg.from.endsWith('@c.us')) {
+if (/^(menu|Menu|tarde|noite|bom dia|oi|Oi|Voltar|voltar|Olá|olá|cancelar|Cancelar|ola|Ola)$/i.test(msg.body) && msg.from.endsWith('@c.us')) {
     await mostrarMenuPrincipal(msg);
 }
 
