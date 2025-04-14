@@ -616,8 +616,19 @@ if (resposta.toLowerCase() === 'sim') {
             'Dia recebido'
         );
         
-        // Processa o agendamento com o dia informado
         data_agendamento = `${String(diaInformado).padStart(2, '0')}/${mes}/${ano}`;
+
+        // Verifica se é uma data futura ou atual
+        let partes = data_agendamento.split('/');
+        let dataDigitada = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
+        let hojeSemHoras = new Date();
+        hojeSemHoras.setHours(0, 0, 0, 0);
+        
+        if (dataDigitada < hojeSemHoras) {
+            await client.sendMessage(msg.from, '❌ Não é permitido agendar para uma data retroativa. Tente novamente.');
+            return;
+        }
+        
         await client.sendMessage(msg.from, `📆 Agendando para o dia: ${data_agendamento}`);
     } else if (escolhaData.toLowerCase() === 'data completa') {
         // Se o cliente escolher "Data Completa", permite digitar a data completa
@@ -630,15 +641,23 @@ if (resposta.toLowerCase() === 'sim') {
             'Data recebida'
         );
 
-        // Processa a data completa informada
         data_agendamento = dataCompletaInformada;
-        await client.sendMessage(msg.from, `📆 Agendando para a data: ${data_agendamento}`);
 
+        let partes = data_agendamento.split('/');
+        let dataDigitada = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
+        let hojeSemHoras = new Date();
+        hojeSemHoras.setHours(0, 0, 0, 0);
+        
+        if (dataDigitada < hojeSemHoras) {
+            await client.sendMessage(msg.from, '❌ Não é permitido agendar para uma data retroativa. Tente novamente.');
+            return;
+        }
+        
+        await client.sendMessage(msg.from, `📆 Agendando para a data: ${data_agendamento}`);
         
     }
 }
 let continuarConsultas = true;
-
 while (continuarConsultas) {
     await client.sendMessage(msg.from, '✅ Data confirmada! Agora, veja os horários disponíveis.');
 
@@ -649,29 +668,81 @@ while (continuarConsultas) {
             mensagem += `🕒 ${horario}\n\n`;
         });
         mensagem += `*Escolha o seu Horário:* (Formato: ⏰ 10:00)\n\n`;
-        mensagem += `❓ Para consultar outra data, digite "Nova Data".`;
+        mensagem += `❓ Para consultar outra data, digite "Nova Data".\n`;
+        mensagem += `📅 Você também pode digitar apenas um *dia* (ex: 20) para buscar horários nesse dia do mês atual.`;
 
         await client.sendMessage(msg.from, mensagem);
 
-        // Solicita o horário
-        let horario_agendamento = await solicitarCampo(
+        let entrada = await solicitarCampo(
             null,
-            '❌ Horário inválido! Envie no formato 10:00.',
-            /^([01]\d|2[0-3]):([0-5]\d)?$/, // Tornando os minutos opcionais
-            'Horário recebido'
+            '❌ Entrada inválida! Envie no formato 10:00 ou "Nova Data".',
+            /^([01]\d|2[0-3]):([0-5]\d)$|^[Nn]ova [Dd]ata$|^\d{1,2}$/,
+            'Entrada recebida'
         );
-        if (!horario_agendamento) return;
+        if (!entrada) return;
 
-        // Verifica se o horário está disponível
+        if (/^[Nn]ova [Dd]ata$/.test(entrada)) {
+            await client.sendMessage(msg.from, '📆 Digite a nova data desejada (Formato: 04/11/2025):');
+            const nova_data = await solicitarCampo(
+                null,
+                '❌ Data inválida! Use o formato 04/11/2025.',
+                /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+                'Data recebida'
+            );
+            if (!nova_data) return;
+
+            let partes = nova_data.split('/');
+            let dataDigitada = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
+            let hojeSemHoras = new Date();
+            hojeSemHoras.setHours(0, 0, 0, 0);
+            
+            if (dataDigitada < hojeSemHoras) {
+                await client.sendMessage(msg.from, '❌ Não é permitido agendar para uma data retroativa. Tente novamente.');
+                continue;
+            }
+            
+
+            data_agendamento = nova_data;
+            continue;
+        } else if (/^\d{1,2}$/.test(entrada)) {
+            const hoje = new Date();
+            const dia = entrada.padStart(2, '0');
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const ano = hoje.getFullYear();
+            data_agendamento = `${dia}/${mes}/${ano}`;
+            continue;
+        }
+
+        horario_agendamento = entrada;
+
+        // Só sai do loop se o horário for válido
         if (horariosDisponiveis.includes(horario_agendamento)) {
-            await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
-                `👤 *Nome:* ${cliente_nome}\n` +
-                `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
-                `📅 *Data:* ${data_agendamento}\n` +
-                `⏰ *Horário:* ${horario_agendamento}\n\n` +
-                `✅ *Digite "Sim"* para confirmar\n❌ *Digite "Cancelar"* para cancelar e voltar ao menu principal\n📜 *Digite "Menu"* para retornar ao menu principal.\n❓ Para consultar outra data, digite "Nova Data".`);
+            break;
+        } else {
+            await client.sendMessage(msg.from, '❌ Horário não disponível. Por favor, escolha um horário disponível.');
+        }
+    } else {
+        await client.sendMessage(msg.from, '❌ Não há horários disponíveis para esta data. Digite "Nova Data", Use o formato 04/11/2025 para tentar outro dia.');
+        const nova_data = await solicitarCampo(
+            null,
+            '❌ Data inválida! Use o formato 04/11/2025.',
+            /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+            'Data recebida'
+        );
+        if (!nova_data) return;
+        data_agendamento = nova_data;
+    }
+}
 
-            const resposta = await esperarMensagem(msg.from);
+// ⚠️ Agora o horário foi confirmado como válido, seguimos com a confirmação:
+await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
+    `👤 *Nome:* ${cliente_nome}\n` +
+    `💼 *Serviço:* ${servicosDisponiveis[servico_id].nome}\n` +
+    `📅 *Data:* ${data_agendamento}\n` +
+    `⏰ *Horário:* ${horario_agendamento}\n\n` +
+    `✅ *Digite "Sim"* para confirmar\n❌ *Digite "Cancelar"* para cancelar e voltar ao menu principal\n📜 *Digite "Menu"* para retornar ao menu principal.\n❓ Para consultar outra data, digite "Nova Data".`);
+
+             resposta = await esperarMensagem(msg.from);
 
             if (resposta.toLowerCase().trim() === 'sim') {
                 confirmacao = true;
@@ -736,16 +807,10 @@ while (continuarConsultas) {
                 await client.sendMessage(msg.from, '❌ Resposta inválida. Por favor, digite "Sim" para confirmar, "Cancelar" para cancelar ou "Menu" para retornar ao menu principal.');
             }
         } else {
-            await client.sendMessage(msg.from, '❌ Horário não disponível. Por favor, escolha um horário disponível.');
-        }
-    } else {
-        // Se não houver horários disponíveis
-        await client.sendMessage(msg.from, '❌ Não há horários disponíveis para a data informada. Tente novamente com outra data.');
-        continuarConsultas = false;
-    }
-}
+         
+            continuarConsultas = false;
+    
 
-    } else {
         let partes = data_agendamento.split('/');
         let proximaData = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
         
