@@ -427,7 +427,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
         let campoValido = false;
 
         while (!campoValido) {
-            if (tentativas >= 5) {
+            if (tentativas >= 2) {
                 await client.sendMessage(msg.from, '⚠️ Muitas tentativas inválidas. Retornando ao menu principal.');
                 return null;
             }
@@ -810,10 +810,10 @@ await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
          
             continuarConsultas = false;
     
-
+ if(data_agendamento){
         let partes = data_agendamento.split('/');
         let proximaData = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-        
+    }
         // Verifica se há horários disponíveis para a data fornecida
         if (!horariosDisponiveis || horariosDisponiveis.length === 0) {
             // Caso não haja horários disponíveis, sugere a próxima data
@@ -927,8 +927,38 @@ await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
 const INTERVALO_EXECUCAO = 10 * 60 * 1000; // 10 minutos em milissegundos
 const agendamentosNotificados = new Set();  // Defina o Set para armazenar notificações enviadas
 
+
+       // Função para obter as configurações do banco de dados
+async function obterConfiguracoes() {
+    try {
+        const response = await axios.get(`${BASE_URL}/consultar-configuracoes_bot.php`);
+        console.log('🔍 Resposta das configurações:', response.data);
+
+        if (!response.data || !response.data.configuracoes) {
+            console.log('⚠️ Nenhuma configuração encontrada.');
+            return;
+        }
+
+        const configuracoes = response.data.configuracoes;
+        const intervaloMensagens = configuracoes.intervalo_mensagens || 30; // Exemplo: 30 minutos
+        const quantidadeMensagens = configuracoes.quantidade_mensagens || 2; // Exemplo: 2 mensagens
+
+        return { intervaloMensagens, quantidadeMensagens };
+    } catch (error) {
+        console.error('❌ Erro ao obter configurações:', error.message || error);
+    }
+}
+
+// Função para enviar os lembretes
 async function enviarLembretes(client) {
     try {
+        const configuracoes = await obterConfiguracoes();
+        if (!configuracoes) {
+            return; // Se não houver configurações, não prosseguir
+        }
+
+        const { intervaloMensagens, quantidadeMensagens } = configuracoes;
+
         console.log('🔄 Verificando agendamentos...');
         const response = await axios.get(`${BASE_URL}/consultar-agendamentos.php`);
         console.log('🔍 Resposta da API:', response.data);
@@ -956,13 +986,13 @@ async function enviarLembretes(client) {
             const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const minutoAgendamento = dataObj.getHours() * 60 + dataObj.getMinutes();
             const chaveConfirmacaoManha = `${cliente_telefone}-${dataFormatada}-confirmacao-manha`;
-            const chaveConfirmacaoAntes = `${cliente_telefone}-${dataFormatada}-confirmacao-antes`; // Correção aqui
+            const chaveConfirmacaoAntes = `${cliente_telefone}-${dataFormatada}-confirmacao-antes`;
 
             console.log(`📅 Agendamento: ${cliente_nome} às ${horaFormatada} (${minutoAgendamento} min)`);
 
             // 🔹 Lembrete de confirmação entre 9:30 e 10:00
-            const horarioInicioConfirmacao = 9 * 60 + 30; // 9:30 em minutos (570)
-            const horarioLimiteConfirmacao = 10 * 60; // 10:00 em minutos (600)
+            const horarioInicioConfirmacao = 9 * 60 + 30; // 9:30 em minutos
+            const horarioLimiteConfirmacao = 10 * 60; // 10:00 em minutos
 
             if (
                 !agendamentosNotificados.has(chaveConfirmacaoManha) &&
@@ -1007,10 +1037,14 @@ async function enviarLembretes(client) {
     }
 }
 
-// 🚀 Rodando o script a cada 10 minutos
+// 🚀 Rodando o script a cada X minutos (intervalo configurado)
 setInterval(() => {
     enviarLembretes(client);
 }, INTERVALO_EXECUCAO);
+
+setInterval(() => {
+    agendamentosNotificados.clear();
+}, 24 * 60 * 60 * 1000);  // Limpar a lista de agendamentos notificados a cada 24 horas
 
 // Executa uma vez ao iniciar
 enviarLembretes(client);
