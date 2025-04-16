@@ -866,14 +866,18 @@ await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
                  }
              
                  let novosHorarios = await verificarDisponibilidade(id_dentista, data_agendamento);
-        
+
                  if (novosHorarios && novosHorarios.length > 0) {
                      let mensagemHorarios = `✅ *Horários disponíveis para ${data_agendamento}:*\n\n`;
-
-                          
-                     mensagemHorarios +=`🕒 ${novosHorarios.join('\n\n')}`;
+                 
+                     mensagemHorarios += `🕒 ${novosHorarios.join('\n\n🕒 ')}`; // adiciona o emoji antes de cada horário
+                 
+                     mensagemHorarios += `\n\n*Escolha o seu Horário:* (Formato: ⏰ 10:00 ou 1000)\n`;
+                     mensagemHorarios += `❓ Para consultar outra data, digite *Nova Data*.`;
+                  
                      await client.sendMessage(msg.from, mensagemHorarios);
-         
+                 }
+                 
                      // Solicita ao usuário para digitar o horário desejado (com ou sem dois-pontos)
                      let horarioEscolhido = await solicitarCampo(
                          null,
@@ -942,9 +946,7 @@ await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
                  } else {
                      await client.sendMessage(msg.from, `❌ Ainda não há horários disponíveis para ${data_agendamento}.`);
                  }
-             } else {
-                 await client.sendMessage(msg.from, `❌ Você optou por não agendar para a nova data. Por favor, tente novamente.`);
-             }
+             
          
             
                        
@@ -1059,8 +1061,9 @@ await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
             return;
         }
     }
+})
 
-    })
+    
 
 
 
