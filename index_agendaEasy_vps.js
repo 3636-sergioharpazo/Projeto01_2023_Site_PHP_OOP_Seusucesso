@@ -203,6 +203,8 @@ if (/^(menu|Menu|tarde|noite|bom dia|oi|Oi|Voltar|voltar|Olá|olá|cancelar|Canc
     await mostrarMenuPrincipal(msg);
 }
 
+
+
     // Resposta para a opção "Serviços e Preços"
     if (msg.body === '1' && msg.from.endsWith('@c.us')) {
         const chat = await msg.getChat();
@@ -210,32 +212,41 @@ if (/^(menu|Menu|tarde|noite|bom dia|oi|Oi|Voltar|voltar|Olá|olá|cancelar|Canc
         await chat.sendStateTyping();
         await delay(2000);
 
-        const idEmpresa = 4; // ajuste conforme necessário
+        const idEmpresa = ID_EMPRESA; // ajuste conforme necessário
 
-        let servicosDisponiveis = {};
-        try {
-            const response = await axios.get(`${BASE_URL}/consultar-servicos_bot.php`, {
-                params: { id_empresa: idEmpresa }
-            });
-            servicosDisponiveis = response.data.servicos;
-        } catch (error) {
-            console.error('Erro ao carregar serviços:', error);
-            await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-            return;
-        }
-        
-        const listaServicos = Object.entries(servicosDisponiveis)
-            .map(([codigo, { nome }]) => ` ${nome}`)
-            .join('\n');
-        
-        await client.sendMessage(
-            msg.from,
-            `👨‍⚕️ *Serviços* 🦷🪥👩‍⚕️\n\n` +
-            `📝\n${listaServicos}\n` +
-            `Digite *2* para agendar seu horário! `
-        );
-    }
-          
+
+ // Consultar os serviços disponíveis
+ let servicosDisponiveis = {};
+
+ try {
+     // Adicionando o id_empresa para a consulta
+     const response = await axios.get('https://agendaeasy.shop/consultar-servicos_bot.php', {
+         params: { id_empresa: ID_EMPRESA } // Passando o id da empresa como parâmetro
+     });
+     servicosDisponiveis = response.data.servicos || {}; // Garante que seja objeto mesmo se vazio
+ } catch (error) {
+     await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+     return;
+ }
+ 
+ // Criando a lista de serviços com id, nome do serviço, profissional e preço
+ const listaServicos = Object.entries(servicosDisponiveis)
+     .map(([codigo, { id_dentista, nome, nome_dentista }]) =>
+         `*${codigo}* ${nome} (Atendido por:. ${nome_dentista})`
+     )
+     .join('\n');
+ 
+     await client.sendMessage(
+        msg.from,
+        `✨ *Lista de Serviços Disponíveis* ✨\n\n` +
+        `🔹 Confira abaixo as opções disponíveis:\n\n` +
+        `${listaServicos}\n\n` +
+        `🌟 Garanta já o seu horário e aproveite nossos serviços de excelência!\n\n` +
+        `📅 Para agendar, digite *2*.\n\n` +
+        `Estamos ansiosos para atender você! 😊`
+    );
+    
+}  
 
     // Resposta para "Localização"
     if (msg.body === '4' && msg.from.endsWith('@c.us')) {
@@ -268,35 +279,47 @@ if (/^(menu|Menu|tarde|noite|bom dia|oi|Oi|Voltar|voltar|Olá|olá|cancelar|Canc
     await chat.sendStateTyping();
     await delay(2000);
 
-
- // Consultar os serviços disponíveis
- let servicosDisponiveis = {};
- try {
-     const response = await axios.get(`${BASE_URL}/consultar-servicos_bot_p.php`);
-     servicosDisponiveis = response.data.servicos;
- } catch (error) {
-     console.error('Erro ao carregar serviços:', error);
-     await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
-     return;
- }
-
- const listaServicos = Object.entries(servicosDisponiveis)
-     .map(([codigo, { nome }]) => ` ${nome}`)
-     .join('\n');
-
-
-     await client.sendMessage(
-        msg.from,
-        `🎉 *Promoções da Semana* 🎉\n\n` +
-        `📝\n${listaServicos}\n` +
-        `Aproveite essas ofertas incríveis! Válidas até sábado. 💅\n\n` +  // Adicionei o '+' aqui
-        `Digite *2* para agendar seu horário!\n`
-    );
-    
-}
-
 // Verifica se o cliente digitou '6' para iniciar a consulta
 
+
+const idEmpresa = ID_EMPRESA; // ajuste conforme necessário
+
+
+// Consultar os serviços disponíveis
+let servicosDisponiveis = {};
+
+try {
+    // Adicionando o id_empresa para a consulta
+    const response = await axios.get('https://agendaeasy.shop/consultar-servicos_bot_p.php', {
+        params: { id_empresa: ID_EMPRESA } // Passando o id da empresa como parâmetro
+    });
+    servicosDisponiveis = response.data.servicos || {}; // Garante que seja objeto mesmo se vazio
+} catch (error) {
+    await client.sendMessage(msg.from, '❌ Erro ao consultar serviços. Tente novamente mais tarde.');
+    return;
+}
+
+// Criando a lista de serviços com id, nome do serviço, profissional e preço
+const listaServicos = Object.entries(servicosDisponiveis)
+    .map(([codigo, { id_dentista, nome, nome_dentista }]) =>
+        `*${codigo}* ${nome} (Atendido por: ${nome_dentista})`
+    )
+    .join('\n');
+
+    await client.sendMessage(
+        msg.from,
+        `🎉 *Promoções da Semana* 🎉\n\n` +
+        `🔹 Aproveite nossos serviços especiais selecionados para esta semana:\n\n` +
+        `${listaServicos}\n\n` +
+        `🌟 Garanta já o seu horário e aproveite descontos exclusivos!\n\n` +
+        `📅 Para agendar, digite *2*.\n\n` +
+        `⏳ Promoções válidas por tempo limitado. Esperamos por você! 😊`
+    );
+    
+        
+
+
+ }
 
 // Função assíncrona para tratar o código do agendamento
 async function handleAgendamento(msg) {
@@ -434,7 +457,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
     let confirmacao = false;
     let cliente_telefone = msg.from.split('@')[0];
     let id_dentista = '';
-    let ID_EMPRESA=1;
+    
 
     
 
@@ -488,7 +511,7 @@ if (msg.body === '2' && msg.from.endsWith('@c.us')) {
             client.on('message', listener);
         });
     }
-    let id_empresa='';
+    let id_empresa=ID_EMPRESA;
 
     async function verificarDisponibilidade(id_dentista,id_empresa, data_agendamento) {
         if (!data_agendamento || typeof data_agendamento !== 'string') {
@@ -548,7 +571,7 @@ try {
 // Criando a lista de serviços com id, nome do serviço, profissional e preço
 const listaServicos = Object.entries(servicosDisponiveis)
     .map(([codigo, { id_dentista, nome, nome_dentista }]) =>
-        `*${codigo}* ${nome} (Dr(a). ${nome_dentista})`
+        `*${codigo}* ${nome} (Atendido por:. ${nome_dentista})`
     )
     .join('\n');
 
@@ -957,7 +980,7 @@ await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
          
                          const resposta = await esperarMensagem(msg.from);
 
-                         let ID_EMPRESA=1;
+                 
          
                          if (resposta.toLowerCase().trim() === 'sim') {
                              confirmacao = true;
@@ -1103,6 +1126,7 @@ await client.sendMessage(msg.from, `📝 *Confirme as informações:*\n\n` +
 }
 }
 })
+
 
 
 
