@@ -165,7 +165,7 @@ initializeClient();
 //client.initialize();
 
 // Função para criar delay
-const delay = ms => new Promise(res => setTimeout(res, ms));
+//const delay = ms => new Promise(res => setTimeout(res, ms));
 
 // Variáveis para armazenar os dados do cliente e do agendamento
 //let cliente_nome = '';
@@ -315,8 +315,7 @@ const listaServicos = Object.entries(servicosDisponiveis)
         `📅 Para agendar, digite *2*.\n\n` +
         `⏳ Promoções válidas por tempo limitado. Esperamos por você! 😊`
     );
-    
-        
+           
 
 
  }
@@ -571,7 +570,7 @@ try {
 // Criando a lista de serviços com id, nome do serviço, profissional e preço
 const listaServicos = Object.entries(servicosDisponiveis)
     .map(([codigo, { id_dentista, nome, nome_dentista }]) =>
-        `*${codigo}* ${nome} (Atendido por:. ${nome_dentista})`
+        `*${codigo}* ${nome} (Atendido por: ${nome_dentista})`
     )
     .join('\n');
 
