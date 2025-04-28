@@ -1,42 +1,67 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
-const path = require('path');
 const axios = require('axios');
 
+const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const express = require('express');
 const { exec } = require('child_process');
-const puppeteer = require('puppeteer-core');
+
 const app = express();
 const PORT = 3005;
-const qrCodeDir = '/var/www/html/bot4';
-const sessionDir = path.join(qrCodeDir, '.wwebjs_auth/session-default');
+
+// CONFIGURAÇÕES
+const BASE_DIR = '/var/www/html'; // Sem barra no final
+const BASE_URL = 'http://agendaeasy.shop'; // Sem barra final
+const NOME_CLIENTE = 'Consultório AR'; // Nome do cliente
+const ID_EMPRESA = 1; // ID da empresa
+
+// FUNÇÕES
+function sanitizeNomeCliente(nome) {
+  return nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+const NOME_CLIENTE_SANITIZADO = sanitizeNomeCliente(NOME_CLIENTE);
+const qrCodeDir = path.join(BASE_DIR, `${NOME_CLIENTE_SANITIZADO}${ID_EMPRESA}`);
+const sessionDir = path.join(qrCodeDir, '.wwebjs_auth', 'session-default');
+
+require('events').EventEmitter.defaultMaxListeners = 100;
 
 let isQRCodeGenerated = false;
 let qrCodeGeneratedAt = null;
 let reconnectAttempts = 0;
 let isClientReady = false;
 
-const BASE_URL = 'http://agendaeasy.shop';//sem a barrar final
-const NOME_CLIENTE='Consultório AR';
-const ID_EMPRESA=1;
-
-require('events').EventEmitter.defaultMaxListeners = 100;
-
-// Função para verificar a conexão com a internet
+// Função para verificar internet
 function checkInternetConnection(callback) {
   exec('ping -c 1 google.com', (error) => {
     callback(!error);
   });
 }
 
-// Função para gerar QR Code e salvar no diretório
+// Função para gerar o QR Code
 async function generateQRCode(qr) {
   const qrCodePath = path.join(qrCodeDir, 'qrcode.png');
 
   try {
-    if (fs.existsSync(qrCodePath)) fs.unlinkSync(qrCodePath);
+    // Garante que a pasta existe
+    if (!fs.existsSync(qrCodeDir)) {
+      fs.mkdirSync(qrCodeDir, { recursive: true });
+      console.log(`📁 Pasta criada: ${qrCodeDir}`);
+    }
+
+    // Remove QR antigo se existir
+    if (fs.existsSync(qrCodePath)) {
+      fs.unlinkSync(qrCodePath);
+      console.log('🗑️ QR Code anterior removido.');
+    }
+
+    // Gera novo QR
     await qrcode.toFile(qrCodePath, qr, { width: 400, margin: 1 });
     console.log(`✅ QR Code salvo em: ${qrCodePath}`);
 
@@ -47,7 +72,7 @@ async function generateQRCode(qr) {
   }
 }
 
-// Função para reiniciar o cliente e remover sessão
+// Função para reiniciar cliente
 function restartClient() {
   console.log('🔄 Reiniciando o cliente...');
 
@@ -57,7 +82,9 @@ function restartClient() {
   isClientReady = false;
 
   client.destroy().then(() => {
-    if (fs.existsSync(sessionDir)) rimraf.sync(sessionDir);
+    if (fs.existsSync(sessionDir)) {
+      rimraf.sync(sessionDir);
+    }
     initializeClient();
   }).catch(err => console.error('Erro ao destruir cliente:', err));
 }
@@ -74,9 +101,11 @@ function attemptReconnect() {
   }
 }
 
-// Configuração do cliente
+// CONFIGURAÇÃO DO CLIENTE
 const client = new Client({
-  authStrategy: new LocalAuth({ clientId: 'bot4' }),
+  authStrategy: new LocalAuth({ 
+    clientId: `${NOME_CLIENTE}${ID_EMPRESA}`.replace(/[^a-zA-Z0-9_-]/g, '')
+  }),
   puppeteer: {
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
     timeout: 30000,
@@ -84,7 +113,7 @@ const client = new Client({
   }
 });
 
-// Eventos do WhatsApp Web
+// EVENTOS
 client.on('qr', generateQRCode);
 
 client.on('authenticated', () => {
@@ -93,8 +122,8 @@ client.on('authenticated', () => {
 
 client.on('ready', () => {
   isClientReady = true;
-  enviarLembretes(client)
-  enviarFelizAniversario(client)
+  enviarLembretes(client); // Se precisar, defina a função enviarLembretes
+  enviarFelizAniversario(client); // Se precisar, defina também
   console.log('🚀 Cliente pronto!');
 });
 
@@ -104,7 +133,7 @@ client.on('disconnected', async (reason) => {
   restartClient();
 });
 
-// Verificação periódica (5 minutos sem conexão = tentativa de reconectar)
+// MONITORAMENTO - Se 5 minutos sem conexão, tenta reconectar
 setInterval(() => {
   if (!isClientReady && qrCodeGeneratedAt && (Date.now() - qrCodeGeneratedAt >= 300000)) {
     console.log('⏱️ 5 minutos sem conexão. Tentando reconectar...');
@@ -112,7 +141,7 @@ setInterval(() => {
   }
 }, 10000);
 
-// Inicializa o cliente se houver internet
+// Inicializar Cliente
 function initializeClient() {
   checkInternetConnection((isConnected) => {
     if (isConnected) {
@@ -124,7 +153,7 @@ function initializeClient() {
   });
 }
 
-// Rotas da API
+// ROTAS DA API
 app.get('/status', (req, res) => {
   res.json({
     connectionStatus: isClientReady ? 'Conectado' : 'Desconectado',
@@ -145,23 +174,16 @@ app.get('/disconnect', async (req, res) => {
   }
 });
 
-// Servir arquivos estáticos (QR Code)
+// SERVE QR CODE
 app.use(express.static(qrCodeDir));
 
-// Inicia o servidor
+// INICIA SERVIDOR
 app.listen(PORT, () => {
   console.log(`✅ Servidor rodando na porta ${PORT}`);
 });
 
-// Inicializar Cliente
+// START
 initializeClient();
-// Executa a função a cada 5 minuto para garantir precisão
-//setInterval(enviarLembretes, 5 * 60 * 1000);
-
-
-
-//});
-
 //client.initialize();
 
 // Função para criar delay
@@ -232,7 +254,7 @@ if (/^(menu|Menu|tarde|noite|bom dia|oi|Oi|Voltar|voltar|Olá|olá|cancelar|Canc
  // Criando a lista de serviços com id, nome do serviço, profissional e preço
  const listaServicos = Object.entries(servicosDisponiveis)
      .map(([codigo, { id_dentista, nome, nome_dentista }]) =>
-         `*${codigo}* ${nome} (Atendido por:. ${nome_dentista})`
+         `*${codigo}* ${nome} (Atendido por:${nome_dentista})`
      )
      .join('\n');
  
