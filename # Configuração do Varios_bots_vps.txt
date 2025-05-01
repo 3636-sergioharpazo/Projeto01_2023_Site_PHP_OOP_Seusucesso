@@ -39,6 +39,7 @@
 #sudo ufw allow 3003
 #sudo ufw allow 3004
 #####passo 5 #########
+#sudo nano /etc/nginx/nginx.conf
 #sudo nginx -t  # Testar se a configuração está correta
 #sudo systemctl reload nginx  # Aplicar as alterações
 
