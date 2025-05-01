@@ -1,0 +1,68 @@
+# 1. Atualizar o sistema e instalar dependências
+sudo apt update && sudo apt upgrade -y  # Atualiza pacotes
+sudo apt install nodejs npm nginx curl git -y  # Instala Node.js, NPM, NGINX, cURL e Git
+
+# 2. Verificar a versão do Node.js
+node -v  # Garante que o Node.js está instalado
+
+# 3. Instalar PM2 globalmente para gerenciar processos
+sudo npm install pm2 -g  # Gerenciador de processos para Node.js
+
+# 4. Criar diretório para o projeto e acessar ele
+mkdir -p /var/www/html  # Cria o diretório
+cd /var/www/html  # Acessa o diretório
+
+# 5. Inicializar um projeto Node.js
+npm init -y  # Cria um package.json padrão
+
+# 6. Instalar as dependências necessárias
+npm install express whatsapp-web.js qrcode puppeteer path fs  # Instala bibliotecas necessárias
+
+# 7. Criar ou editar o arquivo de configuração do NGINX
+sudo nano /etc/nginx/sites-available/default  # Editar o arquivo de configuração
+
+# 8. Adicionar/atualizar o conteúdo no NGINX:
+# server {
+#     listen 80 default_server;
+#     listen [::]:80 default_server;
+#     server_name _;
+#     root /var/www/html;
+#
+#     location / {
+#         proxy_pass http://127.0.0.1:3002;
+#         proxy_http_version 1.1;
+#         proxy_set_header Upgrade $http_upgrade;
+#         proxy_set_header Connection 'upgrade';
+#         proxy_set_header Host $host;
+#         proxy_cache_bypass $http_upgrade;
+#     }
+# }
+
+# 9. Reiniciar o NGINX para aplicar as alterações
+sudo systemctl restart nginx  # Reinicia o servidor NGINX
+
+# 10. Criar e editar o arquivo principal do projeto
+nano index_ceece_vps.js  # Criar e editar o arquivo principal
+
+# 11. Rodar o projeto usando PM2
+pm2 start index_ceece_vps.js --name ceece-bot  # Inicia o projeto com PM2
+
+# 12. Salvar a configuração do PM2 para reiniciar automaticamente em reboot
+pm2 save  # Salva a configuração atual
+pm2 startup  # Gera o comando de inicialização automática
+# (Execute o comando gerado após rodar 'pm2 startup')
+
+# 13. Verificar se a aplicação está rodando corretamente
+sudo lsof -i :3002  # Verifica se a porta 3002 está em uso
+pm2 status  # Mostra o status dos processos PM2
+curl http://127.0.0.1:3002/status  # Testar a rota do servidor
+
+# 14. Habilitar o serviço NGINX para iniciar com o sistema
+sudo systemctl enable nginx  # Habilita o NGINX no boot
+
+# 15. Visualizar logs do PM2 em tempo real
+pm2 logs ceece-bot  # Visualizar logs do projeto
+
+# 16. Para reiniciar ou parar o processo
+pm2 restart ceece-bot  # Reinicia o processo
+pm2 stop ceece-bot  # Para o processo
